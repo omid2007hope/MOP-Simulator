@@ -1,7 +1,5 @@
 # MOP - Massive Ordnance Penetrator Bomb Simulator
 
-> **Made with AI to review and learn C++ — and it works well!**
-
 A C++ physics and penetration mechanics simulator for high-mass earth-penetrating ordnance like the **GBU-57 Massive Ordnance Penetrator (MOP)**. This project models terminal ballistic impact physics, structural casing integrity, and hydrodynamic soil/concrete penetration limits, featuring both a terminal ASCII cross-section renderer and an automatically generated **Three.js WebGL 3D interactive visualizer**.
 
 ---
