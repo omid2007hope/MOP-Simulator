@@ -50,8 +50,7 @@ private:
     const double SPEED_OF_SOUND = 343.0; // m/s in air at sea level (approximate reference)
 
 public:
-    ImpactSimulator(const Projectile& p, const Target& t);
-
+    ImpactSimulator(const Projectile& , const Target& t);
     SimulationResult simulate(const ImpactScenario& scenario);
     void printAscii3DVisualizer(const SimulationResult& r);
     void printReport(const std::vector<SimulationResult>& results);
