@@ -59,50 +59,72 @@ This repository serves as a practical codebase for reviewing C++ fundamentals an
 ## 🛠️ How to Build and Run
 
 ### Prerequisites
-- Any modern C++ compiler supporting C++11 or later (`g++`, `clang++`, or MSVC `cl`).
+- Any modern C++ compiler supporting C++17 or later (`g++`, `clang++`, or MSVC `cl`).
+- Optional: `make` / `mingw32-make` or `cmake`.
 
 ### Compilation
 
-Using **GCC / MinGW**:
+Using **Make / MinGW Make**:
 ```bash
-g++ -O2 Simulation/sim.cpp -o Simulation/sim.exe
+make
+# or on Windows with MinGW:
+mingw32-make
 ```
 
-Using **Clang**:
+Using **GCC / MinGW** directly:
 ```bash
-clang++ -O2 Simulation/sim.cpp -o Simulation/sim.exe
+g++ -std=c++17 -O2 -Iinclude src/main.cpp src/simulation.cpp -o bin/sim.exe
 ```
 
-Using **MSVC Developer Command Prompt**:
-```cmd
-cl /EHsc /O2 Simulation/sim.cpp /Fe:Simulation/sim.exe
+Using **CMake**:
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build .
 ```
 
 ### Running the Simulator
 
 ```bash
-./Simulation/sim.exe
+./bin/sim.exe
 ```
 
 1. **Select Mode**:
    - `[1]` Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4).
    - `[2]` Interactive Custom Parameter Input.
 2. View the console summary report and ASCII cross-sections.
-3. Open `Simulation/3d_visualizer.html` in any web browser to explore the interactive 3D WebGL scene!
+3. Open `3d_visualizer.html` in any web browser to explore the interactive 3D WebGL scene!
+
+### Running Unit Tests
+
+To run the automated physics and penetration regime unit tests:
+```bash
+make test
+# or on Windows with MinGW:
+mingw32-make test
+```
 
 ---
 
 ## 📁 Repository Structure
 
-```
+```text
 MOP Simulator/
-├── .clang-format           # Code formatting configuration
-├── License.md              # Software license & terms
-├── README.md               # Project documentation
-└── Simulation/
-    ├── sim.cpp             # Main C++ source code (Physics engine & HTML generator)
-    ├── sim.exe             # Compiled binary
-    └── 3d_visualizer.html  # Generated Three.js WebGL visualizer
+├── include/
+│   └── simulation.hpp       # Public API headers (Data structs & class declarations)
+├── src/
+│   ├── simulation.cpp       # Core physics engine & 3D HTML generator implementation
+│   └── main.cpp             # CLI application entry point & user menu
+├── tests/
+│   └── test_simulation.cpp  # Automated unit test suite for ballistics & failure regimes
+├── bin/                     # Output directory for compiled executables
+├── build/                   # Intermediate compilation object files
+├── Makefile                 # Standard build script for GCC/Clang/MinGW
+├── CMakeLists.txt           # Standard CMake build configuration
+├── .clang-format            # Code formatting configuration
+├── License.md               # Software license & terms
+├── README.md                # Project documentation
+└── 3d_visualizer.html       # Generated Three.js WebGL visualizer
 ```
 
 ---
