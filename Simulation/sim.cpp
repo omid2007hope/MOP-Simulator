@@ -52,7 +52,7 @@ private:
     Target target;
     const double SPEED_OF_SOUND = 343.0; // m/s in air at sea level (approximate reference)
 
-public:`
+public:
     ImpactSimulator(const Projectile& p, const Target& t) : proj(p), target(t) {}
 
     SimulationResult simulate(const ImpactScenario& scenario) {
