@@ -45,8 +45,10 @@
     </div>
 
     <div id="controls">
-        <button onclick="selectScenario(0)" id="btn-0">Custom Test #1 (750 m/s)</button>
-        <button onclick="selectScenario(1)" id="btn-1">Custom Test #2 (1000 m/s)</button>
+        <button onclick="selectScenario(0)" id="btn-0">50,000 ft Drop</button>
+        <button onclick="selectScenario(1)" id="btn-1">25,000 ft Drop</button>
+        <button onclick="selectScenario(2)" id="btn-2">18,000 ft Drop</button>
+        <button onclick="selectScenario(3)" id="btn-3">Subsonic Operational</button>
     </div>
 
     <!-- Three.js and OrbitControls -->
@@ -55,8 +57,10 @@
     <script>
         // Simulation Data from C++
         const scenarios = [
-            { name: "Custom Test #1 (750 m/s)", velocity: 750, mach: 2.18659, energy: 3.825, pressure: 0.703125, yield: 2, depth: 10.3746, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" },
-            { name: "Custom Test #2 (1000 m/s)", velocity: 1000, mach: 2.91545, energy: 6.8, pressure: 1.25, yield: 2, depth: 10.3746, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" }
+            { name: "50,000 ft Drop", velocity: 1050, mach: 3.06122, energy: 7.497, pressure: 1.37813, yield: 2, depth: 10.9514, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" },
+            { name: "25,000 ft Drop", velocity: 950, mach: 2.76968, energy: 6.137, pressure: 1.12813, yield: 2, depth: 10.9514, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" },
+            { name: "18,000 ft Drop", velocity: 880, mach: 2.5656, energy: 5.26592, pressure: 0.968, yield: 2, depth: 10.9514, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" },
+            { name: "Subsonic Operational", velocity: 340, mach: 0.991254, energy: 0.78608, pressure: 0.1445, yield: 2, depth: 10.9514, fail: false, regime: "Rigid Body Penetration", summary: "Casing intact; smart-fuze detonates deep underground" }
         ];
 
         let scene, camera, renderer, controls;
