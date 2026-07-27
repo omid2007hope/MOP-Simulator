@@ -515,7 +515,7 @@ int main() {
             {"50,000 ft Drop", 50000.0, 1050.0}, // Mach ~10.4
             {"25,000 ft Drop", 25000.0, 950.0}, // Mach ~6.1
             {"18,000 ft Drop", 18000.0, 880.0}, // Mach ~5.3
-            {"Subsonic Operational", 15.0, 340.00, 1.0} // Mach ~1.0
+            {"Subsonic Operational", 15.0, 340.00} // Mach ~1.0
         };
     }
 
