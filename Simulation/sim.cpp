@@ -52,7 +52,7 @@ private:
     Target target;
     const double SPEED_OF_SOUND = 343.0; // m/s in air at sea level (approximate reference)
 
-public:
+public:`
     ImpactSimulator(const Projectile& p, const Target& t) : proj(p), target(t) {}
 
     SimulationResult simulate(const ImpactScenario& scenario) {
@@ -512,10 +512,10 @@ int main() {
     } else {
         std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
         scenarios = {
-            {"50,000 ft Drop", 50000.0, 3555.76}, // Mach ~10.4
-            {"25,000 ft Drop", 25000.0, 2072.00}, // Mach ~6.1
-            {"18,000 ft Drop", 18000.0, 1834.00}, // Mach ~5.3
-            {"Subsonic Operational", 15.0,  350.00} // Mach ~1.0
+            {"50,000 ft Drop", 50000.0, 1050.0}, // Mach ~10.4
+            {"25,000 ft Drop", 25000.0, 950.0}, // Mach ~6.1
+            {"18,000 ft Drop", 18000.0, 880.0}, // Mach ~5.3
+            {"Subsonic Operational", 15.0, 340.00, 1.0} // Mach ~1.0
         };
     }
 
