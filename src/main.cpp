@@ -17,8 +17,9 @@ int main() {
     std::cout << "Select Simulation Mode:\n";
     std::cout << "  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)\n";
     std::cout << "  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)\n";
+    std::cout << "  [3] Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten Penetrators)\n";
     std::cout << "---------------------------------------------------------------------------------------------------\n";
-    std::cout << "Enter choice [1 or 2]: ";
+    std::cout << "Enter choice [1, 2, or 3]: ";
 
     int choice = 1;
     if (!(std::cin >> choice)) {
@@ -60,11 +61,14 @@ int main() {
         std::cout << "Enter Total Mass m (kg) [default 13600]: ";
         if (std::cin >> val && val > 0) mop.total_mass = val; else clearCinBuffer();
 
-        std::cout << "Enter Casing Density rho_p (kg/m^3) [default 7800 for hardened steel]: ";
+        std::cout << "Enter Explosive Mass (kg) [default 2400, enter 0 for kinetic rod]: ";
+        if (std::cin >> val && val >= 0) mop.explosive_mass = val; else clearCinBuffer();
+
+        std::cout << "Enter Casing Density rho_p (kg/m^3) [default 7800 for steel, 19300 for tungsten]: ";
         if (std::cin >> val && val > 0) mop.casing_density = val; else clearCinBuffer();
 
-        std::cout << "Enter Casing Yield Strength sigma_y (GPa) [default 2.0]: ";
-        if (std::cin >> val && val > 0) mop.yield_strength = val * 1e9; else clearCinBuffer();
+        std::cout << "Enter Casing Yield Strength sigma_y (GPa) [default 2.0, enter 0 for kinetic rod]: ";
+        if (std::cin >> val && val >= 0) mop.yield_strength = val * 1e9; else clearCinBuffer();
 
         std::cout << "Enter Target Concrete Density rho_t (kg/m^3) [default 2500]: ";
         if (std::cin >> val && val > 0) concrete.density = val; else clearCinBuffer();
@@ -90,6 +94,21 @@ int main() {
         if (scenarios.empty()) {
             scenarios.push_back({"Custom Default Test", 0.0, 2000.0});
         }
+    } else if (choice == 3) {
+        std::cout << "\n[+] Loading Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten Penetrators)...\n";
+        mop.name = "Orbital Tungsten Kinetic Penetrator (Rods from God)";
+        mop.length = 6.1;
+        mop.diameter = 0.3;
+        mop.total_mass = 8300.0;
+        mop.explosive_mass = 0.0; // 0 kg explosive (pure kinetic energy weapon)
+        mop.casing_density = 19300.0; // High-density Tungsten
+        mop.yield_strength = 0.0; // 0 GPa (hydrodynamic erosion dominated at hypervelocity)
+
+        scenarios = {
+            {"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0},
+            {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0},
+            {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0}
+        };
     } else {
         std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
         scenarios = {

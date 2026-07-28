@@ -39,6 +39,11 @@ struct SimulationResult {
     bool casing_failure;
     bool premature_detonation;
     double hydro_penetration;    // meters (Alekseevskii-Tate limit)
+    double rigid_penetration;    // meters (Work-energy concrete deceleration model)
+    double actual_penetration_depth; // meters (Selected depth based on regime)
+    double shock_damage_prob_percent; // 0% to 100% chance of explosive failure from shock
+    bool explosive_charge_survives;   // true if charge holds intact without shock damage
+    bool is_kinetic_rod;              // true if explosive_mass == 0 or yield_strength == 0
     std::string regime;
     std::string outcome_summary;
 };

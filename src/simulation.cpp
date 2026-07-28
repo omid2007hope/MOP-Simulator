@@ -22,21 +22,51 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
     // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
     res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
 
-    // 3. Structural integrity and detonation evaluation
-    if (res.dynamic_pressure > proj.yield_strength) {
-        res.casing_failure = true;
-        res.premature_detonation = true;
-        res.regime = "Hydrodynamic / Hypervelocity";
-        res.outcome_summary = "Casing crushes/shatters; surface detonation";
-    } else {
-        res.casing_failure = false;
-        res.premature_detonation = false;
-        res.regime = "Rigid Body Penetration";
-        res.outcome_summary = "Casing intact; smart-fuze detonates deep underground";
-    }
+    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model)
+    double area = 3.14159265358979323846 * std::pow(proj.diameter / 2.0, 2);
+    double cd = 1.2; // Drag coefficient in concrete
+    double rt = 100.0e6; // 100 MPa target compressive bearing strength
+    res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * cd)) * 
+                            std::log(1.0 + (target.density * cd * squaredVelocity) / (2.0 * rt));
 
     // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
+
+    // 5. Kinetic rod check and structural integrity evaluation
+    res.is_kinetic_rod = (proj.explosive_mass == 0.0 || proj.yield_strength == 0.0);
+
+    if (res.is_kinetic_rod) {
+        res.casing_failure = (proj.yield_strength > 0.0 && res.dynamic_pressure > proj.yield_strength);
+        res.premature_detonation = false; // No explosive mass to detonate prematurely
+        res.explosive_charge_survives = true; // N/A for pure kinetic weapon
+        res.shock_damage_prob_percent = 0.0;
+        res.regime = "Hypervelocity Kinetic Rod Penetration";
+        res.outcome_summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
+        res.actual_penetration_depth = (res.velocity > 1500.0 || proj.yield_strength == 0.0) ? res.hydro_penetration : res.rigid_penetration;
+    } else if (res.dynamic_pressure > proj.yield_strength) {
+        res.casing_failure = true;
+        res.premature_detonation = true;
+        res.explosive_charge_survives = false;
+        res.shock_damage_prob_percent = 100.0;
+        res.regime = "Hydrodynamic / Hypervelocity";
+        res.outcome_summary = "Casing crushes/shatters; surface detonation";
+        res.actual_penetration_depth = res.hydro_penetration;
+    } else {
+        res.casing_failure = false;
+        double pressure_ratio = res.dynamic_pressure / proj.yield_strength;
+        res.shock_damage_prob_percent = std::min(100.0, std::max(0.0, std::pow(pressure_ratio, 1.5) * 85.0));
+        res.explosive_charge_survives = (res.shock_damage_prob_percent < 50.0);
+        if (!res.explosive_charge_survives) {
+            res.premature_detonation = true;
+            res.regime = "Rigid Body (Shock Failure)";
+            res.outcome_summary = "Casing intact; shock damages explosive payload";
+        } else {
+            res.premature_detonation = false;
+            res.regime = "Rigid Body Penetration";
+            res.outcome_summary = "Casing intact; smart-fuze detonates deep underground";
+        }
+        res.actual_penetration_depth = res.rigid_penetration;
+    }
 
     return res;
 }
@@ -47,22 +77,39 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r) {
     std::cout << "===================================================================================================\n";
     std::cout << "  Velocity: " << std::fixed << std::setprecision(1) << r.velocity << " m/s (Mach " << r.mach_number << ") | Dyn. Press: " 
               << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa | Casing Yield: " << (proj.yield_strength / 1e9) << " GPa\n";
+    std::cout << "  Actual Penetration Depth: " << r.actual_penetration_depth << " m (" << r.actual_penetration_depth * 3.28084 << " ft) | "
+              << "Shock Failure Chance: " << std::setprecision(1) << r.shock_damage_prob_percent << "% | "
+              << "Explosive Survived: " << (r.explosive_charge_survives ? "YES" : "NO (SHOCK/CRUSH)") << "\n";
     std::cout << "---------------------------------------------------------------------------------------------------\n\n";
 
-    if (r.casing_failure) {
-        std::cout << "        AIR / SURFACE           |  PROJECTILE APPROACH (Hypervelocity Mach " << std::setprecision(1) << r.mach_number << ")\n";
+    if (r.is_kinetic_rod) {
+        std::cout << "        AIR / SPACE             |  KINETIC STRIKE ROD APPROACH (Mach " << std::setprecision(1) << r.mach_number << ")\n";
+        std::cout << "                                |       ||=======||    (Solid Tungsten / Heavy Metal)\n";
+        std::cout << "                                |       ||=======||    (Zero Explosive Mass / 0 Yield Mode)\n";
+        std::cout << "                                |       ||=======||    \n";
+        std::cout << "    ============================+=======||=======||============================ [Target Surface]\n";
+        std::cout << "     *    *   *  *  *  *  *  *  |       ||       ||   << HYPERVELOCITY KINETIC EROSION >>       |\n";
+        std::cout << "    *   [ KINETIC CRATERING ] * |       ||       ||   P_dyn = " << std::setprecision(2) << (r.dynamic_pressure/1e9) << " GPa                  |\n";
+        std::cout << "     *    *   *  *  *  *  *  *  |       ||=======||   (Penetrating via hydrodynamic ratio)      |\n";
+        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\\.~.~.~./.~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Deep Kinetic Channel]\n";
+        std::cout << "    .   Concrete Target         |         \\     /     Max Penetration: " << std::setprecision(1) << r.actual_penetration_depth << " meters    |\n";
+        std::cout << "    .   (Density: " << target.density << " kg/m^3) |          \\___/      (" << r.actual_penetration_depth * 3.28084 << " feet deep into target) |\n";
+        std::cout << "    .                           |              *                                |\n";
+        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Bottom of Kinetic Crater]\n";
+    } else if (r.casing_failure || !r.explosive_charge_survives) {
+        std::cout << "        AIR / SURFACE           |  PROJECTILE APPROACH (Mach " << std::setprecision(1) << r.mach_number << ")\n";
         std::cout << "                                |       ||=======||    (Hardened Steel Casing)\n";
         std::cout << "                                |       ||   *   ||    (Sensitive High Explosive)\n";
         std::cout << "                                |       ||=======||    \n";
         std::cout << "    ============================+=======++=======++============================ [Target Surface]\n";
-        std::cout << "     *    *   *  *  *  *  *  *  |   << HYDRODYNAMIC IMPACT WAVE >>            |\n";
-        std::cout << "    *  [SURFACE DETONATION!]  * |   (P_dyn = " << std::setprecision(1) << (r.dynamic_pressure/1e9) << " GPa > Yield 2.0 GPa)       |\n";
+        std::cout << "     *    *   *  *  *  *  *  *  |   << IMPACT SHOCK / FAILURE ZONE >>         |\n";
+        std::cout << "    *  [" << (r.casing_failure ? "SURFACE DETONATION!" : "SHOCK FUZE FAILURE!") << "] * |   (P_dyn = " << std::setprecision(1) << (r.dynamic_pressure/1e9) << " GPa, Shock Damage = " << std::setprecision(0) << r.shock_damage_prob_percent << "%)     |\n";
         std::cout << "     *    *   *  *  *  *  *  *  |                                             |\n";
-        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Fluid Erosion Zone]\n";
-        std::cout << "    .   Concrete Target         |   Casing crushes & shatters instantly.      |\n";
-        std::cout << "    .   (Density: " << target.density << " kg/m^3) |   Max Fluid Penetration Depth:              |\n";
-        std::cout << "    .                           |   P = L * sqrt(rho_p / rho_t) = " << std::setprecision(2) << r.hydro_penetration << " m  |\n";
-        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Depth Limit: " << r.hydro_penetration << "m]\n";
+        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Erosion / Crater Zone]\n";
+        std::cout << "    .   Concrete Target         |   Casing/Payload damaged upon impact.       |\n";
+        std::cout << "    .   (Density: " << target.density << " kg/m^3) |   Max Penetration Depth:                    |\n";
+        std::cout << "    .                           |   D = " << std::setprecision(2) << r.actual_penetration_depth << " m (" << r.actual_penetration_depth * 3.28084 << " ft)                         |\n";
+        std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Depth Limit: " << r.actual_penetration_depth << "m]\n";
         std::cout << "    .                           |   (Payload fails to reach deep tunnels)     |\n";
     } else {
         std::cout << "        AIR / SURFACE           |  PROJECTILE APPROACH (Subsonic Mach " << std::setprecision(1) << r.mach_number << ")\n";
@@ -72,13 +119,13 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r) {
         std::cout << "    ============================+=======||=======||============================ [Target Surface]\n";
         std::cout << "                                |       ||       ||                           |\n";
         std::cout << "     [ RIGID PENETRATION ]      |       ||       ||   P_dyn = " << std::setprecision(2) << (r.dynamic_pressure/1e9) << " GPa           |\n";
-        std::cout << "     (Casing remains intact;    |       ||   *   ||   (Well below 2.0 GPa yield)  |\n";
-        std::cout << "      smart-fuze protected)     |       ||=======||                               |\n";
-        std::cout << "                                |       ||   v   ||                               |\n";
+        std::cout << "     (Casing intact & payload   |       ||   *   ||   (Shock Damage: " << std::setprecision(1) << r.shock_damage_prob_percent << "%)      |\n";
+        std::cout << "      survives impact shock)    |       ||=======||                               |\n";
+        std::cout << "                                |       ||   v   ||   Rigid Depth: " << std::setprecision(1) << r.rigid_penetration << " m          |\n";
         std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\\.~.~.~./.~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]\n";
         std::cout << "    .   Concrete Target         |         \\     /                             |\n";
-        std::cout << "    .   (Density: " << target.density << " kg/m^3) |          \\___/  <-- Reaches 40 - 60+ meters |\n";
-        std::cout << "    .                           |              *                              |\n";
+        std::cout << "    .   (Density: " << target.density << " kg/m^3) |          \\___/  <-- Reaches " << std::setprecision(1) << r.actual_penetration_depth << " meters    |\n";
+        std::cout << "    .                           |              *      (" << r.actual_penetration_depth * 3.28084 << " feet underground) |\n";
         std::cout << "    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Deep Underground Fuze Trigger]\n";
     }
     std::cout << "===================================================================================================\n\n";
@@ -91,6 +138,7 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results) 
     std::cout << "Projectile : " << proj.name << "\n";
     std::cout << "  - Length         : " << proj.length << " m (" << proj.length * 3.28084 << " ft)\n";
     std::cout << "  - Total Mass     : " << proj.total_mass << " kg\n";
+    std::cout << "  - Explosive Mass : " << proj.explosive_mass << " kg (" << (proj.explosive_mass == 0 ? "KINETIC ROD / 0 EXPLOSIVE" : "CONVENTIONAL CHARGE") << ")\n";
     std::cout << "  - Casing Density : " << proj.casing_density << " kg/m^3\n";
     std::cout << "  - Yield Strength : " << proj.yield_strength / 1e9 << " GPa\n";
     std::cout << "Target     : " << target.name << " (Density: " << target.density << " kg/m^3)\n";
@@ -101,22 +149,24 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results) 
     std::cout << "===================================================================================================\n\n";
 
     // Print Summary Table
-    std::cout << std::left << std::setw(22) << "Scenario"
-              << std::right << std::setw(12) << "Velocity"
-              << std::right << std::setw(8) << "Mach"
-              << std::right << std::setw(12) << "Kin. Energy"
-              << std::right << std::setw(12) << "Dyn. Press."
-              << "  " << std::left << std::setw(26) << "Regime"
+    std::cout << std::left << std::setw(20) << "Scenario"
+              << std::right << std::setw(10) << "Velocity"
+              << std::right << std::setw(7) << "Mach"
+              << std::right << std::setw(11) << "Dyn.Press"
+              << std::right << std::setw(11) << "Depth (m)"
+              << std::right << std::setw(11) << "Shock Dmg"
+              << "  " << std::left << std::setw(22) << "Regime"
               << std::left << std::setw(20) << "Outcome" << "\n";
     std::cout << std::string(112, '-') << "\n";
 
     for (const auto& r : results) {
-        std::cout << std::left << std::setw(22) << r.scenario_name
-                  << std::right << std::setw(10) << std::fixed << std::setprecision(1) << r.velocity << " m/s"
-                  << std::right << std::setw(7) << std::fixed << std::setprecision(1) << r.mach_number << "x"
-                  << std::right << std::setw(9) << std::fixed << std::setprecision(2) << (r.kinetic_energy / 1e9) << " GJ"
-                  << std::right << std::setw(9) << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa"
-                  << "  " << std::left << std::setw(26) << r.regime
+        std::cout << std::left << std::setw(20) << r.scenario_name
+                  << std::right << std::setw(8) << std::fixed << std::setprecision(1) << r.velocity << "m/s"
+                  << std::right << std::setw(6) << std::fixed << std::setprecision(1) << r.mach_number << "x"
+                  << std::right << std::setw(9) << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << "GPa"
+                  << std::right << std::setw(9) << std::fixed << std::setprecision(1) << r.actual_penetration_depth << "m"
+                  << std::right << std::setw(9) << std::fixed << std::setprecision(0) << r.shock_damage_prob_percent << "%"
+                  << "  " << std::left << std::setw(22) << r.regime
                   << std::left << std::setw(20) << r.outcome_summary << "\n";
     }
     std::cout << std::string(112, '-') << "\n\n";
@@ -135,220 +185,389 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
         return;
     }
 
-    out << R"(<!DOCTYPE html>
-<html lang="en">
+    out << R"HTML(<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>3D Impact Physics Simulator - Three.js WebGL Visualizer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Impact Physics & Penetration WebGL Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0d0f12; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e0e6ed; }
+        body { margin: 0; overflow: hidden; background-color: #080c14; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #f1f5f9; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        #hud { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(18, 22, 28, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 24px; width: 380px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.37); }
-        h1 { font-size: 18px; margin: 0 0 16px 0; color: #4facfe; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
-        .stat-label { color: #8c9ba5; }
-        .stat-value { font-weight: 600; color: #ffffff; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
-        .badge-fail { background: rgba(255, 75, 75, 0.2); color: #ff4b4b; border: 1px solid #ff4b4b; }
-        .badge-success { background: rgba(46, 213, 115, 0.2); color: #2ed573; border: 1px solid #2ed573; }
-        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(18, 22, 28, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); border-radius: 30px; padding: 10px 20px; display: flex; gap: 10px; }
-        button { background: #2f3640; color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-        button:hover { background: #4facfe; border-color: #4facfe; color: #000; font-weight: bold; }
-        button.active { background: #4facfe; border-color: #4facfe; color: #000; font-weight: bold; }
-        #info-box { position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(18, 22, 28, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 20px; width: 320px; font-size: 13px; line-height: 1.5; color: #a1b0b8; }
-        .highlight { color: #ffffff; font-weight: bold; }
+        .glass-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
+        .slider-thumb::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #38bdf8; cursor: pointer; box-shadow: 0 0 10px #38bdf8; }
+        .slider-thumb::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #38bdf8; cursor: pointer; box-shadow: 0 0 10px #38bdf8; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 select-none">
     <div id="canvas-container"></div>
     
-    <div id="hud">
-        <h1>Simulated Impact HUD</h1>
-        <div class="stat-row"><span class="stat-label">Scenario:</span><span class="stat-value" id="hud-scenario">-</span></div>
-        <div class="stat-row"><span class="stat-label">Impact Velocity:</span><span class="stat-value" id="hud-velocity">-</span></div>
-        <div class="stat-row"><span class="stat-label">Mach Number:</span><span class="stat-value" id="hud-mach">-</span></div>
-        <div class="stat-row"><span class="stat-label">Kinetic Energy:</span><span class="stat-value" id="hud-energy">-</span></div>
-        <div class="stat-row"><span class="stat-label">Dynamic Pressure:</span><span class="stat-value" id="hud-pressure">-</span></div>
-        <div class="stat-row"><span class="stat-label">Casing Yield Strength:</span><span class="stat-value" id="hud-yield">2.00 GPa</span></div>
-        <div class="stat-row"><span class="stat-label">Hydro Depth Limit (P):</span><span class="stat-value" id="hud-depth">-</span></div>
-        <div id="hud-badge-container"><span class="badge" id="hud-badge">-</span></div>
+    <!-- Top Left Telemetry HUD -->
+    <div class="absolute top-6 left-6 z-10 w-96 rounded-2xl glass-panel p-6 transition-all duration-300 hover:border-cyan-500/40">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 mb-4">
+            <h1 class="text-xs font-black tracking-widest text-cyan-400 uppercase flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                Telemetry & Impact HUD
+            </h1>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">WebGL 3.0</span>
+        </div>
+        
+        <div class="space-y-2.5 text-xs">
+            <div class="flex justify-between items-center"><span class="text-slate-400">Scenario Name:</span><span class="font-bold text-white truncate max-w-[180px]" id="hud-scenario">-</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400">Impact Velocity:</span><span class="font-mono font-bold text-cyan-300" id="hud-velocity">-</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400">Mach Number:</span><span class="font-mono font-semibold text-slate-200" id="hud-mach">-</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400">Dynamic Pressure:</span><span class="font-mono font-semibold text-amber-400" id="hud-pressure">-</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400">Casing Yield Limit:</span><span class="font-mono font-semibold text-slate-300" id="hud-yield">-</span></div>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-800"><span class="text-slate-400 font-medium">Actual Penetration:</span><span class="font-mono text-sm font-extrabold text-emerald-400" id="hud-depth">-</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-400">Shock Failure Chance:</span><span class="font-mono font-bold text-rose-400" id="hud-shock">-</span></div>
+        </div>
+
+        <!-- Status Badges -->
+        <div class="mt-5 pt-3 border-t border-slate-800/80 flex flex-col gap-2">
+            <div id="hud-regime-badge" class="px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase transition-all"></div>
+            <div id="hud-exp-badge" class="px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide transition-all"></div>
+        </div>
     </div>
 
-    <div id="info-box">
-        <h2 style="font-size:15px; margin:0 0 10px 0; color:#fff;">3D Physical Behavior</h2>
-        <p id="info-text">Select a scenario below to visualize the impact regime.</p>
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">
-        <p style="font-size:11px; color:#718093;">Orbit: Left-Click + Drag<br>Pan: Right-Click + Drag<br>Zoom: Scroll Wheel</p>
+    <!-- Top Right Camera Presets & Info -->
+    <div class="absolute top-6 right-6 z-10 w-80 rounded-2xl glass-panel p-5 flex flex-col gap-4">
+        <div>
+            <h2 class="text-xs font-bold tracking-wider text-slate-300 uppercase mb-2">Camera Viewpoints</h2>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="setView('iso')" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-cyan-500 hover:text-slate-950 font-semibold text-xs border border-slate-700 transition duration-150">Isometric</button>
+                <button onclick="setView('side')" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-cyan-500 hover:text-slate-950 font-semibold text-xs border border-slate-700 transition duration-150">Side Profile</button>
+                <button onclick="setView('top')" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-cyan-500 hover:text-slate-950 font-semibold text-xs border border-slate-700 transition duration-150">Top Surface</button>
+                <button onclick="setView('bottom')" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-cyan-500 hover:text-slate-950 font-semibold text-xs border border-slate-700 transition duration-150">Tunnel Bottom</button>
+            </div>
+        </div>
+        <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-400 leading-relaxed" id="info-text">
+            Select a scenario below or adjust parametric sliders to visualize depth and shock dynamics.
+        </div>
     </div>
 
-    <div id="controls">
-)";
+    <!-- Bottom Left Real-Time Parametric Controls -->
+    <div class="absolute bottom-6 left-6 z-10 w-80 rounded-2xl glass-panel p-5 space-y-3">
+        <h2 class="text-xs font-bold tracking-wider text-cyan-400 uppercase flex items-center justify-between">
+            <span>Parametric Tuning</span>
+            <span class="text-[9px] font-normal text-slate-400">Live Simulation</span>
+        </h2>
+        <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Velocity (m/s):</span><span class="font-mono text-cyan-400" id="val-vel">1000</span></div>
+            <input type="range" id="slider-vel" min="200" max="4500" step="50" value="1000" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb" oninput="onSliderChange()">
+        </div>
+        <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Target Density (kg/m³):</span><span class="font-mono text-cyan-400" id="val-rho">2500</span></div>
+            <input type="range" id="slider-rho" min="1500" max="4000" step="100" value="2500" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb" oninput="onSliderChange()">
+        </div>
+    </div>
+
+    <!-- Bottom Center Scenario Selector Bar -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-full glass-panel px-4 py-2.5 flex items-center gap-2 max-w-[50vw] overflow-x-auto shadow-2xl border-cyan-500/20">
+)HTML";
 
     for (size_t i = 0; i < results.size(); ++i) {
-        out << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-" << i << "\">" 
+        out << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-" << i 
+            << "\" class=\"px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 hover:text-slate-950 border border-slate-700/60\">" 
             << results[i].scenario_name << "</button>\n";
     }
 
-    out << R"(    </div>
+    out << R"HTML(    </div>
 
     <!-- Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-        // Simulation Data from C++
         const scenarios = [
-)";
+)HTML";
 
     for (size_t i = 0; i < results.size(); ++i) {
         const auto& r = results[i];
         out << "            { name: \"" << r.scenario_name << "\", velocity: " << r.velocity 
             << ", mach: " << r.mach_number << ", energy: " << (r.kinetic_energy/1e9) 
             << ", pressure: " << (r.dynamic_pressure/1e9) << ", yield: " << (proj.yield_strength/1e9)
-            << ", depth: " << r.hydro_penetration << ", fail: " << (r.casing_failure ? "true" : "false") 
+            << ", depth: " << r.actual_penetration_depth << ", rigid_depth: " << r.rigid_penetration << ", hydro_depth: " << r.hydro_penetration
+            << ", fail: " << (r.casing_failure ? "true" : "false") 
+            << ", shock_prob: " << r.shock_damage_prob_percent
+            << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
+            << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false")
             << ", regime: \"" << r.regime << "\", summary: \"" << r.outcome_summary << "\" }";
         if (i + 1 < results.size()) out << ",";
         out << "\n";
     }
 
-    out << R"(        ];
+    out << R"HTML(        ];
 
         let scene, camera, renderer, controls;
-        let targetBlock, projectile, shockwave, crater;
+        let targetBlock, projectile, shockwave, crater, rulerGroup;
+        let currentData = scenarios[0];
+        const projLength = )HTML" << proj.length << R"HTML(;
+        const projDiameter = )HTML" << proj.diameter << R"HTML(;
+        const projMass = )HTML" << proj.total_mass << R"HTML(;
 
         function init() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0c0e);
-            scene.fog = new THREE.FogExp2(0x0a0c0e, 0.015);
+            scene.background = new THREE.Color(0x080c14);
+            scene.fog = new THREE.FogExp2(0x080c14, 0.012);
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(25, 20, 35);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1500);
+            camera.position.set(35, 20, 45);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.target.set(0, -5, 0);
+            controls.target.set(0, -15, 0);
 
             // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(20, 40, 20);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(30, 60, 30);
             dirLight.castShadow = true;
             scene.add(dirLight);
 
-            const pointLight = new THREE.PointLight(0x4facfe, 1, 50);
-            pointLight.position.set(-10, 15, -10);
+            const pointLight = new THREE.PointLight(0x38bdf8, 2, 80);
+            pointLight.position.set(-15, 20, -15);
             scene.add(pointLight);
 
-            // Grid / Ground
-            const gridHelper = new THREE.GridHelper(60, 60, 0x334155, 0x1e293b);
+            // Ground Grid
+            const gridHelper = new THREE.GridHelper(100, 50, 0x0ea5e9, 0x1e293b);
             gridHelper.position.y = 0;
             scene.add(gridHelper);
 
             // Target Concrete Block (Translucent Cube)
-            const blockGeom = new THREE.BoxGeometry(20, 25, 20);
+            const blockGeom = new THREE.BoxGeometry(24, 70, 24);
             const blockMat = new THREE.MeshPhysicalMaterial({
-                color: 0x475569,
+                color: 0x334155,
                 transparent: true,
-                opacity: 0.35,
-                roughness: 0.7,
-                metalness: 0.1,
-                wireframe: false
+                opacity: 0.28,
+                roughness: 0.6,
+                metalness: 0.2,
+                depthWrite: false
             });
             targetBlock = new THREE.Mesh(blockGeom, blockMat);
-            targetBlock.position.set(0, -12.5, 0); // Top surface at y = 0
+            targetBlock.position.set(0, -35, 0);
             scene.add(targetBlock);
 
-            // Target surface wireframe box for visual structure
             const edges = new THREE.EdgesGeometry(blockGeom);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x64748b, linewidth: 2 }));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.5 }));
             targetBlock.add(line);
 
-            // Projectile (Cylinder)
-            const projGeom = new THREE.CylinderGeometry(0.6, 0.6, 6.2, 32);
-            const projMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
+            // Projectile
+            const projGeom = new THREE.CylinderGeometry(projDiameter/2, projDiameter/2, projLength, 32);
+            const projMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.15 });
             projectile = new THREE.Mesh(projGeom, projMat);
             scene.add(projectile);
 
-            // Crater / Erosion zone representation
-            const craterGeom = new THREE.CylinderGeometry(1.2, 0.4, 11, 32);
-            const craterMat = new THREE.MeshBasicMaterial({ color: 0xff4b4b, wireframe: true, transparent: true, opacity: 0.7 });
+            // Crater / Tunnel Channel
+            const craterGeom = new THREE.CylinderGeometry(1.0, 0.5, 10, 32);
+            const craterMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.75 });
             crater = new THREE.Mesh(craterGeom, craterMat);
             scene.add(crater);
 
-            // Shockwave Sphere (For hypervelocity failure)
-            const shockGeom = new THREE.SphereGeometry(3, 32, 32);
-            const shockMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.4, wireframe: true });
+            // Shockwave Sphere
+            const shockGeom = new THREE.SphereGeometry(3.5, 32, 32);
+            const shockMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.45, wireframe: true });
             shockwave = new THREE.Mesh(shockGeom, shockMat);
             shockwave.position.set(0, 0, 0);
             scene.add(shockwave);
+
+            // 3D Depth Measurement Ruler
+            rulerGroup = new THREE.Group();
+            const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
+            for (let depthY = 0; depthY <= 80; depthY += 10) {
+                const tickGeom = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(12.5, -depthY, 12.5),
+                    new THREE.Vector3(14.5, -depthY, 12.5)
+                ]);
+                const tickLine = new THREE.Line(tickGeom, rulerMat);
+                rulerGroup.add(tickLine);
+            }
+            scene.add(rulerGroup);
 
             window.addEventListener('resize', onWindowResize);
             selectScenario(0);
             animate();
         }
 
-        function selectScenario(index) {
-            const data = scenarios[index];
-            document.querySelectorAll('#controls button').forEach((btn, i) => {
-                btn.className = (i === index) ? 'active' : '';
-            });
+        function setView(mode) {
+            if (mode === 'iso') { camera.position.set(35, 20, 45); controls.target.set(0, -15, 0); }
+            else if (mode === 'side') { camera.position.set(60, -15, 0); controls.target.set(0, -15, 0); }
+            else if (mode === 'top') { camera.position.set(0, 70, 1); controls.target.set(0, 0, 0); }
+            else if (mode === 'bottom') { camera.position.set(20, -55, 25); controls.target.set(0, -35, 0); }
+        }
 
+        function updateVisuals(data) {
+            currentData = data;
             document.getElementById('hud-scenario').innerText = data.name;
             document.getElementById('hud-velocity').innerText = data.velocity.toFixed(1) + ' m/s';
             document.getElementById('hud-mach').innerText = 'Mach ' + data.mach.toFixed(1);
-            document.getElementById('hud-energy').innerText = data.energy.toFixed(2) + ' GJ';
             document.getElementById('hud-pressure').innerText = data.pressure.toFixed(2) + ' GPa';
+            document.getElementById('hud-yield').innerText = data.yield.toFixed(2) + ' GPa';
             document.getElementById('hud-depth').innerText = data.depth.toFixed(2) + ' m (' + (data.depth * 3.28084).toFixed(1) + ' ft)';
+            document.getElementById('hud-shock').innerText = data.shock_prob.toFixed(1) + '%';
             
-            const badge = document.getElementById('hud-badge');
-            if (data.fail) {
-                badge.innerText = 'HYDRODYNAMIC FAILURE (P > YIELD)';
-                badge.className = 'badge badge-fail';
-                
-                // 3D Visual update for Hypervelocity Failure
-                projectile.position.set(0, -data.depth / 2, 0); // Erode into the crater
-                projectile.scale.set(1.5, 0.5, 1.5); // Crushed/shattered shape
-                projectile.material.color.setHex(0xff6b6b);
-                
+            const regimeBadge = document.getElementById('hud-regime-badge');
+            const expBadge = document.getElementById('hud-exp-badge');
+
+            // Dynamic target block scaling
+            const blockHeight = Math.max(30, data.depth * 1.35);
+            targetBlock.scale.set(1, blockHeight / 70.0, 1);
+            targetBlock.position.set(0, -blockHeight / 2, 0);
+
+            if (data.is_kinetic) {
+                regimeBadge.innerText = 'HYPERVELOCITY KINETIC ROD MODE';
+                regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-purple-500/20 text-purple-400 border border-purple-500/50 shadow-lg shadow-purple-500/10';
+                expBadge.innerText = 'PAYLOAD: ZERO EXPLOSIVE MASS (SOLID ROD)';
+                expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-slate-800/80 text-slate-300 border border-slate-700';
+
+                projectile.position.set(0, -data.depth + (projLength/2), 0);
+                projectile.scale.set(1, 1, 1);
+                projectile.material.color.setHex(0xc084fc); // Neon purple
+                projectile.material.emissive = new THREE.Color(0x581c87);
+
                 crater.visible = true;
-                crater.scale.set(1, data.depth / 11.0, 1);
+                crater.scale.set(1.2, data.depth / 10.0, 1.2);
                 crater.position.set(0, -data.depth / 2, 0);
-                crater.material.color.setHex(0xff4b4b);
+                crater.material.color.setHex(0xa855f7);
 
                 shockwave.visible = true;
+                shockwave.material.color.setHex(0xa855f7);
+                shockwave.scale.set(2.2, 1.2, 2.2);
+
+                document.getElementById('info-text').innerHTML = 
+                    `<span class="text-purple-400 font-bold">Kinetic Orbital Bombardment Regime</span><br>` +
+                    `Solid tungsten penetrator moving at hypervelocity generates hydrodynamic plasma erosion without explosive detonation. Depth reached: <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
+            } else if (data.fail || !data.exp_survives) {
+                regimeBadge.innerText = data.fail ? 'CASING SHATTER / SURFACE DETONATION' : 'IMPACT SHOCK FUZE FAILURE';
+                regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-lg shadow-rose-500/10';
+                expBadge.innerText = data.fail ? 'PAYLOAD DESTROYED BY STRUCTURAL CRUSH' : `EXPLOSIVE CHARGE FAILED (SHOCK: ${data.shock_prob.toFixed(0)}%)`;
+                expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-rose-950/60 text-rose-300 border border-rose-800/60';
+
+                projectile.position.set(0, -data.depth / 2, 0);
+                projectile.scale.set(1.8, 0.4, 1.8); // Crushed
+                projectile.material.color.setHex(0xf87171);
+                projectile.material.emissive = new THREE.Color(0x7f1d1d);
+
+                crater.visible = true;
+                crater.scale.set(1.5, data.depth / 10.0, 1.5);
+                crater.position.set(0, -data.depth / 2, 0);
+                crater.material.color.setHex(0xef4444);
+
+                shockwave.visible = true;
+                shockwave.material.color.setHex(0xef4444);
                 shockwave.scale.set(1.8, 0.8, 1.8);
 
                 document.getElementById('info-text').innerHTML = 
-                    `<span class="highlight">Dynamic Pressure (${data.pressure.toFixed(2)} GPa) exceeds Yield Strength (${data.yield.toFixed(2)} GPa).</span><br><br>` +
-                    `The impact shockwave instantly crushes the casing and causes premature detonation near the surface. Penetration is capped by fluid erosion at ~${data.depth.toFixed(2)}m.`;
+                    `<span class="text-rose-400 font-bold">Structural / Shock Failure</span><br>` +
+                    `Dynamic impact pressure (${data.pressure.toFixed(2)} GPa) or extreme G-deceleration shock wave fractures the bomb casing or fuze payload. Penetration halted at <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
             } else {
-                badge.innerText = 'RIGID DRILL PENETRATION (SUCCESS)';
-                badge.className = 'badge badge-success';
-                
-                // 3D Visual update for Subsonic Rigid Penetration
-                projectile.position.set(0, -6.0, 0); // Drilling cleanly deep underground
-                projectile.scale.set(1, 1, 1); // Intact shape
+                regimeBadge.innerText = 'RIGID DRILL PENETRATION (SUCCESS)';
+                regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-500/10';
+                expBadge.innerText = `PAYLOAD SURVIVED (SHOCK RISK: ${data.shock_prob.toFixed(1)}%)`;
+                expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-emerald-950/60 text-emerald-300 border border-emerald-800/60';
+
+                projectile.position.set(0, -data.depth + (projLength/2), 0);
+                projectile.scale.set(1, 1, 1);
                 projectile.material.color.setHex(0x38bdf8);
-                
+                projectile.material.emissive = new THREE.Color(0x0284c7);
+
                 crater.visible = true;
-                crater.scale.set(0.6, 2.0, 0.6); // Deep clean drill hole
-                crater.position.set(0, -10.0, 0);
-                crater.material.color.setHex(0x38bdf8);
+                crater.scale.set(0.8, data.depth / 10.0, 0.8);
+                crater.position.set(0, -data.depth / 2, 0);
+                crater.material.color.setHex(0x06b6d4);
 
                 shockwave.visible = false;
 
                 document.getElementById('info-text').innerHTML = 
-                    `<span class="highlight">Dynamic Pressure (${data.pressure.toFixed(2)} GPa) stays below Yield Strength (${data.yield.toFixed(2)} GPa).</span><br><br>` +
-                    `The steel casing remains rigid and intact like a drill bit. The smart-fuze survives impact and carries the payload deep underground (40-60+ meters) before detonation.`;
+                    `<span class="text-emerald-400 font-bold">Deep Underground Detonation</span><br>` +
+                    `Casing withstands impact pressure (< 2.0 GPa) and payload survives deceleration shock (< 50% risk). Drills cleanly down to <span class="text-white font-mono">${data.depth.toFixed(1)}m</span> before detonating.`;
             }
+        }
+
+        function selectScenario(index) {
+            const data = scenarios[index];
+            document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
+                if (i === index) {
+                    btn.className = "px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/30 scale-105";
+                } else {
+                    btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
+                }
+            });
+            document.getElementById('slider-vel').value = data.velocity;
+            document.getElementById('val-vel').innerText = Math.round(data.velocity);
+            updateVisuals(data);
+        }
+
+        function onSliderChange() {
+            const vel = parseFloat(document.getElementById('slider-vel').value);
+            const rho = parseFloat(document.getElementById('slider-rho').value);
+            document.getElementById('val-vel').innerText = Math.round(vel);
+            document.getElementById('val-rho').innerText = Math.round(rho);
+
+            const mach = vel / 343.0;
+            const energy = 0.5 * projMass * vel * vel;
+            const pressure = 0.5 * rho * vel * vel;
+            const yieldStr = currentData.yield * 1e9;
+            const isKinetic = currentData.is_kinetic;
+
+            const area = Math.PI * Math.pow(projDiameter / 2.0, 2);
+            const cd = 1.2;
+            const rt = 100.0e6;
+            const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * vel * vel) / (2.0 * rt));
+            const hydroDepth = projLength * Math.sqrt(7800.0 / rho);
+
+            let fail = false, shockProb = 0.0, expSurvives = true, depth = rigidDepth, regime = "", summary = "";
+            if (isKinetic) {
+                fail = (yieldStr > 0 && pressure > yieldStr);
+                depth = (vel > 1500.0 || yieldStr === 0) ? hydroDepth : rigidDepth;
+                regime = "Hypervelocity Kinetic Rod Penetration";
+                summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
+            } else if (pressure > yieldStr) {
+                fail = true;
+                expSurvives = false;
+                shockProb = 100.0;
+                depth = hydroDepth;
+                regime = "Hydrodynamic / Hypervelocity";
+                summary = "Casing crushes/shatters; surface detonation";
+            } else {
+                fail = false;
+                const pressureRatio = pressure / yieldStr;
+                shockProb = Math.min(100.0, Math.max(0.0, Math.pow(pressureRatio, 1.5) * 85.0));
+                expSurvives = (shockProb < 50.0);
+                depth = rigidDepth;
+                regime = expSurvives ? "Rigid Body Penetration" : "Rigid Body (Shock Failure)";
+                summary = expSurvives ? "Casing intact; smart-fuze detonates deep underground" : "Casing intact; shock damages explosive payload";
+            }
+
+            updateVisuals({
+                name: "Custom Live Parametric Tuning",
+                velocity: vel,
+                mach: mach,
+                energy: energy / 1e9,
+                pressure: pressure / 1e9,
+                yield: currentData.yield,
+                depth: depth,
+                rigid_depth: rigidDepth,
+                hydro_depth: hydroDepth,
+                fail: fail,
+                shock_prob: shockProb,
+                exp_survives: expSurvives,
+                is_kinetic: isKinetic,
+                regime: regime,
+                summary: summary
+            });
+            document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
+                btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
+            });
         }
 
         function onWindowResize() {
@@ -360,8 +579,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
         function animate() {
             requestAnimationFrame(animate);
             if (shockwave.visible) {
-                shockwave.rotation.y += 0.01;
-                shockwave.rotation.x += 0.005;
+                shockwave.rotation.y += 0.015;
+                shockwave.rotation.x += 0.008;
             }
             controls.update();
             renderer.render(scene, camera);
@@ -371,7 +590,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     </script>
 </body>
 </html>
-)";
+)HTML";
     out.close();
     std::cout << "\n[+] Successfully generated 3D WebGL Interactive Visualizer: " << filename << "\n";
     std::cout << "    -> Open " << filename << " in your web browser to view the 3D simulation scene!\n";

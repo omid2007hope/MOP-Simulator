@@ -55,6 +55,21 @@ int main() {
     std::cout << "         -> [PASS] Hydrodynamic failure and premature detonation correctly detected.\n";
     std::cout << "         -> [PASS] Hydrodynamic Penetration Limit: " << resHyper.hydro_penetration << " m\n\n";
 
+    // Test 3: Orbital Kinetic Strike ("Rods from God" Tungsten Rod, 3400 m/s)
+    std::cout << "[Test 3] Testing Orbital Tungsten Kinetic Rod (3400 m/s, 0 GPa Yield, 0 Explosive Mass)...\n";
+    Projectile rod{"Tungsten Rod", 6.1, 0.3, 8300.0, 0.0, 19300.0, 0.0};
+    ImpactSimulator rodSim(rod, concrete);
+    ImpactScenario rodScenario{"LEO Strike", 100000.0, 3400.0};
+    SimulationResult resRod = rodSim.simulate(rodScenario);
+
+    assert(resRod.is_kinetic_rod == true);
+    assert(resRod.casing_failure == false);
+    assert(resRod.explosive_charge_survives == true);
+    assert(resRod.regime == "Hypervelocity Kinetic Rod Penetration");
+    std::cout << "         -> [PASS] Identified as Kinetic Rod (Zero explosive mass & zero yield limit).\n";
+    std::cout << "         -> [PASS] Regime: " << resRod.regime << "\n";
+    std::cout << "         -> [PASS] Depth reached via hydrodynamic plasma erosion: " << resRod.actual_penetration_depth << " m\n\n";
+
     std::cout << "===================================================================================================\n";
     std::cout << "                      [PASS] ALL UNIT TESTS PASSED SUCCESSFULLY!                                   \n";
     std::cout << "===================================================================================================\n";
