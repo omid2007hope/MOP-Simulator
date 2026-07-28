@@ -12,7 +12,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
     res.scenario_name = scenario.name;
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
-    res.mach_number = scenario.velocity / SPEED_OF_SOUND;`
+    res.mach_number = scenario.velocity / SPEED_OF_SOUND;
 
     double squaredVelocity = std::pow(scenario.velocity, 2);
 
