@@ -1,35 +1,21 @@
-<!-- © 2026 Omid Teimory. All rights reserved. Signature: OmidTeimory-2026 -->
-Copyright (c) 2026 Omid Teimory. All Rights Reserved.
+MIT License
 
-This source code and any accompanying files are the exclusive property of the copyright holder listed above.
+Copyright (c) 2026 Omid
 
-No person or organization is permitted to:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Use
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Copy
-
-Modify
-
-Merge
-
-Publish
-
-Distribute
-
-Sublicense
-
-Sell
-
-Host
-
-Reproduce
-
-Reverse-engineer
-
-or Create derivative works
-
-from any part of this software for any purpose, commercial or non-commercial, without explicit written permission from the copyright holder.
-
-Any unauthorized use is strictly prohibited and may result in legal action.
-
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
