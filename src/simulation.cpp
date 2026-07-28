@@ -12,13 +12,15 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
     res.scenario_name = scenario.name;
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
-    res.mach_number = scenario.velocity / SPEED_OF_SOUND;
+    res.mach_number = scenario.velocity / SPEED_OF_SOUND;`
+
+    double squaredVelocity = std::pow(scenario.velocity, 2);
 
     // 1. Kinetic Energy calculation: E_k = 0.5 * m * v^2
-    res.kinetic_energy = 0.5 * proj.total_mass * std::pow(scenario.velocity, 2);
+    res.kinetic_energy = 0.5 * proj.total_mass * squaredVelocity;
 
     // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
-    res.dynamic_pressure = 0.5 * target.density * std::pow(scenario.velocity, 2);
+    res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
 
     // 3. Structural integrity and detonation evaluation
     if (res.dynamic_pressure > proj.yield_strength) {
