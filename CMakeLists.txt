@@ -1,3 +1,5 @@
+# // Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 cmake_minimum_required(VERSION 3.15)
 project(MOPSimulator VERSION 1.0.0 LANGUAGES CXX)
 

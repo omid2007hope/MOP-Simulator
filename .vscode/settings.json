@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 {
   "code-runner.executorMap": {
     "cpp": "cd \"$workspaceRoot\" && g++ -std=c++17 -Iinclude src/main.cpp src/simulation.cpp -o bin/sim && .\\bin\\sim"

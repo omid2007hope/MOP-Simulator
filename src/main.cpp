@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
+
 #include "simulation.hpp"
 #include <iostream>
 #include <vector>
@@ -9,6 +12,7 @@ void clearCinBuffer() {
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
+
 
 int main() {
     std::cout << "===================================================================================================\n";

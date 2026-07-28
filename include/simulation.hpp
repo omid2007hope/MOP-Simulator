@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 #ifndef SIMULATION_HPP
 #define SIMULATION_HPP
 
