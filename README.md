@@ -106,10 +106,42 @@ mingw32-make test
 
 ---
 
+## 🌐 Web Application (Standalone)
+
+The simulator is also available as a **self-contained web application** — no compilation or build step needed.
+
+### Quick Start
+
+1. Open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).
+2. Select a simulation mode:
+   - **GBU-57 MOP Standard** — 4 preset altitude drop scenarios
+   - **Custom Parameters** — define your own projectile and target
+   - **Orbital Kinetic Strike** — "Rods from God" tungsten penetrators
+3. Click **Launch Simulation** → interactive 3D WebGL visualization + data HUD
+4. Use parametric sliders for live re-simulation, switch camera views, and toggle the results table.
+
+### Deploy to a Domain
+
+The `index.html` is fully self-contained and can be deployed to any static hosting provider:
+
+**GitHub Pages** (free):
+```bash
+# Push to a gh-pages branch or enable Pages on main
+git add index.html
+git commit -m "Add web simulator"
+git push
+# Then enable GitHub Pages in Settings → Pages → Deploy from branch
+```
+
+**Netlify / Vercel**: Drag and drop the project folder, or connect your GitHub repo.
+
+---
+
 ## 📁 Repository Structure
 
 ```text
 MOP Simulator/
+├── index.html               # Standalone web application (UI + Sim + 3D Visualizer)
 ├── include/
 │   └── simulation.hpp       # Public API headers (Data structs & class declarations)
 ├── src/
@@ -124,7 +156,7 @@ MOP Simulator/
 ├── .clang-format            # Code formatting configuration
 ├── License.md               # Software license & terms
 ├── README.md                # Project documentation
-└── 3d_visualizer.html       # Generated Three.js WebGL visualizer
+└── 3d_visualizer.html       # Generated Three.js WebGL visualizer (legacy, from C++ exe)
 ```
 
 ---
