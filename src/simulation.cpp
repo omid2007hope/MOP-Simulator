@@ -7,6 +7,8 @@
 #include <iostream>
 #include <sstream>
 
+const double PI = 3.14159265358979323846;
+
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t) : proj(p), target(t) {}
 
 SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
@@ -17,6 +19,12 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.velocity = scenario.velocity;
     res.mach_number = scenario.velocity / SPEED_OF_SOUND;
 
+    double compressiveStrength = 100.0e6; // 100 MPa target compressive bearing strength
+
+    // Drag coefficient
+    double dragCoefficient =
+        (2 * proj.kinetic_energy) / (std::pow((target.density * proj.velocity), 2) * proj.diameter);
+
     double squaredVelocity = std::pow(scenario.velocity, 2);
 
     // 1. Kinetic Energy calculation: E_k = 0.5 * m * v^2
@@ -24,11 +32,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
     res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
-
-    const double PI = 3.14159265358979323846;
-
-    double dragCoefficient = 1.2;         // Drag coefficient in concrete
-    double compressiveStrength = 100.0e6; // 100 MPa target compressive bearing strength
 
     // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model
     double area = PI * std::pow(proj.diameter / 2.0, 2);
