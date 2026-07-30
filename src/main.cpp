@@ -76,9 +76,8 @@ int main()
             std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
             std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
             std::string projectileName;
-            std::cin >> projectileName;
-            if (!projectileName.empty())
-                projectileName == "Undefined Projectile";
+            getline(std::cin, projectileName) if (!projectileName.empty())
+                getline(projectileName, "Undefined Projectile");
 
             mop.length = getValidInput<double>("Enter Projectile Length L (meters): ");
 
