@@ -276,6 +276,18 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
             return;
         }
 
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+    // ! HTML
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+    // ! CSS
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+    // ! JAVA SCRIPT
+    // ! /\/\/\/\/\/\/\/\/\/\/\/\
+
     out << R"HTML(<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -400,19 +412,31 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
         let currentData = scenarios[0];
         
         // Dynamically injected C++ variables
-        const projName = ")HTML" << proj.name << R"HTML(";
-        const projLength = )HTML" << proj.length << R"HTML(;
-        const projDiameter = )HTML" << proj.diameter << R"HTML(;
-        const projMass = )HTML" << proj.total_mass << R"HTML(;
-        const projExplosiveMass = )HTML" << proj.explosive_mass << R"HTML(;
-        const projCasingDensity = )HTML" << proj.casing_density << R"HTML(;
-        const projYieldStrength = )HTML" << proj.yield_strength << R"HTML(;
+        const projName = ")HTML"
+        << proj.name << R"HTML(";
+        const projLength = )HTML"
+        << proj.length << R"HTML(;
+        const projDiameter = )HTML"
+        << proj.diameter << R"HTML(;
+        const projMass = )HTML"
+        << proj.total_mass << R"HTML(;
+        const projExplosiveMass = )HTML"
+        << proj.explosive_mass << R"HTML(;
+        const projCasingDensity = )HTML"
+        << proj.casing_density << R"HTML(;
+        const projYieldStrength = )HTML"
+        << proj.yield_strength << R"HTML(;
         
-        const targetName = ")HTML" << target.name << R"HTML(";
-        const targetDensity = )HTML" << target.density << R"HTML(;
-        const targetBearingStrength = )HTML" << 100.0e6 << R"HTML(; // 100 MPa
-        const dragCoefficient = )HTML" << 1.2 << R"HTML(;
-        const speedOfSound = )HTML" << SPEED_OF_SOUND << R"HTML(;
+        const targetName = ")HTML"
+        << target.name << R"HTML(";
+        const targetDensity = )HTML"
+        << target.density << R"HTML(;
+        const targetBearingStrength = )HTML"
+        << 100.0e6 << R"HTML(; // 100 MPa
+        const dragCoefficient = )HTML"
+        << 1.2 << R"HTML(;
+        const speedOfSound = )HTML"
+        << SPEED_OF_SOUND << R"HTML(;
 
         function init() {
             const container = document.getElementById('canvas-container');
