@@ -6,6 +6,16 @@
 #include <string>
 #include <vector>
 
+struct PhysicsConstants
+{
+    const double SPEED_OF_SOUND = 343.0;
+    const double PI = 3.14159265358979323846;
+
+    // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
+    // Assigned 200 - insuring total destruction .
+    const double compressiveStrengthOfUHPC = 200;
+};
+
 // Target material specification
 struct Target
 {
@@ -59,10 +69,10 @@ class ImpactSimulator
 private:
     Projectile proj;
     Target target;
-    const double SPEED_OF_SOUND = 343.0; // m/s in air at sea level (approximate reference)
+    PhysicsConstants cons;
 
 public:
-    ImpactSimulator(const Projectile& p, const Target& t);
+    ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
     SimulationResult simulate(const ImpactScenario& scenario);
     void printAscii3DVisualizer(const SimulationResult& r);
     void printReport(const std::vector<SimulationResult>& results);

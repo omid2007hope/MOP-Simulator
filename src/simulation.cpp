@@ -7,10 +7,10 @@
 #include <iostream>
 #include <sstream>
 
-const double PI = 3.14159265358979323846;
-const double UHPC_CS = 200;
-
-ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t) : proj(p), target(t) {}
+ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, PhysicsConstants& c)
+    : proj(p), target(t), cons(c)
+{
+}
 
 SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 {
@@ -18,11 +18,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.scenario_name = scenario.name;
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
-    res.mach_number = scenario.velocity / SPEED_OF_SOUND;
-
-    // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
-    // Assigned 200 - insuring total destruction .
-    double compressiveStrength = UHPC_CS;
+    res.mach_number = scenario.velocity / cons.SPEED_OF_SOUND;
 
     // To achieve maximum accuracy for the rigid body penetration model, we calculate
     // the "Nose Performance Coefficient" (N) based on the Caliber-Radius-Head (CRH) geometry.
@@ -43,11 +39,11 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
 
     // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model
-    double area = PI * std::pow(proj.diameter / 2.0, 2);
+    double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
 
     res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
                             std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
-                                               (2.0 * compressiveStrength));
+                                               (2.0 * cons.compressiveStrengthOfUHPC));
 
     // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
@@ -358,7 +354,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
     replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(100.0e6));
     replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(1.2));
-    replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(SPEED_OF_SOUND));
+    replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(cons.SPEED_OF_SOUND));
 
     out << html;
     out.close();
