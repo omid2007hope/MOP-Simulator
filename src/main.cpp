@@ -14,7 +14,7 @@ double valueEntry;
 
 // Helper to safely read numeric input and re-prompt on failure
 template <typename T>
-T getValidInput(const std::string& prompt, T defaultValue, bool allowZero = false)
+T getValidInput(const std::string& prompt, bool allowZero = false)
 {
     T valueEntry;
         while (allowEntry == true) {
@@ -79,22 +79,24 @@ int main()
             getline(std::cin, projectileName) if (!projectileName.empty())
                 getline(projectileName, "Undefined Projectile");
 
-            mop.length = getValidInput<double>("Enter Projectile Length L (meters): ");
+            mop.length = getValidInput<double>("Enter Projectile Length L (meters): ", false);
 
-            mop.diameter = getValidInput<double>("Enter Projectile Diameter d (meters): ");
+            mop.diameter = getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
 
-            mop.total_mass = getValidInput<double>("Enter Total Mass m (kg): ");
+            mop.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
 
-            mop.explosive_mass = getValidInput<double>("Enter Explosive Mass (kg): ");
+            mop.explosive_mass = getValidInput<double>("Enter Explosive Mass (kg): ", true);
 
-            mop.casing_density = getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ");
+            mop.casing_density =
+                getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
 
-            double yield = getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa): ");
+            double yield =
+                getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa): ", true);
 
             mop.yield_strength = yield * 1e9;
 
             concrete.density =
-                getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ");
+                getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
             int numScenarios = 1;
                 while (allowEntry == true) {
