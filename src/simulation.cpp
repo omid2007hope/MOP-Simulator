@@ -25,12 +25,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
     res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
 
-    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model)
-    double area = 3.14159265358979323846 * std::pow(proj.diameter / 2.0, 2);
-    double cd = 1.2;     // Drag coefficient in concrete
-    double rt = 100.0e6; // 100 MPa target compressive bearing strength
-    res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * cd)) *
-                            std::log(1.0 + (target.density * cd * squaredVelocity) / (2.0 * rt));
+    const double PI = 3.14159265358979323846;
+
+    double dragCoefficient = 1.2;         // Drag coefficient in concrete
+    double compressiveStrength = 100.0e6; // 100 MPa target compressive bearing strength
+
+    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model
+    double area = PI * std::pow(proj.diameter / 2.0, 2);
+
+    res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
+                            std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
+                                               (2.0 * compressiveStrength));
 
     // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
@@ -271,16 +276,16 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 {
     std::string filename = "3d_visualizer.html";
     std::ofstream out(filename);
-    if (!out.is_open()) {
-        std::cerr << "Error: Could not open " << filename << " for writing.\n";
-        return;
-    }
+        if (!out.is_open()) {
+            std::cerr << "Error: Could not open " << filename << " for writing.\n";
+            return;
+        }
 
     std::ifstream tpl("assets/visualizer_template.html");
-    if (!tpl.is_open()) {
-        std::cerr << "Error: Could not open template file assets/visualizer_template.html\n";
-        return;
-    }
+        if (!tpl.is_open()) {
+            std::cerr << "Error: Could not open template file assets/visualizer_template.html\n";
+            return;
+        }
 
     std::stringstream buffer;
     buffer << tpl.rdbuf();
@@ -288,42 +293,44 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
     // Generate scenario buttons
     std::stringstream buttons;
-    for (size_t i = 0; i < results.size(); ++i) {
-        buttons << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-" << i
-            << "\" class=\"px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap "
-               "transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 "
-               "hover:text-slate-950 border border-slate-700/60\">"
-            << results[i].scenario_name << "</button>\n";
-    }
+        for (size_t i = 0; i < results.size(); ++i) {
+            buttons
+                << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-" << i
+                << "\" class=\"px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap "
+                   "transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 "
+                   "hover:text-slate-950 border border-slate-700/60\">"
+                << results[i].scenario_name << "</button>\n";
+        }
 
     // Generate scenario data
     std::stringstream data;
-    for (size_t i = 0; i < results.size(); ++i) {
-        const auto& r = results[i];
-        data << "            { name: \"" << r.scenario_name << "\", velocity: " << r.velocity
-            << ", mach: " << r.mach_number << ", energy: " << (r.kinetic_energy / 1e9)
-            << ", pressure: " << (r.dynamic_pressure / 1e9)
-            << ", yield: " << (proj.yield_strength / 1e9)
-            << ", depth: " << r.actual_penetration_depth
-            << ", rigid_depth: " << r.rigid_penetration
-            << ", hydro_depth: " << r.hydro_penetration
-            << ", fail: " << (r.casing_failure ? "true" : "false")
-            << ", shock_prob: " << r.shock_damage_prob_percent
-            << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
-            << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
-            << r.regime << "\", summary: \"" << r.outcome_summary << "\" }";
-        if (i + 1 < results.size())
-            data << ",";
-        data << "\n";
-    }
+        for (size_t i = 0; i < results.size(); ++i) {
+            const auto& r = results[i];
+            data << "            { name: \"" << r.scenario_name << "\", velocity: " << r.velocity
+                 << ", mach: " << r.mach_number << ", energy: " << (r.kinetic_energy / 1e9)
+                 << ", pressure: " << (r.dynamic_pressure / 1e9)
+                 << ", yield: " << (proj.yield_strength / 1e9)
+                 << ", depth: " << r.actual_penetration_depth
+                 << ", rigid_depth: " << r.rigid_penetration
+                 << ", hydro_depth: " << r.hydro_penetration
+                 << ", fail: " << (r.casing_failure ? "true" : "false")
+                 << ", shock_prob: " << r.shock_damage_prob_percent
+                 << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
+                 << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
+                 << r.regime << "\", summary: \"" << r.outcome_summary << "\" }";
+            if (i + 1 < results.size())
+                data << ",";
+            data << "\n";
+        }
 
     auto replaceAll = [](std::string& str, const std::string& from, const std::string& to) {
-        if(from.empty()) return;
+        if (from.empty())
+            return;
         size_t start_pos = 0;
-        while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-            str.replace(start_pos, from.length(), to);
-            start_pos += to.length(); 
-        }
+            while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+                str.replace(start_pos, from.length(), to);
+                start_pos += to.length();
+            }
     };
 
     replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
