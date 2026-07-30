@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sstream>
 
-ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, PhysicsConstants& c)
+ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
     : proj(p), target(t), cons(c)
 {
 }

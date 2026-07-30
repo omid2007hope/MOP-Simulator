@@ -32,7 +32,7 @@ During the latest comprehensive line-by-line code review, the following issues a
 _Focus: Refactoring the core architecture to support dynamic inputs, cleaner code separation, and flawless 3D WebGL synchronization._
 
 - [x] **External Asset Loading System**: Implement a file-reading utility to load the WebGL HTML/JS template dynamically, eliminating the massive string literal in the C++ source.
-- [ ] **Data-Driven Configuration**: Introduce a JSON or YAML parser (e.g., `nlohmann/json`) to load external databases of:
+- [x] **Data-Driven Configuration**: Introduce a JSON or YAML parser (e.g., `nlohmann/json`) to load external databases of:
   - **Targets**: Soil, Granite, High-Quality Concrete, Steel Armor.
   - **Projectiles**: GBU-57 MOP, BLU-109, Custom Tungsten Rods.
 - [ ] **Web UI Physics Synchronization**: Fix the hardcoded JS physics bug by injecting the dynamic `casing_density` and `target_density` properties into the HTML payload.

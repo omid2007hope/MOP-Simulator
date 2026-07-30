@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Soil",
+        "density": 1600.0
+    },
+    {
+        "name": "Granite",
+        "density": 2700.0
+    },
+    {
+        "name": "High-Quality Hardened Concrete",
+        "density": 2500.0
+    },
+    {
+        "name": "Steel Armor",
+        "density": 7850.0
+    }
+]

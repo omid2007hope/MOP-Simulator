@@ -1,0 +1,29 @@
+[
+    {
+        "name": "GBU-57 Massive Ordnance Penetrator (MOP)",
+        "length": 6.2,
+        "diameter": 0.8,
+        "total_mass": 13600.0,
+        "explosive_mass": 2400.0,
+        "casing_density": 7800.0,
+        "yield_strength": 2.0e9
+    },
+    {
+        "name": "BLU-109",
+        "length": 2.4,
+        "diameter": 0.37,
+        "total_mass": 874.0,
+        "explosive_mass": 240.0,
+        "casing_density": 7800.0,
+        "yield_strength": 1.5e9
+    },
+    {
+        "name": "Orbital Tungsten Kinetic Penetrator (Rods from God)",
+        "length": 6.1,
+        "diameter": 0.3,
+        "total_mass": 8300.0,
+        "explosive_mass": 0.0,
+        "casing_density": 19300.0,
+        "yield_strength": 0.0
+    }
+]

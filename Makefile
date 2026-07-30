@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2 -Iinclude
+CXXFLAGS ?= -std=c++20 -Wall -Wextra -O2 -Iinclude
 
 ifeq ($(OS),Windows_NT)
     EXE = .exe
@@ -20,8 +20,8 @@ endif
 TARGET = bin/sim$(EXE)
 TEST_TARGET = bin/test_simulation$(EXE)
 
-OBJS = build/main.o build/simulation.o
-TEST_OBJS = build/test_simulation.o build/simulation.o
+OBJS = build/main.o build/simulation.o build/config_loader.o
+TEST_OBJS = build/test_simulation.o build/simulation.o build/config_loader.o
 
 all: $(TARGET)
 
@@ -29,11 +29,15 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/main.cpp include/simulation.hpp
+build/main.o: src/main.cpp include/simulation.hpp include/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 build/simulation.o: src/simulation.cpp include/simulation.hpp
+	@$(MKDIR_BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+build/config_loader.o: src/config_loader.cpp include/config_loader.hpp include/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 

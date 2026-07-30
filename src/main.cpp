@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "simulation.hpp"
-
+#include "config_loader.hpp"
 const bool allowEntry = true;
 
 int choice = 2;
@@ -31,24 +31,36 @@ T getValidInput(const std::string& prompt, bool allowZero = false)
 
 int main()
 {
+    // Load databases
+    auto targetsDb = ConfigLoader::loadTargets("data/targets.json");
+    auto projectilesDb = ConfigLoader::loadProjectiles("data/projectiles.json");
+
     // Default target
     Target concrete;
-    concrete.name = "High-Quality Hardened Concrete";
-    concrete.density = 2500.0; // kg/m^3
+    if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
+        concrete = *t;
+    } else {
+        concrete.name = "High-Quality Hardened Concrete";
+        concrete.density = 2500.0; // kg/m^3
+    }
 
     // Default projectile (GBU-57 MOP)
     Projectile mop;
-    mop.name = "GBU-57 Massive Ordnance Penetrator (MOP)";
-    mop.length = 6.2;
-    mop.diameter = 0.8;
-    mop.total_mass = 13600.0;
-    mop.explosive_mass = 2400.0;
-    mop.casing_density = 7800.0;
-    mop.yield_strength = 2.0e9; // 2.0 GPa
+    if (auto p = ConfigLoader::getProjectileByName(projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
+        mop = *p;
+    } else {
+        mop.name = "GBU-57 Massive Ordnance Penetrator (MOP)";
+        mop.length = 6.2;
+        mop.diameter = 0.8;
+        mop.total_mass = 13600.0;
+        mop.explosive_mass = 2400.0;
+        mop.casing_density = 7800.0;
+        mop.yield_strength = 2.0e9; // 2.0 GPa
+    }
 
     std::cout << "================================================================================="
                  "==================\n";
-    std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR (WITH 3D "
+    std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.5 (WITH 3D "
                  "VISUALIZATION)                \n";
     std::cout << "================================================================================="
                  "==================\n";
@@ -132,13 +144,17 @@ int main()
             std::cout << "\n[+] Loading Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten "
                          "Penetrators)...\n";
 
-            mop.name = "Orbital Tungsten Kinetic Penetrator (Rods from God)";
-            mop.length = 6.1;
-            mop.diameter = 0.3;
-            mop.total_mass = 8300.0;
-            mop.explosive_mass = 0.0;     // 0 kg explosive (pure kinetic energy weapon)
-            mop.casing_density = 19300.0; // High-density Tungsten
-            mop.yield_strength = 0.0;     // 0 GPa (hydrodynamic erosion dominated at hypervelocity)
+            if (auto p = ConfigLoader::getProjectileByName(projectilesDb, "Orbital Tungsten Kinetic Penetrator (Rods from God)")) {
+                mop = *p;
+            } else {
+                mop.name = "Orbital Tungsten Kinetic Penetrator (Rods from God)";
+                mop.length = 6.1;
+                mop.diameter = 0.3;
+                mop.total_mass = 8300.0;
+                mop.explosive_mass = 0.0;     // 0 kg explosive (pure kinetic energy weapon)
+                mop.casing_density = 19300.0; // High-density Tungsten
+                mop.yield_strength = 0.0;     // 0 GPa (hydrodynamic erosion dominated at hypervelocity)
+            }
 
             scenarios = {{"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0},
                          {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0},
@@ -156,7 +172,8 @@ int main()
         }
 
     // Initialize Simulator
-    ImpactSimulator simulator(mop, concrete);
+    PhysicsConstants cons;
+    ImpactSimulator simulator(mop, concrete, cons);
 
     // Run simulations
     std::vector<SimulationResult> results;
