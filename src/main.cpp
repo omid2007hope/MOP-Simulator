@@ -146,10 +146,11 @@ int main()
         }
         else {
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
-            scenarios = {{"50, 000ft Drop", 50000.0, 1050.0},
-                         {"25,000 ft Drop", 25000.0, 950.0},
-                         {"18,000 ft Drop", 18000.0, 880.0},
-                         {"Subsonic Operational", 15.0, 340.00}};
+            scenarios = {
+                {"50, 000ft Drop", 50000.0, 500.0},
+                {"45,000 ft Drop", 45000.0, 400.0},
+                {"Subsonic Operational", 40000.0, 300.0},
+            };
         }
 
     // Initialize Simulator
