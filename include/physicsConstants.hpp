@@ -5,6 +5,7 @@ struct physicsConstants
 {
     const double SPEED_OF_SOUND;
     const double PI;
+    const double AIR_MASS_DENSITY;
 };
 
 #endif
