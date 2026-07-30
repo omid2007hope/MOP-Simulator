@@ -8,6 +8,7 @@
 #include <sstream>
 
 const double PI = 3.14159265358979323846;
+const double UHPC_CS = 200;
 
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t) : proj(p), target(t) {}
 
@@ -19,11 +20,18 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.velocity = scenario.velocity;
     res.mach_number = scenario.velocity / SPEED_OF_SOUND;
 
-    double compressiveStrength = 100.0e6; // 100 MPa target compressive bearing strength
+    // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
+    // Assigned 200 - insuring total destruction .
+    double compressiveStrength = UHPC_CS;
 
-    // Drag coefficient
-    double dragCoefficient =
-        (2 * proj.kinetic_energy) / (std::pow((target.density * proj.velocity), 2) * proj.diameter);
+    // To achieve maximum accuracy for the rigid body penetration model, we calculate 
+    // the "Nose Performance Coefficient" (N) based on the Caliber-Radius-Head (CRH) geometry.
+    // For a deep penetrator like the GBU-57 MOP, the CRH is typically around 3.0 to 4.0.
+    double crh = 3.0; // Caliber-Radius-Head
+    
+    // The exact geometric formula for the effective drag coefficient (N) of an ogive nose 
+    // penetrating a solid target (derived from the Forrestal equation):
+    double dragCoefficient = (8.0 * crh - 1.0) / (24.0 * std::pow(crh, 2));
 
     double squaredVelocity = std::pow(scenario.velocity, 2);
 
