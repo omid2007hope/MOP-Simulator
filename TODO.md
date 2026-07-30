@@ -22,7 +22,7 @@ During the latest comprehensive line-by-line code review, the following issues a
 ### 🏗️ Technical Debt & Areas of Improvement
 
 - [x] **Decouple HTML Generation**: Embedding 400+ lines of raw HTML/JS in `simulation.cpp` as a raw string literal makes UI maintenance difficult. **Action:** Move the HTML template into an external asset file (e.g., `assets/visualizer_template.html`) and load/inject data at runtime.
-- [ ] **Parameterize Magic Numbers**: target compressive strength (`rt = 100.0e6`), and the speed of sound (`SPEED_OF_SOUND = 343.0`) are hardcoded. **Action:** Extract these into a `PhysicsConstants` structure or configuration file.
+- [x] **Parameterize Magic Numbers**: target compressive strength (`rt = 100.0e6`), and the speed of sound (`SPEED_OF_SOUND = 343.0`) are hardcoded. **Action:** Extract these into a `PhysicsConstants` structure or configuration file.
 - [ ] **Standardize Math Constants**: Replace manual definitions of Pi (`3.14159...`) with C++ standard library equivalents (e.g., `std::numbers::pi` in C++20 or `M_PI`).
 
 ---
