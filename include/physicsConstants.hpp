@@ -4,6 +4,7 @@
 struct physicsConstants
 {
     const double SPEED_OF_SOUND;
+    const double PI;
 };
 
 #endif
