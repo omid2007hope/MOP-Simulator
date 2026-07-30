@@ -5,11 +5,12 @@
 
 #include <string>
 #include <vector>
+#include <numbers>
 
 struct PhysicsConstants
 {
     const double SPEED_OF_SOUND = 343.0;
-    const double PI = 3.14159265358979323846;
+    const double PI = std::numbers::pi;
 
     // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
     // Assigned 200 - insuring total destruction .
