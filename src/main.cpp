@@ -108,7 +108,7 @@ int main()
                     std::cout << "Invalid Entry, please try again!\n";
                 }
 
-                for (numScenarios& each : eachScenario) {
+                for (numScenarios : eachScenario) {
                     std::stringstream prompt_ss;
 
                     prompt_ss << "  -> Enter Velocity #" << (eachScenario + 1)
