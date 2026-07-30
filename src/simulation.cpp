@@ -24,14 +24,15 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // Assigned 200 - insuring total destruction .
     double compressiveStrength = UHPC_CS;
 
-    // To achieve maximum accuracy for the rigid body penetration model, we calculate 
+    // To achieve maximum accuracy for the rigid body penetration model, we calculate
     // the "Nose Performance Coefficient" (N) based on the Caliber-Radius-Head (CRH) geometry.
     // For a deep penetrator like the GBU-57 MOP, the CRH is typically around 3.0 to 4.0.
-    double crh = 3.0; // Caliber-Radius-Head
-    
-    // The exact geometric formula for the effective drag coefficient (N) of an ogive nose 
+    double Caliber_Radius_Head = 3.0; // Caliber-Radius-Head
+
+    // The exact geometric formula for the effective drag coefficient (N) of an ogive nose
     // penetrating a solid target (derived from the Forrestal equation):
-    double dragCoefficient = (8.0 * crh - 1.0) / (24.0 * std::pow(crh, 2));
+    double dragCoefficient =
+        (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
     double squaredVelocity = std::pow(scenario.velocity, 2);
 
