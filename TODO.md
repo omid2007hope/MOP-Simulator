@@ -16,8 +16,8 @@ During the latest comprehensive line-by-line code review, the following issues a
 
 - [x] **Hardcoded JS Physics Bug**: In `simulation.cpp` (Line 528), the generated WebGL JavaScript recalculates `hydroDepth` using a hardcoded casing density of `7800.0`. If a custom projectile is used with a different density (e.g., Tungsten at 19300.0), the HTML visualizer's parametric sliders will calculate and render the wrong depth.
 - [x] **Typo in Default Scenarios**: In `main.cpp` (Line 122), the 4th preset scenario is named "Subsonic Operational" with an altitude of `15.0` ft. Based on preceding entries (50,000, 25,000, 18,000), this is likely a typo for `15000.0` ft.
-- [ ] **Interactive Input Loop Failure**: In `main.cpp`, if the user enters invalid input during the interactive prompt (e.g., a string instead of a number), `clearCinBuffer()` is called, and the program silently defaults to the previous value instead of re-prompting the user.
-- [ ] **Scenario Count Constraint Mismatch**: In `main.cpp` (Line 80), the prompt limits custom impact velocities to `[1 to 5]`, but the actual validation logic on Line 82 accepts up to `10`.
+- [x] **Interactive Input Loop Failure**: In `main.cpp`, if the user enters invalid input during the interactive prompt (e.g., a string instead of a number), `clearCinBuffer()` is called, and the program silently defaults to the previous value instead of re-prompting the user.
+- [x] **Scenario Count Constraint Mismatch**: In `main.cpp` (Line 80), the prompt limits custom impact velocities to `[1 to 5]`, but the actual validation logic on Line 82 accepts up to `10`.
 
 ### 🏗️ Technical Debt & Areas of Improvement
 
