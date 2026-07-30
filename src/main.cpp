@@ -76,8 +76,9 @@ int main()
             std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
             std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
             std::string projectileName;
-            getline(std::cin, projectileName) if (!projectileName.empty())
-                getline(projectileName, "Undefined Projectile");
+            getline(std::cin, projectileName);
+            if (!projectileName.empty())
+                projectileName = "Undefined Projectile";
 
             mop.length = getValidInput<double>("Enter Projectile Length L (meters): ", false);
 
@@ -109,16 +110,16 @@ int main()
                     std::cout << "Invalid Entry, please try again!\n";
                 }
 
-                for (numScenarios : eachScenario) {
+                for (int each = 0; each < numScenarios; ++each) {
                     std::stringstream prompt_ss;
 
-                    prompt_ss << "  -> Enter Velocity #" << (eachScenario + 1)
+                    prompt_ss << "  -> Enter Velocity #" << (each + 1)
                               << " (m/s) [e.g., 3500, 2000, 350]: ";
 
                     double projectileVelocity = getValidInput<double>(prompt_ss.str());
                     std::stringstream name_ss;
 
-                    name_ss << "Custom Test #" << (eachScenario + 1) << " (" << projectileVelocity
+                    name_ss << "Custom Test #" << (each + 1) << " (" << projectileVelocity
                             << " m/s)";
                     scenarios.push_back({name_ss.str(), 0.0, projectileVelocity});
                 }
