@@ -7,11 +7,7 @@
 #include <vector>
 #include "simulation.hpp"
 
-void clearCinBuffer()
-{
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-}
+double val;
 
 int main()
 {
@@ -29,10 +25,11 @@ int main()
                  "------------------\n";
     std::cout << "Enter choice [1, 2, or 3]: ";
 
-    int choice = 1;
-        if (!(std::cin >> choice)) {
-            clearCinBuffer();
-            choice = 1;
+    int choice;
+        if (!(std::cin >> choice) || choice == 0) {
+            std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> choice;
         }
 
     // Default target
@@ -61,72 +58,97 @@ int main()
                 mop.name = pName;
 
             std::cout << "Enter Projectile Length L (meters) [default 6.2]: ";
-            double val;
             if (std::cin >> val && val > 0)
                 mop.length = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.length = val;
 
             std::cout << "Enter Projectile Diameter d (meters) [default 0.8]: ";
             if (std::cin >> val && val > 0)
                 mop.diameter = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.diameter = val;
 
             std::cout << "Enter Total Mass m (kg) [default 13600]: ";
             if (std::cin >> val && val > 0)
                 mop.total_mass = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.total_mass = val;
 
             std::cout << "Enter Explosive Mass (kg) [default 2400, enter 0 for kinetic rod]: ";
             if (std::cin >> val && val >= 0)
                 mop.explosive_mass = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.explosive_mass = val;
 
             std::cout << "Enter Casing Density rho_p (kg/m^3) [default 7800 for steel, 19300 for "
                          "tungsten]: ";
             if (std::cin >> val && val > 0)
                 mop.casing_density = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.casing_density = val;
 
             std::cout << "Enter Casing Yield Strength sigma_y (GPa) [default 2.0, enter 0 for "
                          "kinetic rod]: ";
             if (std::cin >> val && val >= 0)
                 mop.yield_strength = val * 1e9;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            mop.yield_strength = val * 1e9;
 
             std::cout << "Enter Target Concrete Density rho_t (kg/m^3) [default 2500]: ";
             if (std::cin >> val && val > 0)
                 concrete.density = val;
             else
-                clearCinBuffer();
+                std::cin.clear();
+            std::cout << "\n Invalid Entry, please try again!";
+            std::cin >> val;
+            concrete.density = val;
 
             std::cout << "Enter number of custom impact velocities to test [1 to 5]: ";
             int numScenarios = 1;
                 if (!(std::cin >> numScenarios) || numScenarios < 1 || numScenarios > 10) {
-                    clearCinBuffer();
+                    std::cin.clear();
                     numScenarios = 1;
                 }
 
-                for (int i = 0; i < numScenarios; ++i) {
-                    std::cout << "  -> Enter Velocity #" << (i + 1)
+                for (int numScenarios : eachSen) {
+                    std::cout << "  -> Enter Velocity #" << (eachSen)
                               << " (m/s) [e.g., 3500, 2000, 350]: ";
                     double v = 1000.0;
                         if (std::cin >> v && v > 0) {
                             std::stringstream ss;
-                            ss << "Custom Test #" << (i + 1) << " (" << v << " m/s)";
+                            ss << "Custom Test #" << (eachSen) << " (" << v << " m/s)";
                             scenarios.push_back({ss.str(), 0.0, v});
                         }
                         else {
-                            clearCinBuffer();
+                            std::cin.clear();
+                            std::cout << "\n Invalid Entry, please try again!";
+
+                            std::stringstream ss;
+                            ss << "Custom Test #" << (eachSen) << " (" << v << " m/s)";
+                            scenarios.push_back({ss.str(), 0.0, v});
                         }
                 }
                 if (scenarios.empty()) {
-                    scenarios.push_back({"Custom Default Test", 0.0, 2000.0});
+                    scenarios.push_back({"Custom Default Test", 50000.0, 500.0});
                 }
         }
         else if (choice == 3) {
@@ -144,7 +166,7 @@ int main()
                          {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0},
                          {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0}};
         }
-        else {
+        else if (choice == 1) {
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
             scenarios = {
                 {"50, 000ft Drop", 50000.0, 500.0},
