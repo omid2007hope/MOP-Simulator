@@ -352,7 +352,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     replaceAll(html, "{{PROJ_YIELD_STRENGTH}}", std::to_string(proj.yield_strength));
     replaceAll(html, "{{TARGET_NAME}}", target.name);
     replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
-    replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(100.0e6));
+    replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(cons.compressiveStrengthOfUHPC));
     replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(1.2));
     replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(cons.SPEED_OF_SOUND));
 
