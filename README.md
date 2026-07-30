@@ -40,8 +40,21 @@ cmake --build .
 1. **Select Mode**:
    - `[1]` Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4).
    - `[2]` Interactive Custom Parameter Input.
+   - `[3]` Orbital Kinetic Strike Preset ("Rods from God").
 2. View the console summary report and ASCII cross-sections.
-3. Open `3d_visualizer.html` in any web browser to explore the interactive 3D WebGL scene!
+3. The simulator loads `assets/visualizer_template.html` and injects dynamic simulation results to output `3d_visualizer.html` in the root directory.
+
+#### 🌐 Viewing `3d_visualizer.html`
+Due to browser CORS security restrictions when loading CDN scripts on local `file://` URLs, use a local web server to view the generated 3D scene:
+
+```bash
+# Using Node.js (Recommended)
+npx serve .
+
+# Or using Python
+python -m http.server 8080
+```
+Open `http://localhost:3000/3d_visualizer.html` (or `http://localhost:8080/3d_visualizer.html`) in your browser.
 
 ### Running Unit Tests
 
@@ -131,6 +144,8 @@ Where:
 ```text
 MOP Simulator/
 ├── index.html               # Standalone web application (UI + Sim + 3D Visualizer)
+├── assets/
+│   └── visualizer_template.html # External HTML/JS template for 3D visualizer generation
 ├── include/
 │   └── simulation.hpp       # Public API headers (Data structs & class declarations)
 ├── src/
@@ -145,7 +160,7 @@ MOP Simulator/
 ├── .clang-format            # Code formatting configuration
 ├── License.md               # Software license & terms
 ├── README.md                # Project documentation
-└── 3d_visualizer.html       # Generated Three.js WebGL visualizer (legacy, from C++ exe)
+└── 3d_visualizer.html       # Generated Three.js WebGL visualizer output
 ```
 
 ---

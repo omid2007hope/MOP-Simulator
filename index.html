@@ -1,1046 +1,1741 @@
-<!DOCTYPE html>
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MOP Impact Physics & Penetration Simulator</title>
-    <meta name="description" content="Interactive 3D impact physics and penetration simulator featuring GBU-57 MOP, custom projectiles, and orbital kinetic strike scenarios with real-time WebGL visualization.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta
+      name="description"
+      content="Interactive 3D impact physics and penetration simulator featuring GBU-57 MOP, custom projectiles, and orbital kinetic strike scenarios with real-time WebGL visualization."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        :root {
-            --bg-deep: #050a12;
-            --bg-surface: #0b1120;
-            --bg-card: #111827;
-            --bg-card-hover: #1a2744;
-            --border-subtle: rgba(255,255,255,0.07);
-            --border-accent: rgba(56,189,248,0.35);
-            --cyan-400: #22d3ee;
-            --cyan-500: #06b6d4;
-            --cyan-600: #0891b2;
-            --emerald-400: #34d399;
-            --rose-400: #fb7185;
-            --rose-500: #f43f5e;
-            --amber-400: #fbbf24;
-            --purple-400: #c084fc;
-            --purple-500: #a855f7;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-        }
+      :root {
+        --bg-deep: #050a12;
+        --bg-surface: #0b1120;
+        --bg-card: #111827;
+        --bg-card-hover: #1a2744;
+        --border-subtle: rgba(255, 255, 255, 0.07);
+        --border-accent: rgba(56, 189, 248, 0.35);
+        --cyan-400: #22d3ee;
+        --cyan-500: #06b6d4;
+        --cyan-600: #0891b2;
+        --emerald-400: #34d399;
+        --rose-400: #fb7185;
+        --rose-500: #f43f5e;
+        --amber-400: #fbbf24;
+        --purple-400: #c084fc;
+        --purple-500: #a855f7;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+        --font-mono: "JetBrains Mono", "Fira Code", monospace;
+      }
 
-        html { scroll-behavior: smooth; }
+      html {
+        scroll-behavior: smooth;
+      }
 
-        body {
-            font-family: var(--font-sans);
-            background: var(--bg-deep);
-            color: var(--slate-100);
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
+      body {
+        font-family: var(--font-sans);
+        background: var(--bg-deep);
+        color: var(--slate-100);
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
 
-        /* ── Glass Panel Utility ── */
-        .glass {
-            background: rgba(15, 23, 42, 0.82);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-subtle);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-        }
+      /* ── Glass Panel Utility ── */
+      .glass {
+        background: rgba(15, 23, 42, 0.82);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      }
 
-        /* ── Animated Grid Background ── */
-        .grid-bg {
-            position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background-image:
-                linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            animation: gridShift 30s linear infinite;
+      /* ── Animated Grid Background ── */
+      .grid-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        animation: gridShift 30s linear infinite;
+      }
+      @keyframes gridShift {
+        to {
+          background-position: 60px 60px;
         }
-        @keyframes gridShift { to { background-position: 60px 60px; } }
+      }
 
-        /* ── Glow Orbs ── */
-        .glow-orb {
-            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
-        }
-        .glow-orb-1 { width: 500px; height: 500px; top: -150px; left: -100px; background: rgba(6,182,212,0.08); }
-        .glow-orb-2 { width: 400px; height: 400px; bottom: -100px; right: -100px; background: rgba(168,85,247,0.06); }
+      /* ── Glow Orbs ── */
+      .glow-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(100px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .glow-orb-1 {
+        width: 500px;
+        height: 500px;
+        top: -150px;
+        left: -100px;
+        background: rgba(6, 182, 212, 0.08);
+      }
+      .glow-orb-2 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        right: -100px;
+        background: rgba(168, 85, 247, 0.06);
+      }
 
-        /* ── Setup Screen ── */
-        #setup-screen {
-            position: relative; z-index: 1;
-            min-height: 100vh;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 40px 24px 60px;
-        }
+      /* ── Setup Screen ── */
+      #setup-screen {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 24px 60px;
+      }
 
-        .brand-header {
-            text-align: center; margin-bottom: 48px;
+      .brand-header {
+        text-align: center;
+        margin-bottom: 48px;
+      }
+      .brand-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--cyan-400);
+        background: rgba(6, 182, 212, 0.1);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        border-radius: 100px;
+        padding: 6px 16px;
+        margin-bottom: 20px;
+      }
+      .brand-tag .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--cyan-400);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-        .brand-tag {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-            color: var(--cyan-400);
-            background: rgba(6,182,212,0.1);
-            border: 1px solid rgba(6,182,212,0.2);
-            border-radius: 100px;
-            padding: 6px 16px;
-            margin-bottom: 20px;
+        50% {
+          opacity: 0.3;
         }
-        .brand-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan-400); animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+      }
 
-        .brand-title {
-            font-size: clamp(28px, 4vw, 44px); font-weight: 900; letter-spacing: -1px;
-            background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.15; margin-bottom: 12px;
-        }
-        .brand-sub {
-            font-size: 14px; color: var(--slate-400); font-weight: 500;
-            max-width: 500px; margin: 0 auto;
-        }
+      .brand-title {
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 900;
+        letter-spacing: -1px;
+        background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.15;
+        margin-bottom: 12px;
+      }
+      .brand-sub {
+        font-size: 14px;
+        color: var(--slate-400);
+        font-weight: 500;
+        max-width: 500px;
+        margin: 0 auto;
+      }
 
-        /* ── Mode Cards ── */
-        .mode-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px; max-width: 960px; width: 100%; margin-bottom: 32px;
-        }
+      /* ── Mode Cards ── */
+      .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        max-width: 960px;
+        width: 100%;
+        margin-bottom: 32px;
+      }
 
-        .mode-card {
-            position: relative;
-            border-radius: 16px; padding: 28px 24px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-            border: 1.5px solid var(--border-subtle);
-            background: var(--bg-card);
-            overflow: hidden;
-        }
-        .mode-card::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, transparent 60%, rgba(6,182,212,0.05));
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .mode-card:hover { border-color: rgba(56,189,248,0.25); transform: translateY(-2px); }
-        .mode-card:hover::before { opacity: 1; }
-        .mode-card.selected {
-            border-color: var(--cyan-500);
-            box-shadow: 0 0 30px rgba(6,182,212,0.15), inset 0 0 30px rgba(6,182,212,0.03);
-        }
-        .mode-card.selected::before { opacity: 1; }
+      .mode-card {
+        position: relative;
+        border-radius: 16px;
+        padding: 28px 24px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1.5px solid var(--border-subtle);
+        background: var(--bg-card);
+        overflow: hidden;
+      }
+      .mode-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          transparent 60%,
+          rgba(6, 182, 212, 0.05)
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .mode-card:hover {
+        border-color: rgba(56, 189, 248, 0.25);
+        transform: translateY(-2px);
+      }
+      .mode-card:hover::before {
+        opacity: 1;
+      }
+      .mode-card.selected {
+        border-color: var(--cyan-500);
+        box-shadow:
+          0 0 30px rgba(6, 182, 212, 0.15),
+          inset 0 0 30px rgba(6, 182, 212, 0.03);
+      }
+      .mode-card.selected::before {
+        opacity: 1;
+      }
 
-        .mode-icon {
-            width: 44px; height: 44px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; margin-bottom: 16px;
-        }
-        .mode-1 .mode-icon { background: rgba(6,182,212,0.12); color: var(--cyan-400); }
-        .mode-2 .mode-icon { background: rgba(251,191,36,0.12); color: var(--amber-400); }
-        .mode-3 .mode-icon { background: rgba(168,85,247,0.12); color: var(--purple-400); }
+      .mode-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+      .mode-1 .mode-icon {
+        background: rgba(6, 182, 212, 0.12);
+        color: var(--cyan-400);
+      }
+      .mode-2 .mode-icon {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+      }
+      .mode-3 .mode-icon {
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--purple-400);
+      }
 
-        .mode-label {
-            font-size: 15px; font-weight: 700; color: var(--slate-100); margin-bottom: 6px;
-        }
-        .mode-desc {
-            font-size: 12px; color: var(--slate-400); line-height: 1.6;
-        }
-        .mode-badge {
-            display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 3px 10px; border-radius: 100px; margin-top: 12px;
-        }
-        .mode-1 .mode-badge { background: rgba(6,182,212,0.15); color: var(--cyan-400); }
-        .mode-2 .mode-badge { background: rgba(251,191,36,0.15); color: var(--amber-400); }
-        .mode-3 .mode-badge { background: rgba(168,85,247,0.15); color: var(--purple-400); }
+      .mode-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--slate-100);
+        margin-bottom: 6px;
+      }
+      .mode-desc {
+        font-size: 12px;
+        color: var(--slate-400);
+        line-height: 1.6;
+      }
+      .mode-badge {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 3px 10px;
+        border-radius: 100px;
+        margin-top: 12px;
+      }
+      .mode-1 .mode-badge {
+        background: rgba(6, 182, 212, 0.15);
+        color: var(--cyan-400);
+      }
+      .mode-2 .mode-badge {
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--amber-400);
+      }
+      .mode-3 .mode-badge {
+        background: rgba(168, 85, 247, 0.15);
+        color: var(--purple-400);
+      }
 
-        /* ── Custom Parameters Form ── */
-        #custom-panel {
-            max-width: 960px; width: 100%;
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.3s, margin 0.3s;
-            opacity: 0; margin-bottom: 0;
-        }
-        #custom-panel.open {
-            max-height: 800px; opacity: 1; margin-bottom: 32px;
-        }
+      /* ── Custom Parameters Form ── */
+      #custom-panel {
+        max-width: 960px;
+        width: 100%;
+        max-height: 0;
+        overflow: hidden;
+        transition:
+          max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.3s,
+          margin 0.3s;
+        opacity: 0;
+        margin-bottom: 0;
+      }
+      #custom-panel.open {
+        max-height: 800px;
+        opacity: 1;
+        margin-bottom: 32px;
+      }
 
-        .form-panel {
-            border-radius: 16px; padding: 28px;
-            border: 1px solid var(--border-subtle);
-            background: var(--bg-card);
-        }
-        .form-panel h3 {
-            font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-            color: var(--amber-400); margin-bottom: 20px;
-        }
+      .form-panel {
+        border-radius: 16px;
+        padding: 28px;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-card);
+      }
+      .form-panel h3 {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--amber-400);
+        margin-bottom: 20px;
+      }
 
-        .form-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-        }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label {
-            font-size: 11px; font-weight: 600; color: var(--slate-400); letter-spacing: 0.5px;
-        }
-        .form-group input, .form-group select {
-            background: var(--bg-surface);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px; padding: 10px 14px;
-            font-family: var(--font-mono); font-size: 13px; font-weight: 500;
-            color: var(--slate-100);
-            transition: border-color 0.2s;
-            outline: none;
-            width: 100%;
-        }
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--cyan-500);
-            box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
-        }
-        .form-group .unit {
-            font-size: 10px; color: var(--slate-500); font-weight: 500;
-        }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-group label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate-400);
+        letter-spacing: 0.5px;
+      }
+      .form-group input,
+      .form-group select {
+        background: var(--bg-surface);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--slate-100);
+        transition: border-color 0.2s;
+        outline: none;
+        width: 100%;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: var(--cyan-500);
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+      }
+      .form-group .unit {
+        font-size: 10px;
+        color: var(--slate-500);
+        font-weight: 500;
+      }
 
-        .velocity-row {
-            display: flex; gap: 10px; align-items: end; flex-wrap: wrap;
-        }
-        .velocity-row .form-group { flex: 1; min-width: 120px; }
+      .velocity-row {
+        display: flex;
+        gap: 10px;
+        align-items: end;
+        flex-wrap: wrap;
+      }
+      .velocity-row .form-group {
+        flex: 1;
+        min-width: 120px;
+      }
 
-        .add-vel-btn, .remove-vel-btn {
-            background: rgba(6,182,212,0.1);
-            border: 1px solid rgba(6,182,212,0.2);
-            border-radius: 10px; padding: 10px 16px;
-            font-size: 12px; font-weight: 700; color: var(--cyan-400);
-            cursor: pointer; transition: all 0.2s;
-            align-self: end;
-        }
-        .add-vel-btn:hover { background: rgba(6,182,212,0.2); }
-        .remove-vel-btn {
-            background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.2); color: var(--rose-400);
-            padding: 10px 12px;
-        }
-        .remove-vel-btn:hover { background: rgba(244,63,94,0.2); }
+      .add-vel-btn,
+      .remove-vel-btn {
+        background: rgba(6, 182, 212, 0.1);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--cyan-400);
+        cursor: pointer;
+        transition: all 0.2s;
+        align-self: end;
+      }
+      .add-vel-btn:hover {
+        background: rgba(6, 182, 212, 0.2);
+      }
+      .remove-vel-btn {
+        background: rgba(244, 63, 94, 0.1);
+        border-color: rgba(244, 63, 94, 0.2);
+        color: var(--rose-400);
+        padding: 10px 12px;
+      }
+      .remove-vel-btn:hover {
+        background: rgba(244, 63, 94, 0.2);
+      }
 
-        /* ── Launch Button ── */
-        .launch-btn {
-            position: relative;
-            display: inline-flex; align-items: center; gap: 10px;
-            padding: 16px 48px;
-            font-family: var(--font-sans); font-size: 14px; font-weight: 800;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            color: var(--bg-deep);
-            background: linear-gradient(135deg, var(--cyan-400), var(--cyan-600));
-            border: none; border-radius: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 30px rgba(6,182,212,0.3);
-            overflow: hidden;
-        }
-        .launch-btn:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 40px rgba(6,182,212,0.45);
-        }
-        .launch-btn:active { transform: translateY(0) scale(0.98); }
-        .launch-btn::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2));
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .launch-btn:hover::after { opacity: 1; }
+      /* ── Launch Button ── */
+      .launch-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 48px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--bg-deep);
+        background: linear-gradient(135deg, var(--cyan-400), var(--cyan-600));
+        border: none;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 30px rgba(6, 182, 212, 0.3);
+        overflow: hidden;
+      }
+      .launch-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 40px rgba(6, 182, 212, 0.45);
+      }
+      .launch-btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+      .launch-btn::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          transparent,
+          rgba(255, 255, 255, 0.2)
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .launch-btn:hover::after {
+        opacity: 1;
+      }
 
-        /* ── Simulation View ── */
-        #sim-view {
-            position: fixed; inset: 0; z-index: 10;
-            display: none;
+      /* ── Simulation View ── */
+      #sim-view {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+      }
+      #sim-view.active {
+        display: block;
+      }
+
+      #canvas-container {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+
+      /* ── HUD Panels (Sim View Overlays) ── */
+      .hud-panel {
+        position: absolute;
+        z-index: 10;
+        border-radius: 16px;
+        transition: all 0.3s;
+      }
+      .hud-panel:hover {
+        border-color: rgba(56, 189, 248, 0.25);
+      }
+
+      .hud-tl {
+        top: 20px;
+        left: 20px;
+        width: 360px;
+        padding: 20px;
+      }
+      .hud-tr {
+        top: 20px;
+        right: 20px;
+        width: 300px;
+        padding: 18px;
+      }
+      .hud-bl {
+        bottom: 20px;
+        left: 20px;
+        width: 300px;
+        padding: 18px;
+      }
+      .hud-bc {
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 100px;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 55vw;
+        overflow-x: auto;
+      }
+      .hud-br {
+        bottom: 20px;
+        right: 20px;
+        max-width: 480px;
+        max-height: 50vh;
+        overflow-y: auto;
+        padding: 18px;
+        display: none;
+      }
+      .hud-br.open {
+        display: block;
+      }
+
+      .hud-section-title {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--cyan-400);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hud-section-title .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--cyan-400);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .hud-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        padding: 4px 0;
+      }
+      .hud-row .label {
+        color: var(--slate-400);
+      }
+      .hud-row .value {
+        font-family: var(--font-mono);
+        font-weight: 600;
+      }
+      .hud-row .value.cyan {
+        color: var(--cyan-400);
+      }
+      .hud-row .value.amber {
+        color: var(--amber-400);
+      }
+      .hud-row .value.emerald {
+        color: var(--emerald-400);
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .hud-row .value.rose {
+        color: var(--rose-400);
+        font-weight: 700;
+      }
+
+      .hud-divider {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        margin: 10px 0;
+      }
+
+      .regime-badge,
+      .exp-badge {
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin-top: 6px;
+      }
+
+      /* ── Camera / Action Buttons ── */
+      .cam-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .cam-btn,
+      .action-btn {
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--slate-300);
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+      }
+      .cam-btn:hover,
+      .action-btn:hover {
+        background: var(--cyan-500);
+        color: var(--bg-deep);
+        border-color: var(--cyan-500);
+      }
+      .action-btn.back-btn {
+        background: rgba(244, 63, 94, 0.1);
+        border-color: rgba(244, 63, 94, 0.2);
+        color: var(--rose-400);
+      }
+      .action-btn.back-btn:hover {
+        background: var(--rose-500);
+        color: white;
+      }
+      .action-btn.table-btn {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: rgba(52, 211, 153, 0.2);
+        color: var(--emerald-400);
+      }
+      .action-btn.table-btn:hover {
+        background: var(--emerald-400);
+        color: var(--bg-deep);
+      }
+
+      /* ── Scenario Buttons ── */
+      .sc-btn {
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--slate-300);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .sc-btn:hover {
+        background: rgba(6, 182, 212, 0.15);
+        color: var(--cyan-400);
+      }
+      .sc-btn.active {
+        background: var(--cyan-400);
+        color: var(--bg-deep);
+        font-weight: 800;
+        box-shadow: 0 2px 20px rgba(6, 182, 212, 0.3);
+      }
+
+      /* ── Sliders ── */
+      .slider-group {
+        margin-bottom: 10px;
+      }
+      .slider-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+      .slider-header .label {
+        color: var(--slate-400);
+      }
+      .slider-header .val {
+        font-family: var(--font-mono);
+        color: var(--cyan-400);
+        font-weight: 600;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 5px;
+        border-radius: 5px;
+        background: var(--slate-700);
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--cyan-400);
+        cursor: pointer;
+        box-shadow: 0 0 8px var(--cyan-400);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--cyan-400);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 8px var(--cyan-400);
+      }
+
+      /* ── Results Table ── */
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+      }
+      .results-table th {
+        text-align: left;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--slate-400);
+        padding: 8px 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .results-table td {
+        padding: 8px 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--slate-200);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .results-table tr:hover td {
+        background: rgba(6, 182, 212, 0.05);
+      }
+
+      .info-text {
+        font-size: 11px;
+        color: var(--slate-400);
+        line-height: 1.7;
+      }
+
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--slate-700);
+        border-radius: 5px;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .hud-tl {
+          width: calc(100vw - 40px);
+          top: 12px;
+          left: 12px;
+          padding: 14px;
         }
-        #sim-view.active { display: block; }
-
-        #canvas-container { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; }
-
-        /* ── HUD Panels (Sim View Overlays) ── */
-        .hud-panel {
-            position: absolute; z-index: 10;
-            border-radius: 16px;
-            transition: all 0.3s;
+        .hud-tr {
+          display: none;
         }
-        .hud-panel:hover { border-color: rgba(56,189,248,0.25); }
-
-        .hud-tl { top: 20px; left: 20px; width: 360px; padding: 20px; }
-        .hud-tr { top: 20px; right: 20px; width: 300px; padding: 18px; }
-        .hud-bl { bottom: 20px; left: 20px; width: 300px; padding: 18px; }
+        .hud-bl {
+          width: calc(100vw - 40px);
+          left: 12px;
+          bottom: 70px;
+        }
         .hud-bc {
-            bottom: 20px; left: 50%; transform: translateX(-50%);
-            border-radius: 100px; padding: 10px 16px;
-            display: flex; align-items: center; gap: 8px;
-            max-width: 55vw; overflow-x: auto;
+          bottom: 12px;
+          max-width: 90vw;
         }
         .hud-br {
-            bottom: 20px; right: 20px; max-width: 480px; max-height: 50vh;
-            overflow-y: auto; padding: 18px;
-            display: none;
+          max-width: calc(100vw - 40px);
+          right: 12px;
         }
-        .hud-br.open { display: block; }
-
-        .hud-section-title {
-            font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-            color: var(--cyan-400); margin-bottom: 14px;
-            display: flex; align-items: center; gap: 8px;
+        .mode-grid {
+          grid-template-columns: 1fr;
         }
-        .hud-section-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan-400); animation: pulse 2s ease-in-out infinite; }
-
-        .hud-row {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 11px; padding: 4px 0;
-        }
-        .hud-row .label { color: var(--slate-400); }
-        .hud-row .value { font-family: var(--font-mono); font-weight: 600; }
-        .hud-row .value.cyan { color: var(--cyan-400); }
-        .hud-row .value.amber { color: var(--amber-400); }
-        .hud-row .value.emerald { color: var(--emerald-400); font-weight: 800; font-size: 13px; }
-        .hud-row .value.rose { color: var(--rose-400); font-weight: 700; }
-
-        .hud-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 10px 0; }
-
-        .regime-badge, .exp-badge {
-            text-align: center; font-size: 10px; font-weight: 800;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 8px 12px; border-radius: 10px; margin-top: 6px;
-        }
-
-        /* ── Camera / Action Buttons ── */
-        .cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
-        .cam-btn, .action-btn {
-            padding: 8px 12px; border-radius: 10px;
-            font-size: 11px; font-weight: 600;
-            background: rgba(30,41,59,0.8);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--slate-300); cursor: pointer;
-            transition: all 0.15s;
-            text-align: center;
-        }
-        .cam-btn:hover, .action-btn:hover {
-            background: var(--cyan-500); color: var(--bg-deep); border-color: var(--cyan-500);
-        }
-        .action-btn.back-btn {
-            background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.2); color: var(--rose-400);
-        }
-        .action-btn.back-btn:hover { background: var(--rose-500); color: white; }
-        .action-btn.table-btn {
-            background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.2); color: var(--emerald-400);
-        }
-        .action-btn.table-btn:hover { background: var(--emerald-400); color: var(--bg-deep); }
-
-        /* ── Scenario Buttons ── */
-        .sc-btn {
-            padding: 8px 16px; border-radius: 100px;
-            font-size: 11px; font-weight: 600; white-space: nowrap;
-            background: rgba(30,41,59,0.8);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--slate-300); cursor: pointer;
-            transition: all 0.2s;
-        }
-        .sc-btn:hover { background: rgba(6,182,212,0.15); color: var(--cyan-400); }
-        .sc-btn.active {
-            background: var(--cyan-400); color: var(--bg-deep);
-            font-weight: 800;
-            box-shadow: 0 2px 20px rgba(6,182,212,0.3);
-        }
-
-        /* ── Sliders ── */
-        .slider-group { margin-bottom: 10px; }
-        .slider-header {
-            display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;
-        }
-        .slider-header .label { color: var(--slate-400); }
-        .slider-header .val { font-family: var(--font-mono); color: var(--cyan-400); font-weight: 600; }
-
-        input[type="range"] {
-            width: 100%; height: 5px; border-radius: 5px;
-            background: var(--slate-700); outline: none;
-            -webkit-appearance: none; appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 14px; height: 14px; border-radius: 50%;
-            background: var(--cyan-400); cursor: pointer;
-            box-shadow: 0 0 8px var(--cyan-400);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 14px; height: 14px; border-radius: 50%;
-            background: var(--cyan-400); cursor: pointer; border: none;
-            box-shadow: 0 0 8px var(--cyan-400);
-        }
-
-        /* ── Results Table ── */
-        .results-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        .results-table th {
-            text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-            color: var(--slate-400); padding: 8px 6px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .results-table td {
-            padding: 8px 6px; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
-            color: var(--slate-200);
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .results-table tr:hover td { background: rgba(6,182,212,0.05); }
-
-        .info-text { font-size: 11px; color: var(--slate-400); line-height: 1.7; }
-
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--slate-700); border-radius: 5px; }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .hud-tl { width: calc(100vw - 40px); top: 12px; left: 12px; padding: 14px; }
-            .hud-tr { display: none; }
-            .hud-bl { width: calc(100vw - 40px); left: 12px; bottom: 70px; }
-            .hud-bc { bottom: 12px; max-width: 90vw; }
-            .hud-br { max-width: calc(100vw - 40px); right: 12px; }
-            .mode-grid { grid-template-columns: 1fr; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- Ambient Background -->
+    <div class="grid-bg"></div>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
 
-<!-- Ambient Background -->
-<div class="grid-bg"></div>
-<div class="glow-orb glow-orb-1"></div>
-<div class="glow-orb glow-orb-2"></div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!--                          SETUP SCREEN                                 -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div id="setup-screen">
-
-    <!-- Brand Header -->
-    <div class="brand-header">
-        <div class="brand-tag"><span class="dot"></span> Impact Physics Engine v1.0</div>
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--                          SETUP SCREEN                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="setup-screen">
+      <!-- Brand Header -->
+      <div class="brand-header">
+        <div class="brand-tag">
+          <span class="dot"></span> Impact Physics Engine v1.0
+        </div>
         <h1 class="brand-title">MOP Penetration Simulator</h1>
-        <p class="brand-sub">Terminal ballistic impact physics, structural casing integrity analysis, and hydrodynamic penetration modeling with real-time 3D WebGL visualization.</p>
-    </div>
+        <p class="brand-sub">
+          Terminal ballistic impact physics, structural casing integrity
+          analysis, and hydrodynamic penetration modeling with real-time 3D
+          WebGL visualization.
+        </p>
+      </div>
 
-    <!-- Mode Selection Cards -->
-    <div class="mode-grid">
-        <div class="mode-card mode-1 selected" onclick="selectMode(1)" id="mode-card-1">
-            <div class="mode-icon">💣</div>
-            <div class="mode-label">GBU-57 MOP Standard</div>
-            <div class="mode-desc">Run preset scenarios for the Massive Ordnance Penetrator at multiple drop altitudes (subsonic to Mach 3+). Standard hardened concrete target.</div>
-            <div class="mode-badge">4 Preset Scenarios</div>
+      <!-- Mode Selection Cards -->
+      <div class="mode-grid">
+        <div
+          class="mode-card mode-1 selected"
+          onclick="selectMode(1)"
+          id="mode-card-1"
+        >
+          <div class="mode-icon">💣</div>
+          <div class="mode-label">GBU-57 MOP Standard</div>
+          <div class="mode-desc">
+            Run preset scenarios for the Massive Ordnance Penetrator at multiple
+            drop altitudes (subsonic to Mach 3+). Standard hardened concrete
+            target.
+          </div>
+          <div class="mode-badge">4 Preset Scenarios</div>
         </div>
         <div class="mode-card mode-2" onclick="selectMode(2)" id="mode-card-2">
-            <div class="mode-icon">⚙️</div>
-            <div class="mode-label">Custom Parameters</div>
-            <div class="mode-desc">Define custom projectile dimensions, material densities, casing yield strength, and test multiple impact velocities of your choice.</div>
-            <div class="mode-badge">Full Control</div>
+          <div class="mode-icon">⚙️</div>
+          <div class="mode-label">Custom Parameters</div>
+          <div class="mode-desc">
+            Define custom projectile dimensions, material densities, casing
+            yield strength, and test multiple impact velocities of your choice.
+          </div>
+          <div class="mode-badge">Full Control</div>
         </div>
         <div class="mode-card mode-3" onclick="selectMode(3)" id="mode-card-3">
-            <div class="mode-icon">🛰️</div>
-            <div class="mode-label">Orbital Kinetic Strike</div>
-            <div class="mode-desc">"Rods from God" — solid tungsten penetrators at orbital hypervelocity. Zero explosive mass, pure kinetic energy devastation.</div>
-            <div class="mode-badge">3 Hypervelocity Scenarios</div>
+          <div class="mode-icon">🛰️</div>
+          <div class="mode-label">Orbital Kinetic Strike</div>
+          <div class="mode-desc">
+            "Rods from God" — solid tungsten penetrators at orbital
+            hypervelocity. Zero explosive mass, pure kinetic energy devastation.
+          </div>
+          <div class="mode-badge">3 Hypervelocity Scenarios</div>
         </div>
-    </div>
+      </div>
 
-    <!-- Custom Parameters Panel (Mode 2 only) -->
-    <div id="custom-panel">
+      <!-- Custom Parameters Panel (Mode 2 only) -->
+      <div id="custom-panel">
         <div class="form-panel">
-            <h3>🔧 Custom Projectile & Target Parameters</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Projectile Name</label>
-                    <input type="text" id="cp-name" value="Custom_Penetrator" placeholder="e.g. Custom_Rod">
-                </div>
-                <div class="form-group">
-                    <label>Length <span class="unit">(meters)</span></label>
-                    <input type="number" id="cp-length" value="6.2" step="0.1" min="0.1">
-                </div>
-                <div class="form-group">
-                    <label>Diameter <span class="unit">(meters)</span></label>
-                    <input type="number" id="cp-diameter" value="0.8" step="0.01" min="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Total Mass <span class="unit">(kg)</span></label>
-                    <input type="number" id="cp-mass" value="13600" step="100" min="1">
-                </div>
-                <div class="form-group">
-                    <label>Explosive Mass <span class="unit">(kg, 0 = kinetic rod)</span></label>
-                    <input type="number" id="cp-explosive" value="2400" step="100" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Casing Density <span class="unit">(kg/m³; steel=7800, tungsten=19300)</span></label>
-                    <input type="number" id="cp-casing-density" value="7800" step="100" min="1">
-                </div>
-                <div class="form-group">
-                    <label>Yield Strength <span class="unit">(GPa; 0 = hydrodynamic erosion)</span></label>
-                    <input type="number" id="cp-yield" value="2.0" step="0.1" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Target Density <span class="unit">(kg/m³; concrete ≈ 2500)</span></label>
-                    <input type="number" id="cp-target-density" value="2500" step="100" min="1">
-                </div>
+          <h3>🔧 Custom Projectile & Target Parameters</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Projectile Name</label>
+              <input
+                type="text"
+                id="cp-name"
+                value="Custom_Penetrator"
+                placeholder="e.g. Custom_Rod"
+              />
             </div>
+            <div class="form-group">
+              <label>Length <span class="unit">(meters)</span></label>
+              <input
+                type="number"
+                id="cp-length"
+                value="6.2"
+                step="0.1"
+                min="0.1"
+              />
+            </div>
+            <div class="form-group">
+              <label>Diameter <span class="unit">(meters)</span></label>
+              <input
+                type="number"
+                id="cp-diameter"
+                value="0.8"
+                step="0.01"
+                min="0.01"
+              />
+            </div>
+            <div class="form-group">
+              <label>Total Mass <span class="unit">(kg)</span></label>
+              <input
+                type="number"
+                id="cp-mass"
+                value="13600"
+                step="100"
+                min="1"
+              />
+            </div>
+            <div class="form-group">
+              <label
+                >Explosive Mass
+                <span class="unit">(kg, 0 = kinetic rod)</span></label
+              >
+              <input
+                type="number"
+                id="cp-explosive"
+                value="2400"
+                step="100"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label
+                >Casing Density
+                <span class="unit"
+                  >(kg/m³; steel=7800, tungsten=19300)</span
+                ></label
+              >
+              <input
+                type="number"
+                id="cp-casing-density"
+                value="7800"
+                step="100"
+                min="1"
+              />
+            </div>
+            <div class="form-group">
+              <label
+                >Yield Strength
+                <span class="unit">(GPa; 0 = hydrodynamic erosion)</span></label
+              >
+              <input
+                type="number"
+                id="cp-yield"
+                value="2.0"
+                step="0.1"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label
+                >Target Density
+                <span class="unit">(kg/m³; concrete ≈ 2500)</span></label
+              >
+              <input
+                type="number"
+                id="cp-target-density"
+                value="2500"
+                step="100"
+                min="1"
+              />
+            </div>
+          </div>
 
-            <h3 style="margin-top: 24px;">🚀 Impact Velocities to Test</h3>
-            <div id="velocity-list">
-                <div class="velocity-row" style="margin-bottom: 8px;">
-                    <div class="form-group">
-                        <label>Velocity #1 <span class="unit">(m/s)</span></label>
-                        <input type="number" class="vel-input" value="1050" step="50" min="1">
-                    </div>
-                </div>
+          <h3 style="margin-top: 24px">🚀 Impact Velocities to Test</h3>
+          <div id="velocity-list">
+            <div class="velocity-row" style="margin-bottom: 8px">
+              <div class="form-group">
+                <label>Velocity #1 <span class="unit">(m/s)</span></label>
+                <input
+                  type="number"
+                  class="vel-input"
+                  value="1050"
+                  step="50"
+                  min="1"
+                />
+              </div>
             </div>
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <button class="add-vel-btn" onclick="addVelocity()">+ Add Velocity</button>
-            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px">
+            <button class="add-vel-btn" onclick="addVelocity()">
+              + Add Velocity
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- Launch Button -->
+      <button class="launch-btn" onclick="launchSimulation()">
+        <span style="font-size: 18px">▶</span> Launch Simulation
+      </button>
     </div>
 
-    <!-- Launch Button -->
-    <button class="launch-btn" onclick="launchSimulation()">
-        <span style="font-size: 18px;">▶</span> Launch Simulation
-    </button>
-</div>
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!--                        SIMULATION VIEW                                -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="sim-view">
+      <div id="canvas-container"></div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!--                        SIMULATION VIEW                                -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div id="sim-view">
-    <div id="canvas-container"></div>
-
-    <!-- Top-Left: Telemetry HUD -->
-    <div class="hud-panel hud-tl glass">
-        <div class="hud-section-title"><span class="dot"></span> Telemetry & Impact HUD <span style="margin-left:auto; font-size:9px; font-weight:600; color:var(--slate-500); letter-spacing:1px;">WebGL</span></div>
-        <div class="hud-row"><span class="label">Scenario:</span><span class="value" id="hud-scenario" style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</span></div>
-        <div class="hud-row"><span class="label">Impact Velocity:</span><span class="value cyan" id="hud-velocity">—</span></div>
-        <div class="hud-row"><span class="label">Mach Number:</span><span class="value" id="hud-mach">—</span></div>
-        <div class="hud-row"><span class="label">Dynamic Pressure:</span><span class="value amber" id="hud-pressure">—</span></div>
-        <div class="hud-row"><span class="label">Casing Yield Limit:</span><span class="value" id="hud-yield">—</span></div>
-        <hr class="hud-divider">
-        <div class="hud-row"><span class="label" style="font-weight:600;">Actual Penetration:</span><span class="value emerald" id="hud-depth">—</span></div>
-        <div class="hud-row"><span class="label">Shock Failure Chance:</span><span class="value rose" id="hud-shock">—</span></div>
+      <!-- Top-Left: Telemetry HUD -->
+      <div class="hud-panel hud-tl glass">
+        <div class="hud-section-title">
+          <span class="dot"></span> Telemetry & Impact HUD
+          <span
+            style="
+              margin-left: auto;
+              font-size: 9px;
+              font-weight: 600;
+              color: var(--slate-500);
+              letter-spacing: 1px;
+            "
+            >WebGL</span
+          >
+        </div>
+        <div class="hud-row">
+          <span class="label">Scenario:</span
+          ><span
+            class="value"
+            id="hud-scenario"
+            style="
+              max-width: 180px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            "
+            >—</span
+          >
+        </div>
+        <div class="hud-row">
+          <span class="label">Impact Velocity:</span
+          ><span class="value cyan" id="hud-velocity">—</span>
+        </div>
+        <div class="hud-row">
+          <span class="label">Mach Number:</span
+          ><span class="value" id="hud-mach">—</span>
+        </div>
+        <div class="hud-row">
+          <span class="label">Dynamic Pressure:</span
+          ><span class="value amber" id="hud-pressure">—</span>
+        </div>
+        <div class="hud-row">
+          <span class="label">Casing Yield Limit:</span
+          ><span class="value" id="hud-yield">—</span>
+        </div>
+        <hr class="hud-divider" />
+        <div class="hud-row">
+          <span class="label" style="font-weight: 600">Actual Penetration:</span
+          ><span class="value emerald" id="hud-depth">—</span>
+        </div>
+        <div class="hud-row">
+          <span class="label">Shock Failure Chance:</span
+          ><span class="value rose" id="hud-shock">—</span>
+        </div>
         <div id="hud-regime-badge" class="regime-badge"></div>
         <div id="hud-exp-badge" class="exp-badge"></div>
-    </div>
+      </div>
 
-    <!-- Top-Right: Controls -->
-    <div class="hud-panel hud-tr glass">
-        <div style="font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--slate-300); margin-bottom:10px;">Camera Viewpoints</div>
+      <!-- Top-Right: Controls -->
+      <div class="hud-panel hud-tr glass">
+        <div
+          style="
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--slate-300);
+            margin-bottom: 10px;
+          "
+        >
+          Camera Viewpoints
+        </div>
         <div class="cam-grid">
-            <button class="cam-btn" onclick="setView('iso')">Isometric</button>
-            <button class="cam-btn" onclick="setView('side')">Side Profile</button>
-            <button class="cam-btn" onclick="setView('top')">Top Surface</button>
-            <button class="cam-btn" onclick="setView('bottom')">Tunnel Bottom</button>
+          <button class="cam-btn" onclick="setView('iso')">Isometric</button>
+          <button class="cam-btn" onclick="setView('side')">
+            Side Profile
+          </button>
+          <button class="cam-btn" onclick="setView('top')">Top Surface</button>
+          <button class="cam-btn" onclick="setView('bottom')">
+            Tunnel Bottom
+          </button>
         </div>
-        <div style="display:flex; gap:6px; margin-bottom:12px;">
-            <button class="action-btn table-btn" onclick="toggleTable()" id="table-toggle-btn">📊 Results Table</button>
-            <button class="action-btn back-btn" onclick="backToSetup()">← Back</button>
+        <div style="display: flex; gap: 6px; margin-bottom: 12px">
+          <button
+            class="action-btn table-btn"
+            onclick="toggleTable()"
+            id="table-toggle-btn"
+          >
+            📊 Results Table
+          </button>
+          <button class="action-btn back-btn" onclick="backToSetup()">
+            ← Back
+          </button>
         </div>
-        <div class="info-text" id="info-text">Select a scenario below or adjust parametric sliders to visualize depth and shock dynamics.</div>
-    </div>
+        <div class="info-text" id="info-text">
+          Select a scenario below or adjust parametric sliders to visualize
+          depth and shock dynamics.
+        </div>
+      </div>
 
-    <!-- Bottom-Left: Parametric Sliders -->
-    <div class="hud-panel hud-bl glass">
-        <div class="hud-section-title"><span class="dot"></span> Parametric Tuning <span style="margin-left:auto; font-size:9px; font-weight:500; color:var(--slate-500);">Live</span></div>
+      <!-- Bottom-Left: Parametric Sliders -->
+      <div class="hud-panel hud-bl glass">
+        <div class="hud-section-title">
+          <span class="dot"></span> Parametric Tuning
+          <span
+            style="
+              margin-left: auto;
+              font-size: 9px;
+              font-weight: 500;
+              color: var(--slate-500);
+            "
+            >Live</span
+          >
+        </div>
         <div class="slider-group">
-            <div class="slider-header"><span class="label">Velocity (m/s):</span><span class="val" id="val-vel">1000</span></div>
-            <input type="range" id="slider-vel" min="100" max="8000" step="50" value="1000" oninput="onSliderChange()">
+          <div class="slider-header">
+            <span class="label">Velocity (m/s):</span
+            ><span class="val" id="val-vel">1000</span>
+          </div>
+          <input
+            type="range"
+            id="slider-vel"
+            min="100"
+            max="8000"
+            step="50"
+            value="1000"
+            oninput="onSliderChange()"
+          />
         </div>
         <div class="slider-group">
-            <div class="slider-header"><span class="label">Target Density (kg/m³):</span><span class="val" id="val-rho">2500</span></div>
-            <input type="range" id="slider-rho" min="1000" max="5000" step="100" value="2500" oninput="onSliderChange()">
+          <div class="slider-header">
+            <span class="label">Target Density (kg/m³):</span
+            ><span class="val" id="val-rho">2500</span>
+          </div>
+          <input
+            type="range"
+            id="slider-rho"
+            min="1000"
+            max="5000"
+            step="100"
+            value="2500"
+            oninput="onSliderChange()"
+          />
         </div>
-    </div>
+      </div>
 
-    <!-- Bottom-Center: Scenario Selector -->
-    <div class="hud-panel hud-bc glass" id="scenario-bar"></div>
+      <!-- Bottom-Center: Scenario Selector -->
+      <div class="hud-panel hud-bc glass" id="scenario-bar"></div>
 
-    <!-- Bottom-Right: Results Table Panel (toggleable) -->
-    <div class="hud-panel hud-br glass" id="results-panel">
-        <div style="font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--emerald-400); margin-bottom:12px;">📋 Simulation Results</div>
+      <!-- Bottom-Right: Results Table Panel (toggleable) -->
+      <div class="hud-panel hud-br glass" id="results-panel">
+        <div
+          style="
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--emerald-400);
+            margin-bottom: 12px;
+          "
+        >
+          📋 Simulation Results
+        </div>
         <div id="results-table-wrap"></div>
+      </div>
     </div>
-</div>
 
-<!-- Three.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-<script>
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SIMULATION ENGINE — Ported from C++ simulation.cpp
- * ═══════════════════════════════════════════════════════════════════════════ */
-const SPEED_OF_SOUND = 343.0;
+    <script>
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  SIMULATION ENGINE — Ported from C++ simulation.cpp
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      const SPEED_OF_SOUND = 343.0;
 
-function simulate(proj, target, scenario) {
-    const r = {};
-    r.scenario_name = scenario.name;
-    r.altitude_ft   = scenario.altitude_ft;
-    r.velocity      = scenario.velocity;
-    r.mach_number   = scenario.velocity / SPEED_OF_SOUND;
+      function simulate(proj, target, scenario) {
+        const r = {};
+        r.scenario_name = scenario.name;
+        r.altitude_ft = scenario.altitude_ft;
+        r.velocity = scenario.velocity;
+        r.mach_number = scenario.velocity / SPEED_OF_SOUND;
 
-    const v2 = scenario.velocity * scenario.velocity;
+        const v2 = scenario.velocity * scenario.velocity;
 
-    // 1. Kinetic Energy: E_k = 0.5 * m * v^2
-    r.kinetic_energy = 0.5 * proj.total_mass * v2;
+        // 1. Kinetic Energy: E_k = 0.5 * m * v^2
+        r.kinetic_energy = 0.5 * proj.total_mass * v2;
 
-    // 2. Dynamic Impact Pressure: P_dyn = 0.5 * rho_t * v^2
-    r.dynamic_pressure = 0.5 * target.density * v2;
+        // 2. Dynamic Impact Pressure: P_dyn = 0.5 * rho_t * v^2
+        r.dynamic_pressure = 0.5 * target.density * v2;
 
-    // 3. Rigid body penetration (Work-Energy deceleration model)
-    const area = Math.PI * Math.pow(proj.diameter / 2.0, 2);
-    const cd = 1.2;
-    const rt = 100.0e6; // 100 MPa target compressive bearing strength
-    r.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * cd)) *
-        Math.log(1.0 + (target.density * cd * v2) / (2.0 * rt));
+        // 3. Rigid body penetration (Work-Energy deceleration model)
+        const area = Math.PI * Math.pow(proj.diameter / 2.0, 2);
+        const cd = 1.2;
+        const rt = 100.0e6; // 100 MPa target compressive bearing strength
+        r.rigid_penetration =
+          (proj.total_mass / (2.0 * area * target.density * cd)) *
+          Math.log(1.0 + (target.density * cd * v2) / (2.0 * rt));
 
-    // 4. Alekseevskii-Tate Hydrodynamic Limit: P = L * sqrt(rho_p / rho_t)
-    r.hydro_penetration = proj.length * Math.sqrt(proj.casing_density / target.density);
+        // 4. Alekseevskii-Tate Hydrodynamic Limit: P = L * sqrt(rho_p / rho_t)
+        r.hydro_penetration =
+          proj.length * Math.sqrt(proj.casing_density / target.density);
 
-    // 5. Kinetic rod check and structural integrity evaluation
-    r.is_kinetic_rod = (proj.explosive_mass === 0 || proj.yield_strength === 0);
+        // 5. Kinetic rod check and structural integrity evaluation
+        r.is_kinetic_rod =
+          proj.explosive_mass === 0 || proj.yield_strength === 0;
 
-    if (r.is_kinetic_rod) {
-        r.casing_failure = (proj.yield_strength > 0 && r.dynamic_pressure > proj.yield_strength);
-        r.premature_detonation = false;
-        r.explosive_charge_survives = true;
-        r.shock_damage_prob_percent = 0.0;
-        r.regime = "Hypervelocity Kinetic Rod Penetration";
-        r.outcome_summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
-        r.actual_penetration_depth = (r.velocity > 1500.0 || proj.yield_strength === 0)
-            ? r.hydro_penetration : r.rigid_penetration;
-    } else if (r.dynamic_pressure > proj.yield_strength) {
-        r.casing_failure = true;
-        r.premature_detonation = true;
-        r.explosive_charge_survives = false;
-        r.shock_damage_prob_percent = 100.0;
-        r.regime = "Hydrodynamic / Hypervelocity";
-        r.outcome_summary = "Casing crushes/shatters; surface detonation";
-        r.actual_penetration_depth = r.hydro_penetration;
-    } else {
-        r.casing_failure = false;
-        const ratio = r.dynamic_pressure / proj.yield_strength;
-        r.shock_damage_prob_percent = Math.min(100.0, Math.max(0.0, Math.pow(ratio, 1.5) * 85.0));
-        r.explosive_charge_survives = (r.shock_damage_prob_percent < 50.0);
-        if (!r.explosive_charge_survives) {
+        if (r.is_kinetic_rod) {
+          r.casing_failure =
+            proj.yield_strength > 0 && r.dynamic_pressure > proj.yield_strength;
+          r.premature_detonation = false;
+          r.explosive_charge_survives = true;
+          r.shock_damage_prob_percent = 0.0;
+          r.regime = "Hypervelocity Kinetic Rod Penetration";
+          r.outcome_summary =
+            "Hydrodynamic erosion; deep kinetic cratering without explosives";
+          r.actual_penetration_depth =
+            r.velocity > 1500.0 || proj.yield_strength === 0
+              ? r.hydro_penetration
+              : r.rigid_penetration;
+        } else if (r.dynamic_pressure > proj.yield_strength) {
+          r.casing_failure = true;
+          r.premature_detonation = true;
+          r.explosive_charge_survives = false;
+          r.shock_damage_prob_percent = 100.0;
+          r.regime = "Hydrodynamic / Hypervelocity";
+          r.outcome_summary = "Casing crushes/shatters; surface detonation";
+          r.actual_penetration_depth = r.hydro_penetration;
+        } else {
+          r.casing_failure = false;
+          const ratio = r.dynamic_pressure / proj.yield_strength;
+          r.shock_damage_prob_percent = Math.min(
+            100.0,
+            Math.max(0.0, Math.pow(ratio, 1.5) * 85.0),
+          );
+          r.explosive_charge_survives = r.shock_damage_prob_percent < 50.0;
+          if (!r.explosive_charge_survives) {
             r.premature_detonation = true;
             r.regime = "Rigid Body (Shock Failure)";
-            r.outcome_summary = "Casing intact; shock damages explosive payload";
-        } else {
+            r.outcome_summary =
+              "Casing intact; shock damages explosive payload";
+          } else {
             r.premature_detonation = false;
             r.regime = "Rigid Body Penetration";
-            r.outcome_summary = "Casing intact; smart-fuze detonates deep underground";
+            r.outcome_summary =
+              "Casing intact; smart-fuze detonates deep underground";
+          }
+          r.actual_penetration_depth = r.rigid_penetration;
         }
-        r.actual_penetration_depth = r.rigid_penetration;
-    }
-    return r;
-}
+        return r;
+      }
 
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  SETUP SCREEN LOGIC
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      let selectedMode = 1;
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SETUP SCREEN LOGIC
- * ═══════════════════════════════════════════════════════════════════════════ */
-let selectedMode = 1;
+      function selectMode(mode) {
+        selectedMode = mode;
+        document
+          .querySelectorAll(".mode-card")
+          .forEach((c) => c.classList.remove("selected"));
+        document.getElementById("mode-card-" + mode).classList.add("selected");
+        const panel = document.getElementById("custom-panel");
+        if (mode === 2) {
+          panel.classList.add("open");
+        } else {
+          panel.classList.remove("open");
+        }
+      }
 
-function selectMode(mode) {
-    selectedMode = mode;
-    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
-    document.getElementById('mode-card-' + mode).classList.add('selected');
-    const panel = document.getElementById('custom-panel');
-    if (mode === 2) { panel.classList.add('open'); } else { panel.classList.remove('open'); }
-}
-
-function addVelocity() {
-    const list = document.getElementById('velocity-list');
-    const count = list.querySelectorAll('.velocity-row').length;
-    if (count >= 5) return;
-    const row = document.createElement('div');
-    row.className = 'velocity-row';
-    row.style.marginBottom = '8px';
-    row.innerHTML = `
+      function addVelocity() {
+        const list = document.getElementById("velocity-list");
+        const count = list.querySelectorAll(".velocity-row").length;
+        if (count >= 5) return;
+        const row = document.createElement("div");
+        row.className = "velocity-row";
+        row.style.marginBottom = "8px";
+        row.innerHTML = `
         <div class="form-group">
             <label>Velocity #${count + 1} <span class="unit">(m/s)</span></label>
             <input type="number" class="vel-input" value="2000" step="50" min="1">
         </div>
         <button class="remove-vel-btn" onclick="this.parentElement.remove()">✕</button>
     `;
-    list.appendChild(row);
-}
+        list.appendChild(row);
+      }
 
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  LAUNCH — Build data, run simulations, switch to 3D view
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      let simProjectile, simTarget, simResults, simScenarios;
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  LAUNCH — Build data, run simulations, switch to 3D view
- * ═══════════════════════════════════════════════════════════════════════════ */
-let simProjectile, simTarget, simResults, simScenarios;
+      function launchSimulation() {
+        // Build projectile & target from mode
+        let proj, target, scenarios;
 
-function launchSimulation() {
-    // Build projectile & target from mode
-    let proj, target, scenarios;
+        target = { name: "High-Quality Hardened Concrete", density: 2500.0 };
 
-    target = { name: "High-Quality Hardened Concrete", density: 2500.0 };
-
-    if (selectedMode === 1) {
-        proj = {
+        if (selectedMode === 1) {
+          proj = {
             name: "GBU-57 Massive Ordnance Penetrator (MOP)",
-            length: 6.2, diameter: 0.8, total_mass: 13600.0,
-            explosive_mass: 2400.0, casing_density: 7800.0, yield_strength: 2.0e9
-        };
-        scenarios = [
-            { name: "50,000 ft Drop",       altitude_ft: 50000.0, velocity: 1050.0 },
-            { name: "25,000 ft Drop",       altitude_ft: 25000.0, velocity: 950.0 },
-            { name: "18,000 ft Drop",       altitude_ft: 18000.0, velocity: 880.0 },
-            { name: "Subsonic Operational", altitude_ft: 15.0,    velocity: 340.0 }
-        ];
-    } else if (selectedMode === 2) {
-        const yieldGPa = parseFloat(document.getElementById('cp-yield').value) || 0;
-        proj = {
-            name: document.getElementById('cp-name').value || "Custom_Penetrator",
-            length:         parseFloat(document.getElementById('cp-length').value)         || 6.2,
-            diameter:       parseFloat(document.getElementById('cp-diameter').value)       || 0.8,
-            total_mass:     parseFloat(document.getElementById('cp-mass').value)           || 13600,
-            explosive_mass: parseFloat(document.getElementById('cp-explosive').value)      || 0,
-            casing_density: parseFloat(document.getElementById('cp-casing-density').value) || 7800,
-            yield_strength: yieldGPa * 1e9
-        };
-        target.density = parseFloat(document.getElementById('cp-target-density').value) || 2500;
-        scenarios = [];
-        const velInputs = document.querySelectorAll('.vel-input');
-        velInputs.forEach((inp, i) => {
+            length: 6.2,
+            diameter: 0.8,
+            total_mass: 13600.0,
+            explosive_mass: 2400.0,
+            casing_density: 7800.0,
+            yield_strength: 2.0e9,
+          };
+          scenarios = [
+            { name: "50,000 ft Drop", altitude_ft: 50000.0, velocity: 1050.0 },
+            { name: "25,000 ft Drop", altitude_ft: 25000.0, velocity: 950.0 },
+            { name: "18,000 ft Drop", altitude_ft: 18000.0, velocity: 880.0 },
+            {
+              name: "Subsonic Operational",
+              altitude_ft: 15.0,
+              velocity: 340.0,
+            },
+          ];
+        } else if (selectedMode === 2) {
+          const yieldGPa =
+            parseFloat(document.getElementById("cp-yield").value) || 0;
+          proj = {
+            name:
+              document.getElementById("cp-name").value || "Custom_Penetrator",
+            length:
+              parseFloat(document.getElementById("cp-length").value) || 6.2,
+            diameter:
+              parseFloat(document.getElementById("cp-diameter").value) || 0.8,
+            total_mass:
+              parseFloat(document.getElementById("cp-mass").value) || 13600,
+            explosive_mass:
+              parseFloat(document.getElementById("cp-explosive").value) || 0,
+            casing_density:
+              parseFloat(document.getElementById("cp-casing-density").value) ||
+              7800,
+            yield_strength: yieldGPa * 1e9,
+          };
+          target.density =
+            parseFloat(document.getElementById("cp-target-density").value) ||
+            2500;
+          scenarios = [];
+          const velInputs = document.querySelectorAll(".vel-input");
+          velInputs.forEach((inp, i) => {
             const v = parseFloat(inp.value);
-            if (v > 0) scenarios.push({ name: `Custom #${i + 1} (${v} m/s)`, altitude_ft: 0, velocity: v });
-        });
-        if (scenarios.length === 0) scenarios.push({ name: "Custom Default", altitude_ft: 0, velocity: 2000 });
-    } else {
-        proj = {
+            if (v > 0)
+              scenarios.push({
+                name: `Custom #${i + 1} (${v} m/s)`,
+                altitude_ft: 0,
+                velocity: v,
+              });
+          });
+          if (scenarios.length === 0)
+            scenarios.push({
+              name: "Custom Default",
+              altitude_ft: 0,
+              velocity: 2000,
+            });
+        } else {
+          proj = {
             name: "Orbital Tungsten Kinetic Penetrator (Rods from God)",
-            length: 6.1, diameter: 0.3, total_mass: 8300.0,
-            explosive_mass: 0.0, casing_density: 19300.0, yield_strength: 0.0
-        };
-        scenarios = [
-            { name: "LEO Orbital Strike (Mach 10)",     altitude_ft: 100000.0, velocity: 3400.0 },
-            { name: "Deep Orbital Strike (Mach 15)",    altitude_ft: 200000.0, velocity: 5100.0 },
-            { name: "Hypervelocity Terminal (Mach 22)", altitude_ft: 300000.0, velocity: 7500.0 }
-        ];
-    }
+            length: 6.1,
+            diameter: 0.3,
+            total_mass: 8300.0,
+            explosive_mass: 0.0,
+            casing_density: 19300.0,
+            yield_strength: 0.0,
+          };
+          scenarios = [
+            {
+              name: "LEO Orbital Strike (Mach 10)",
+              altitude_ft: 100000.0,
+              velocity: 3400.0,
+            },
+            {
+              name: "Deep Orbital Strike (Mach 15)",
+              altitude_ft: 200000.0,
+              velocity: 5100.0,
+            },
+            {
+              name: "Hypervelocity Terminal (Mach 22)",
+              altitude_ft: 300000.0,
+              velocity: 7500.0,
+            },
+          ];
+        }
 
-    // Run simulations
-    const results = scenarios.map(sc => simulate(proj, target, sc));
+        // Run simulations
+        const results = scenarios.map((sc) => simulate(proj, target, sc));
 
-    simProjectile = proj;
-    simTarget     = target;
-    simResults    = results;
-    simScenarios  = scenarios;
+        simProjectile = proj;
+        simTarget = target;
+        simResults = results;
+        simScenarios = scenarios;
 
-    // Switch to sim view
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('sim-view').classList.add('active');
+        // Switch to sim view
+        document.getElementById("setup-screen").style.display = "none";
+        document.getElementById("sim-view").classList.add("active");
 
-    initThreeScene(proj, target, results);
-}
+        initThreeScene(proj, target, results);
+      }
 
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  THREE.JS 3D VISUALIZATION
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      let scene, camera, renderer, controls;
+      let targetBlock, projectile, shockwave, crater, rulerGroup;
+      let currentData;
+      let threeInitialized = false;
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  THREE.JS 3D VISUALIZATION
- * ═══════════════════════════════════════════════════════════════════════════ */
-let scene, camera, renderer, controls;
-let targetBlock, projectile, shockwave, crater, rulerGroup;
-let currentData;
-let threeInitialized = false;
+      function initThreeScene(proj, target, results) {
+        const container = document.getElementById("canvas-container");
 
-function initThreeScene(proj, target, results) {
-    const container = document.getElementById('canvas-container');
+        if (threeInitialized) {
+          // Dispose previous
+          while (container.firstChild)
+            container.removeChild(container.firstChild);
+          if (renderer) renderer.dispose();
+        }
 
-    if (threeInitialized) {
-        // Dispose previous
-        while (container.firstChild) container.removeChild(container.firstChild);
-        if (renderer) renderer.dispose();
-    }
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050a12);
+        scene.fog = new THREE.FogExp2(0x050a12, 0.012);
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050a12);
-    scene.fog = new THREE.FogExp2(0x050a12, 0.012);
+        camera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1500,
+        );
+        camera.position.set(35, 20, 45);
 
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1500);
-    camera.position.set(35, 20, 45);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, -15, 0);
 
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.target.set(0, -15, 0);
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight.position.set(30, 60, 30);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        const ptLight = new THREE.PointLight(0x38bdf8, 2, 80);
+        ptLight.position.set(-15, 20, -15);
+        scene.add(ptLight);
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    dirLight.position.set(30, 60, 30);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
-    const ptLight = new THREE.PointLight(0x38bdf8, 2, 80);
-    ptLight.position.set(-15, 20, -15);
-    scene.add(ptLight);
+        // Grid
+        const grid = new THREE.GridHelper(100, 50, 0x0ea5e9, 0x1e293b);
+        scene.add(grid);
 
-    // Grid
-    const grid = new THREE.GridHelper(100, 50, 0x0ea5e9, 0x1e293b);
-    scene.add(grid);
+        // Target Block
+        const blockGeom = new THREE.BoxGeometry(24, 70, 24);
+        const blockMat = new THREE.MeshPhysicalMaterial({
+          color: 0x334155,
+          transparent: true,
+          opacity: 0.28,
+          roughness: 0.6,
+          metalness: 0.2,
+          depthWrite: false,
+        });
+        targetBlock = new THREE.Mesh(blockGeom, blockMat);
+        targetBlock.position.set(0, -35, 0);
+        scene.add(targetBlock);
+        targetBlock.add(
+          new THREE.LineSegments(
+            new THREE.EdgesGeometry(blockGeom),
+            new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.5 }),
+          ),
+        );
 
-    // Target Block
-    const blockGeom = new THREE.BoxGeometry(24, 70, 24);
-    const blockMat = new THREE.MeshPhysicalMaterial({
-        color: 0x334155, transparent: true, opacity: 0.28,
-        roughness: 0.6, metalness: 0.2, depthWrite: false
-    });
-    targetBlock = new THREE.Mesh(blockGeom, blockMat);
-    targetBlock.position.set(0, -35, 0);
-    scene.add(targetBlock);
-    targetBlock.add(new THREE.LineSegments(
-        new THREE.EdgesGeometry(blockGeom),
-        new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.5 })
-    ));
+        // Projectile
+        const projGeom = new THREE.CylinderGeometry(
+          proj.diameter / 2,
+          proj.diameter / 2,
+          proj.length,
+          32,
+        );
+        const projMat = new THREE.MeshStandardMaterial({
+          color: 0xf8fafc,
+          metalness: 0.9,
+          roughness: 0.15,
+        });
+        projectile = new THREE.Mesh(projGeom, projMat);
+        scene.add(projectile);
 
-    // Projectile
-    const projGeom = new THREE.CylinderGeometry(proj.diameter / 2, proj.diameter / 2, proj.length, 32);
-    const projMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.15 });
-    projectile = new THREE.Mesh(projGeom, projMat);
-    scene.add(projectile);
+        // Crater / Tunnel
+        const craterGeom = new THREE.CylinderGeometry(1.0, 0.5, 10, 32);
+        const craterMat = new THREE.MeshBasicMaterial({
+          color: 0x06b6d4,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.75,
+        });
+        crater = new THREE.Mesh(craterGeom, craterMat);
+        scene.add(crater);
 
-    // Crater / Tunnel
-    const craterGeom = new THREE.CylinderGeometry(1.0, 0.5, 10, 32);
-    const craterMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.75 });
-    crater = new THREE.Mesh(craterGeom, craterMat);
-    scene.add(crater);
+        // Shockwave
+        const shockGeom = new THREE.SphereGeometry(3.5, 32, 32);
+        const shockMat = new THREE.MeshBasicMaterial({
+          color: 0xef4444,
+          transparent: true,
+          opacity: 0.45,
+          wireframe: true,
+        });
+        shockwave = new THREE.Mesh(shockGeom, shockMat);
+        scene.add(shockwave);
 
-    // Shockwave
-    const shockGeom = new THREE.SphereGeometry(3.5, 32, 32);
-    const shockMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.45, wireframe: true });
-    shockwave = new THREE.Mesh(shockGeom, shockMat);
-    scene.add(shockwave);
+        // Ruler
+        rulerGroup = new THREE.Group();
+        const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
+        for (let d = 0; d <= 80; d += 10) {
+          const g = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(12.5, -d, 12.5),
+            new THREE.Vector3(14.5, -d, 12.5),
+          ]);
+          rulerGroup.add(new THREE.Line(g, rulerMat));
+        }
+        scene.add(rulerGroup);
 
-    // Ruler
-    rulerGroup = new THREE.Group();
-    const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
-    for (let d = 0; d <= 80; d += 10) {
-        const g = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(12.5, -d, 12.5), new THREE.Vector3(14.5, -d, 12.5)
-        ]);
-        rulerGroup.add(new THREE.Line(g, rulerMat));
-    }
-    scene.add(rulerGroup);
+        // Build scenario bar & results table
+        buildScenarioBar(results);
+        buildResultsTable(proj, target, results);
 
-    // Build scenario bar & results table
-    buildScenarioBar(results);
-    buildResultsTable(proj, target, results);
+        window.addEventListener("resize", onResize);
+        threeInitialized = true;
 
-    window.addEventListener('resize', onResize);
-    threeInitialized = true;
+        // Select first scenario
+        selectScenario(0);
+        animate();
+      }
 
-    // Select first scenario
-    selectScenario(0);
-    animate();
-}
+      function onResize() {
+        if (!camera || !renderer) return;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
 
-function onResize() {
-    if (!camera || !renderer) return;
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+      function animate() {
+        requestAnimationFrame(animate);
+        if (shockwave && shockwave.visible) {
+          shockwave.rotation.y += 0.015;
+          shockwave.rotation.x += 0.008;
+        }
+        if (controls) controls.update();
+        if (renderer && scene && camera) renderer.render(scene, camera);
+      }
 
-function animate() {
-    requestAnimationFrame(animate);
-    if (shockwave && shockwave.visible) {
-        shockwave.rotation.y += 0.015;
-        shockwave.rotation.x += 0.008;
-    }
-    if (controls) controls.update();
-    if (renderer && scene && camera) renderer.render(scene, camera);
-}
+      function setView(mode) {
+        if (!camera || !controls) return;
+        if (mode === "iso") {
+          camera.position.set(35, 20, 45);
+          controls.target.set(0, -15, 0);
+        }
+        if (mode === "side") {
+          camera.position.set(60, -15, 0);
+          controls.target.set(0, -15, 0);
+        }
+        if (mode === "top") {
+          camera.position.set(0, 70, 1);
+          controls.target.set(0, 0, 0);
+        }
+        if (mode === "bottom") {
+          camera.position.set(20, -55, 25);
+          controls.target.set(0, -35, 0);
+        }
+      }
 
-function setView(mode) {
-    if (!camera || !controls) return;
-    if (mode === 'iso')    { camera.position.set(35, 20, 45);   controls.target.set(0, -15, 0); }
-    if (mode === 'side')   { camera.position.set(60, -15, 0);   controls.target.set(0, -15, 0); }
-    if (mode === 'top')    { camera.position.set(0, 70, 1);     controls.target.set(0, 0, 0); }
-    if (mode === 'bottom') { camera.position.set(20, -55, 25);  controls.target.set(0, -35, 0); }
-}
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  UPDATE 3D VISUALS & HUD
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      function updateVisuals(data) {
+        currentData = data;
+        const $ = (id) => document.getElementById(id);
 
+        $("hud-scenario").textContent = data.scenario_name;
+        $("hud-velocity").textContent = data.velocity.toFixed(1) + " m/s";
+        $("hud-mach").textContent = "Mach " + data.mach_number.toFixed(1);
+        $("hud-pressure").textContent =
+          (data.dynamic_pressure / 1e9).toFixed(2) + " GPa";
+        $("hud-yield").textContent =
+          (simProjectile.yield_strength / 1e9).toFixed(2) + " GPa";
+        $("hud-depth").textContent =
+          data.actual_penetration_depth.toFixed(2) +
+          " m (" +
+          (data.actual_penetration_depth * 3.28084).toFixed(1) +
+          " ft)";
+        $("hud-shock").textContent =
+          data.shock_damage_prob_percent.toFixed(1) + "%";
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  UPDATE 3D VISUALS & HUD
- * ═══════════════════════════════════════════════════════════════════════════ */
-function updateVisuals(data) {
-    currentData = data;
-    const $ = id => document.getElementById(id);
+        const regBadge = $("hud-regime-badge");
+        const expBadge = $("hud-exp-badge");
 
-    $('hud-scenario').textContent  = data.scenario_name;
-    $('hud-velocity').textContent  = data.velocity.toFixed(1) + ' m/s';
-    $('hud-mach').textContent      = 'Mach ' + data.mach_number.toFixed(1);
-    $('hud-pressure').textContent  = (data.dynamic_pressure / 1e9).toFixed(2) + ' GPa';
-    $('hud-yield').textContent     = (simProjectile.yield_strength / 1e9).toFixed(2) + ' GPa';
-    $('hud-depth').textContent     = data.actual_penetration_depth.toFixed(2) + ' m (' + (data.actual_penetration_depth * 3.28084).toFixed(1) + ' ft)';
-    $('hud-shock').textContent     = data.shock_damage_prob_percent.toFixed(1) + '%';
+        // Dynamic target block
+        const bh = Math.max(30, data.actual_penetration_depth * 1.35);
+        targetBlock.scale.set(1, bh / 70.0, 1);
+        targetBlock.position.set(0, -bh / 2, 0);
 
-    const regBadge = $('hud-regime-badge');
-    const expBadge = $('hud-exp-badge');
+        const pLen = simProjectile.length;
 
-    // Dynamic target block
-    const bh = Math.max(30, data.actual_penetration_depth * 1.35);
-    targetBlock.scale.set(1, bh / 70.0, 1);
-    targetBlock.position.set(0, -bh / 2, 0);
+        if (data.is_kinetic_rod) {
+          regBadge.textContent = "HYPERVELOCITY KINETIC ROD MODE";
+          regBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.35);";
+          expBadge.textContent = "PAYLOAD: ZERO EXPLOSIVE MASS (SOLID ROD)";
+          expBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(30,41,59,0.8);color:#cbd5e1;border:1px solid rgba(255,255,255,0.08);";
 
-    const pLen = simProjectile.length;
+          projectile.position.set(
+            0,
+            -data.actual_penetration_depth + pLen / 2,
+            0,
+          );
+          projectile.scale.set(1, 1, 1);
+          projectile.material.color.setHex(0xc084fc);
+          projectile.material.emissive = new THREE.Color(0x581c87);
 
-    if (data.is_kinetic_rod) {
-        regBadge.textContent = 'HYPERVELOCITY KINETIC ROD MODE';
-        regBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.35);';
-        expBadge.textContent = 'PAYLOAD: ZERO EXPLOSIVE MASS (SOLID ROD)';
-        expBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(30,41,59,0.8);color:#cbd5e1;border:1px solid rgba(255,255,255,0.08);';
+          crater.visible = true;
+          crater.scale.set(1.2, data.actual_penetration_depth / 10.0, 1.2);
+          crater.position.set(0, -data.actual_penetration_depth / 2, 0);
+          crater.material.color.setHex(0xa855f7);
 
-        projectile.position.set(0, -data.actual_penetration_depth + pLen / 2, 0);
-        projectile.scale.set(1, 1, 1);
-        projectile.material.color.setHex(0xc084fc);
-        projectile.material.emissive = new THREE.Color(0x581c87);
+          shockwave.visible = true;
+          shockwave.material.color.setHex(0xa855f7);
+          shockwave.scale.set(2.2, 1.2, 2.2);
 
-        crater.visible = true;
-        crater.scale.set(1.2, data.actual_penetration_depth / 10.0, 1.2);
-        crater.position.set(0, -data.actual_penetration_depth / 2, 0);
-        crater.material.color.setHex(0xa855f7);
-
-        shockwave.visible = true;
-        shockwave.material.color.setHex(0xa855f7);
-        shockwave.scale.set(2.2, 1.2, 2.2);
-
-        $('info-text').innerHTML =
+          $("info-text").innerHTML =
             `<span style="color:#c084fc;font-weight:700;">Kinetic Orbital Bombardment Regime</span><br>` +
             `Solid tungsten penetrator at hypervelocity generates hydrodynamic plasma erosion. Depth: <span style="color:white;font-family:var(--font-mono);">${data.actual_penetration_depth.toFixed(1)}m</span>.`;
+        } else if (data.casing_failure || !data.explosive_charge_survives) {
+          const label = data.casing_failure
+            ? "CASING SHATTER / SURFACE DETONATION"
+            : "IMPACT SHOCK FUZE FAILURE";
+          regBadge.textContent = label;
+          regBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(244,63,94,0.15);color:#fb7185;border:1px solid rgba(244,63,94,0.35);";
 
-    } else if (data.casing_failure || !data.explosive_charge_survives) {
-        const label = data.casing_failure ? 'CASING SHATTER / SURFACE DETONATION' : 'IMPACT SHOCK FUZE FAILURE';
-        regBadge.textContent = label;
-        regBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(244,63,94,0.15);color:#fb7185;border:1px solid rgba(244,63,94,0.35);';
-
-        const expLabel = data.casing_failure
-            ? 'PAYLOAD DESTROYED BY STRUCTURAL CRUSH'
+          const expLabel = data.casing_failure
+            ? "PAYLOAD DESTROYED BY STRUCTURAL CRUSH"
             : `EXPLOSIVE CHARGE FAILED (SHOCK: ${data.shock_damage_prob_percent.toFixed(0)}%)`;
-        expBadge.textContent = expLabel;
-        expBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(244,63,94,0.08);color:#fda4af;border:1px solid rgba(244,63,94,0.2);';
+          expBadge.textContent = expLabel;
+          expBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(244,63,94,0.08);color:#fda4af;border:1px solid rgba(244,63,94,0.2);";
 
-        projectile.position.set(0, -data.actual_penetration_depth / 2, 0);
-        projectile.scale.set(1.8, 0.4, 1.8);
-        projectile.material.color.setHex(0xf87171);
-        projectile.material.emissive = new THREE.Color(0x7f1d1d);
+          projectile.position.set(0, -data.actual_penetration_depth / 2, 0);
+          projectile.scale.set(1.8, 0.4, 1.8);
+          projectile.material.color.setHex(0xf87171);
+          projectile.material.emissive = new THREE.Color(0x7f1d1d);
 
-        crater.visible = true;
-        crater.scale.set(1.5, data.actual_penetration_depth / 10.0, 1.5);
-        crater.position.set(0, -data.actual_penetration_depth / 2, 0);
-        crater.material.color.setHex(0xef4444);
+          crater.visible = true;
+          crater.scale.set(1.5, data.actual_penetration_depth / 10.0, 1.5);
+          crater.position.set(0, -data.actual_penetration_depth / 2, 0);
+          crater.material.color.setHex(0xef4444);
 
-        shockwave.visible = true;
-        shockwave.material.color.setHex(0xef4444);
-        shockwave.scale.set(1.8, 0.8, 1.8);
+          shockwave.visible = true;
+          shockwave.material.color.setHex(0xef4444);
+          shockwave.scale.set(1.8, 0.8, 1.8);
 
-        $('info-text').innerHTML =
+          $("info-text").innerHTML =
             `<span style="color:#fb7185;font-weight:700;">Structural / Shock Failure</span><br>` +
-            `Dynamic pressure (${(data.dynamic_pressure/1e9).toFixed(2)} GPa) fractures casing or fuze. Penetration halted at <span style="color:white;font-family:var(--font-mono);">${data.actual_penetration_depth.toFixed(1)}m</span>.`;
+            `Dynamic pressure (${(data.dynamic_pressure / 1e9).toFixed(2)} GPa) fractures casing or fuze. Penetration halted at <span style="color:white;font-family:var(--font-mono);">${data.actual_penetration_depth.toFixed(1)}m</span>.`;
+        } else {
+          regBadge.textContent = "RIGID DRILL PENETRATION (SUCCESS)";
+          regBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.35);";
 
-    } else {
-        regBadge.textContent = 'RIGID DRILL PENETRATION (SUCCESS)';
-        regBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.35);';
+          expBadge.textContent = `PAYLOAD SURVIVED (SHOCK RISK: ${data.shock_damage_prob_percent.toFixed(1)}%)`;
+          expBadge.style.cssText =
+            "text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(52,211,153,0.08);color:#86efac;border:1px solid rgba(52,211,153,0.2);";
 
-        expBadge.textContent = `PAYLOAD SURVIVED (SHOCK RISK: ${data.shock_damage_prob_percent.toFixed(1)}%)`;
-        expBadge.style.cssText = 'text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;border-radius:10px;margin-top:6px;background:rgba(52,211,153,0.08);color:#86efac;border:1px solid rgba(52,211,153,0.2);';
+          projectile.position.set(
+            0,
+            -data.actual_penetration_depth + pLen / 2,
+            0,
+          );
+          projectile.scale.set(1, 1, 1);
+          projectile.material.color.setHex(0x38bdf8);
+          projectile.material.emissive = new THREE.Color(0x0284c7);
 
-        projectile.position.set(0, -data.actual_penetration_depth + pLen / 2, 0);
-        projectile.scale.set(1, 1, 1);
-        projectile.material.color.setHex(0x38bdf8);
-        projectile.material.emissive = new THREE.Color(0x0284c7);
+          crater.visible = true;
+          crater.scale.set(0.8, data.actual_penetration_depth / 10.0, 0.8);
+          crater.position.set(0, -data.actual_penetration_depth / 2, 0);
+          crater.material.color.setHex(0x06b6d4);
 
-        crater.visible = true;
-        crater.scale.set(0.8, data.actual_penetration_depth / 10.0, 0.8);
-        crater.position.set(0, -data.actual_penetration_depth / 2, 0);
-        crater.material.color.setHex(0x06b6d4);
+          shockwave.visible = false;
 
-        shockwave.visible = false;
-
-        $('info-text').innerHTML =
+          $("info-text").innerHTML =
             `<span style="color:#34d399;font-weight:700;">Deep Underground Detonation</span><br>` +
             `Casing withstands pressure and payload survives shock (${data.shock_damage_prob_percent.toFixed(1)}% risk). Drills to <span style="color:white;font-family:var(--font-mono);">${data.actual_penetration_depth.toFixed(1)}m</span> before detonating.`;
-    }
-}
+        }
+      }
 
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  SCENARIO BAR & SELECTION
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      function buildScenarioBar(results) {
+        const bar = document.getElementById("scenario-bar");
+        bar.innerHTML = "";
+        results.forEach((r, i) => {
+          const btn = document.createElement("button");
+          btn.className = "sc-btn";
+          btn.id = "sc-btn-" + i;
+          btn.textContent = r.scenario_name;
+          btn.onclick = () => selectScenario(i);
+          bar.appendChild(btn);
+        });
+      }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SCENARIO BAR & SELECTION
- * ═══════════════════════════════════════════════════════════════════════════ */
-function buildScenarioBar(results) {
-    const bar = document.getElementById('scenario-bar');
-    bar.innerHTML = '';
-    results.forEach((r, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'sc-btn';
-        btn.id = 'sc-btn-' + i;
-        btn.textContent = r.scenario_name;
-        btn.onclick = () => selectScenario(i);
-        bar.appendChild(btn);
-    });
-}
+      function selectScenario(index) {
+        const data = simResults[index];
+        document.querySelectorAll(".sc-btn").forEach((b, i) => {
+          b.classList.toggle("active", i === index);
+        });
+        document.getElementById("slider-vel").value = data.velocity;
+        document.getElementById("val-vel").textContent = Math.round(
+          data.velocity,
+        );
+        document.getElementById("slider-rho").value = simTarget.density;
+        document.getElementById("val-rho").textContent = Math.round(
+          simTarget.density,
+        );
+        updateVisuals(data);
+      }
 
-function selectScenario(index) {
-    const data = simResults[index];
-    document.querySelectorAll('.sc-btn').forEach((b, i) => {
-        b.classList.toggle('active', i === index);
-    });
-    document.getElementById('slider-vel').value = data.velocity;
-    document.getElementById('val-vel').textContent = Math.round(data.velocity);
-    document.getElementById('slider-rho').value = simTarget.density;
-    document.getElementById('val-rho').textContent = Math.round(simTarget.density);
-    updateVisuals(data);
-}
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  PARAMETRIC LIVE TUNING
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      function onSliderChange() {
+        const vel = parseFloat(document.getElementById("slider-vel").value);
+        const rho = parseFloat(document.getElementById("slider-rho").value);
+        document.getElementById("val-vel").textContent = Math.round(vel);
+        document.getElementById("val-rho").textContent = Math.round(rho);
 
+        // Re-run simulation with slider values
+        const tempTarget = { name: simTarget.name, density: rho };
+        const tempScenario = {
+          name: "Live Parametric Tuning",
+          altitude_ft: 0,
+          velocity: vel,
+        };
+        const result = simulate(simProjectile, tempTarget, tempScenario);
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  PARAMETRIC LIVE TUNING
- * ═══════════════════════════════════════════════════════════════════════════ */
-function onSliderChange() {
-    const vel = parseFloat(document.getElementById('slider-vel').value);
-    const rho = parseFloat(document.getElementById('slider-rho').value);
-    document.getElementById('val-vel').textContent = Math.round(vel);
-    document.getElementById('val-rho').textContent = Math.round(rho);
+        // Deselect scenario buttons
+        document
+          .querySelectorAll(".sc-btn")
+          .forEach((b) => b.classList.remove("active"));
+        updateVisuals(result);
+      }
 
-    // Re-run simulation with slider values
-    const tempTarget = { name: simTarget.name, density: rho };
-    const tempScenario = { name: "Live Parametric Tuning", altitude_ft: 0, velocity: vel };
-    const result = simulate(simProjectile, tempTarget, tempScenario);
-
-    // Deselect scenario buttons
-    document.querySelectorAll('.sc-btn').forEach(b => b.classList.remove('active'));
-    updateVisuals(result);
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  RESULTS TABLE
- * ═══════════════════════════════════════════════════════════════════════════ */
-function buildResultsTable(proj, target, results) {
-    let html = `
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  RESULTS TABLE
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      function buildResultsTable(proj, target, results) {
+        let html = `
         <div style="font-size:11px;color:var(--slate-400);margin-bottom:10px;line-height:1.6;">
             <strong style="color:var(--slate-200);">${proj.name}</strong><br>
-            L=${proj.length}m · d=${proj.diameter}m · m=${proj.total_mass}kg · ρ<sub>p</sub>=${proj.casing_density} kg/m³ · σ<sub>y</sub>=${(proj.yield_strength/1e9).toFixed(1)} GPa<br>
+            L=${proj.length}m · d=${proj.diameter}m · m=${proj.total_mass}kg · ρ<sub>p</sub>=${proj.casing_density} kg/m³ · σ<sub>y</sub>=${(proj.yield_strength / 1e9).toFixed(1)} GPa<br>
             Target: ${target.name} (ρ<sub>t</sub>=${target.density} kg/m³)
         </div>
         <table class="results-table">
@@ -1048,38 +1743,41 @@ function buildResultsTable(proj, target, results) {
             <th>Scenario</th><th>Vel</th><th>Mach</th><th>P<sub>dyn</sub></th><th>Depth</th><th>Shock</th><th>Regime</th>
         </tr></thead><tbody>`;
 
-    results.forEach(r => {
-        const depthColor = r.explosive_charge_survives && !r.casing_failure ? 'var(--emerald-400)' :
-                           r.is_kinetic_rod ? 'var(--purple-400)' : 'var(--rose-400)';
-        html += `<tr>
+        results.forEach((r) => {
+          const depthColor =
+            r.explosive_charge_survives && !r.casing_failure
+              ? "var(--emerald-400)"
+              : r.is_kinetic_rod
+                ? "var(--purple-400)"
+                : "var(--rose-400)";
+          html += `<tr>
             <td style="color:var(--slate-100);font-family:var(--font-sans);font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.scenario_name}</td>
             <td>${r.velocity.toFixed(0)} m/s</td>
             <td>${r.mach_number.toFixed(1)}</td>
-            <td>${(r.dynamic_pressure/1e9).toFixed(2)} GPa</td>
+            <td>${(r.dynamic_pressure / 1e9).toFixed(2)} GPa</td>
             <td style="color:${depthColor};font-weight:700;">${r.actual_penetration_depth.toFixed(1)} m</td>
             <td style="color:var(--rose-400);">${r.shock_damage_prob_percent.toFixed(0)}%</td>
             <td style="font-family:var(--font-sans);font-size:9px;color:var(--slate-400);">${r.regime}</td>
         </tr>`;
-    });
+        });
 
-    html += '</tbody></table>';
-    document.getElementById('results-table-wrap').innerHTML = html;
-}
+        html += "</tbody></table>";
+        document.getElementById("results-table-wrap").innerHTML = html;
+      }
 
-function toggleTable() {
-    const panel = document.getElementById('results-panel');
-    panel.classList.toggle('open');
-}
+      function toggleTable() {
+        const panel = document.getElementById("results-panel");
+        panel.classList.toggle("open");
+      }
 
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  BACK TO SETUP
- * ═══════════════════════════════════════════════════════════════════════════ */
-function backToSetup() {
-    document.getElementById('sim-view').classList.remove('active');
-    document.getElementById('setup-screen').style.display = 'flex';
-    document.getElementById('results-panel').classList.remove('open');
-}
-</script>
-</body>
+      /* ═══════════════════════════════════════════════════════════════════════════
+       *  BACK TO SETUP
+       * ═══════════════════════════════════════════════════════════════════════════ */
+      function backToSetup() {
+        document.getElementById("sim-view").classList.remove("active");
+        document.getElementById("setup-screen").style.display = "flex";
+        document.getElementById("results-panel").classList.remove("open");
+      }
+    </script>
+  </body>
 </html>

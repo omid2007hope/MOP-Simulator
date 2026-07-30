@@ -1,3 +1,5 @@
+# // Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 import sys
 
 file_path = r"h:\Code\MyOwn\Main\Best\MOP Simulator\src\simulation.cpp"

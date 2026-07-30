@@ -1,26 +1,32 @@
-#include <iostream>
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 #include <fstream>
+#include <iostream>
 #include <string>
 
-int main() {
+int main()
+{
     std::string file_path = "h:/Code/MyOwn/Main/Best/MOP Simulator/src/simulation.cpp";
     std::ifstream in(file_path);
-    if (!in.is_open()) {
-        std::cerr << "Failed to open file for reading\n";
-        return 1;
-    }
+        if (!in.is_open()) {
+            std::cerr << "Failed to open file for reading\n";
+            return 1;
+        }
 
     std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     in.close();
 
-    std::string target = "void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results)";
+    std::string target =
+        "void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& "
+        "results)";
     size_t start_idx = content.find(target);
-    if (start_idx == std::string::npos) {
-        std::cerr << "Target method not found\n";
-        return 1;
-    }
+        if (start_idx == std::string::npos) {
+            std::cerr << "Target method not found\n";
+            return 1;
+        }
 
-    std::string new_method = R"RAW(void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results)
+    std::string new_method =
+        R"RAW(void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results)
 {
     std::string filename = "3d_visualizer.html";
     std::ofstream out(filename);
@@ -105,11 +111,11 @@ int main() {
 )RAW";
 
     std::ofstream out(file_path);
-    if (!out.is_open()) {
-        std::cerr << "Failed to open file for writing\n";
-        return 1;
-    }
-    
+        if (!out.is_open()) {
+            std::cerr << "Failed to open file for writing\n";
+            return 1;
+        }
+
     out << content.substr(0, start_idx) << new_method;
     out.close();
 
