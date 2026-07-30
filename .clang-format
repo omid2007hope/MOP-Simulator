@@ -77,7 +77,6 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: c++20
 
 # --- Line Management ---
 ColumnLimit: 100
