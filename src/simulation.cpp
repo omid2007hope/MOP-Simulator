@@ -504,7 +504,12 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
             // Set dynamic defaults
             document.title = `${projName} vs ${targetName} - 3D Simulation Visualizer`;
-            document.getElementById('slider-rho').value = targetDensity;
+            
+            const rhoSlider = document.getElementById('slider-rho');
+            if (targetDensity > rhoSlider.max) rhoSlider.max = targetDensity * 1.5;
+            if (targetDensity < rhoSlider.min) rhoSlider.min = targetDensity * 0.5;
+            rhoSlider.value = targetDensity;
+            
             document.getElementById('val-rho').innerText = Math.round(targetDensity);
 
             window.addEventListener('resize', onWindowResize);
@@ -616,7 +621,11 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                     btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
                 }
             });
-            document.getElementById('slider-vel').value = data.velocity;
+            const velSlider = document.getElementById('slider-vel');
+            if (data.velocity > velSlider.max) velSlider.max = data.velocity * 1.5;
+            if (data.velocity < velSlider.min) velSlider.min = data.velocity * 0.5;
+            velSlider.value = data.velocity;
+            
             document.getElementById('val-vel').innerText = Math.round(data.velocity);
             updateVisuals(data);
         }
