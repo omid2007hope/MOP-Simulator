@@ -21,7 +21,7 @@ During the latest comprehensive line-by-line code review, the following issues a
 
 ### 🏗️ Technical Debt & Areas of Improvement
 
-- [ ] **Decouple HTML Generation**: Embedding 400+ lines of raw HTML/JS in `simulation.cpp` as a raw string literal makes UI maintenance difficult. **Action:** Move the HTML template into an external asset file (e.g., `assets/visualizer_template.html`) and load/inject data at runtime.
+- [x] **Decouple HTML Generation**: Embedding 400+ lines of raw HTML/JS in `simulation.cpp` as a raw string literal makes UI maintenance difficult. **Action:** Move the HTML template into an external asset file (e.g., `assets/visualizer_template.html`) and load/inject data at runtime.
 - [ ] **Parameterize Magic Numbers**: Constants like drag coefficient (`cd = 1.2`), target compressive strength (`rt = 100.0e6`), and the speed of sound (`SPEED_OF_SOUND = 343.0`) are hardcoded. **Action:** Extract these into a `PhysicsConstants` structure or configuration file.
 - [ ] **Standardize Math Constants**: Replace manual definitions of Pi (`3.14159...`) with C++ standard library equivalents (e.g., `std::numbers::pi` in C++20 or `M_PI`).
 
@@ -31,7 +31,7 @@ During the latest comprehensive line-by-line code review, the following issues a
 
 _Focus: Refactoring the core architecture to support dynamic inputs, cleaner code separation, and flawless 3D WebGL synchronization._
 
-- [ ] **External Asset Loading System**: Implement a file-reading utility to load the WebGL HTML/JS template dynamically, eliminating the massive string literal in the C++ source.
+- [x] **External Asset Loading System**: Implement a file-reading utility to load the WebGL HTML/JS template dynamically, eliminating the massive string literal in the C++ source.
 - [ ] **Data-Driven Configuration**: Introduce a JSON or YAML parser (e.g., `nlohmann/json`) to load external databases of:
   - **Targets**: Soil, Granite, High-Quality Concrete, Steel Armor.
   - **Projectiles**: GBU-57 MOP, BLU-109, Custom Tungsten Rods.
