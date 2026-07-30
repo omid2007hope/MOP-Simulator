@@ -400,6 +400,10 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
         let currentData = scenarios[0];
         const projLength = )HTML"
         << proj.length << R"HTML(;
+        const projCasingDensity = )HTML"
+        << proj.casing_density << R"HTML(;
+        const targetDensity = )HTML"
+        << target.density << R"HTML(;
         const projDiameter = )HTML"
         << proj.diameter << R"HTML(;
         const projMass = )HTML"
@@ -623,7 +627,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
             const cd = 1.2;
             const rt = 100.0e6;
             const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * vel * vel) / (2.0 * rt));
-            const hydroDepth = projLength * Math.sqrt(7800.0 / rho);
+            const hydroDepth = projLength * Math.sqrt(projCasingDensity / targetDensity);
 
             let fail = false, shockProb = 0.0, expSurvives = true, depth = rigidDepth, regime = "", summary = "";
             if (isKinetic) {
