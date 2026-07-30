@@ -398,16 +398,21 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
         let scene, camera, renderer, controls;
         let targetBlock, projectile, shockwave, crater, rulerGroup;
         let currentData = scenarios[0];
-        const projLength = )HTML"
-        << proj.length << R"HTML(;
-        const projCasingDensity = )HTML"
-        << proj.casing_density << R"HTML(;
-        const targetDensity = )HTML"
-        << target.density << R"HTML(;
-        const projDiameter = )HTML"
-        << proj.diameter << R"HTML(;
-        const projMass = )HTML"
-        << proj.total_mass << R"HTML(;
+        
+        // Dynamically injected C++ variables
+        const projName = ")HTML" << proj.name << R"HTML(";
+        const projLength = )HTML" << proj.length << R"HTML(;
+        const projDiameter = )HTML" << proj.diameter << R"HTML(;
+        const projMass = )HTML" << proj.total_mass << R"HTML(;
+        const projExplosiveMass = )HTML" << proj.explosive_mass << R"HTML(;
+        const projCasingDensity = )HTML" << proj.casing_density << R"HTML(;
+        const projYieldStrength = )HTML" << proj.yield_strength << R"HTML(;
+        
+        const targetName = ")HTML" << target.name << R"HTML(";
+        const targetDensity = )HTML" << target.density << R"HTML(;
+        const targetBearingStrength = )HTML" << 100.0e6 << R"HTML(; // 100 MPa
+        const dragCoefficient = )HTML" << 1.2 << R"HTML(;
+        const speedOfSound = )HTML" << SPEED_OF_SOUND << R"HTML(;
 
         function init() {
             const container = document.getElementById('canvas-container');
@@ -496,6 +501,11 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                 rulerGroup.add(tickLine);
             }
             scene.add(rulerGroup);
+
+            // Set dynamic defaults
+            document.title = `${projName} vs ${targetName} - 3D Simulation Visualizer`;
+            document.getElementById('slider-rho').value = targetDensity;
+            document.getElementById('val-rho').innerText = Math.round(targetDensity);
 
             window.addEventListener('resize', onWindowResize);
             selectScenario(0);
@@ -617,17 +627,18 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
             document.getElementById('val-vel').innerText = Math.round(vel);
             document.getElementById('val-rho').innerText = Math.round(rho);
 
-            const mach = vel / 343.0;
+            const mach = vel / speedOfSound;
             const energy = 0.5 * projMass * vel * vel;
             const pressure = 0.5 * rho * vel * vel;
-            const yieldStr = currentData.yield * 1e9;
-            const isKinetic = currentData.is_kinetic;
+
+            const yieldStr = projYieldStrength;
+            const isKinetic = (projExplosiveMass === 0 || projYieldStrength === 0);
 
             const area = Math.PI * Math.pow(projDiameter / 2.0, 2);
-            const cd = 1.2;
-            const rt = 100.0e6;
+            const cd = dragCoefficient;
+            const rt = targetBearingStrength;
             const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * vel * vel) / (2.0 * rt));
-            const hydroDepth = projLength * Math.sqrt(projCasingDensity / targetDensity);
+            const hydroDepth = projLength * Math.sqrt(projCasingDensity / rho);
 
             let fail = false, shockProb = 0.0, expSurvives = true, depth = rigidDepth, regime = "", summary = "";
             if (isKinetic) {
@@ -658,7 +669,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                 mach: mach,
                 energy: energy / 1e9,
                 pressure: pressure / 1e9,
-                yield: currentData.yield,
+                yield: projYieldStrength / 1e9,
                 depth: depth,
                 rigid_depth: rigidDepth,
                 hydro_depth: hydroDepth,
