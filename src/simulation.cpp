@@ -43,7 +43,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
                             std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
-                                               (2.0 * cons.compressiveStrengthOfUHPC));
+                                               (2.0 * target.compressiveStrength));
 
     // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
@@ -352,7 +352,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     replaceAll(html, "{{PROJ_YIELD_STRENGTH}}", std::to_string(proj.yield_strength));
     replaceAll(html, "{{TARGET_NAME}}", target.name);
     replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
-    replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(cons.compressiveStrengthOfUHPC));
+    replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(target.compressiveStrength));
     double Caliber_Radius_Head = 3.0;
     double dragCoefficient = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
     replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(dragCoefficient));
