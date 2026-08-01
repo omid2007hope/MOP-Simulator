@@ -68,8 +68,7 @@ int main(int argc, char* argv[])
         else {
             CONCRETE_DEFAULT objectDefaultValue;
             object.name = objectDefaultValue.default_name;
-            object.density = objectDefaultValue.default_density; // kg/m^3
-            object.compressiveStrength = objectDefaultValue.default_compressive_strength;
+            object.layers = objectDefaultValue.default_layers;
         }
 
     // Default projectile (GBU-57 MOP)
@@ -88,6 +87,10 @@ int main(int argc, char* argv[])
             munition.explosive_mass = mopDefaultValue.default_explosive_mass;
             munition.casing_density = mopDefaultValue.default_casing_density;
             munition.yield_strength = mopDefaultValue.default_yield_strength;
+            munition.specific_heat = mopDefaultValue.default_specific_heat;
+            munition.melting_point = mopDefaultValue.default_melting_point;
+            munition.heat_of_fusion = mopDefaultValue.default_heat_of_fusion;
+            munition.area_moment_inertia = mopDefaultValue.default_area_moment_inertia;
         }
 
     std::cout << "================================================================================="
@@ -153,11 +156,19 @@ int main(int argc, char* argv[])
 
             munition.yield_strength = yield * 1e9;
 
-            object.density =
+            object.layers.clear();
+            TargetLayer customLayer;
+            customLayer.material_name = "Custom Layer";
+            customLayer.thickness = 100.0;
+            customLayer.rebar_volume_fraction = 0.0;
+            customLayer.rebar_yield_strength = 0.0;
+            
+            customLayer.density =
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
             double targetStrength = getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
-            object.compressiveStrength = targetStrength * 1e6;
+            customLayer.compressiveStrength = targetStrength * 1e6;
+            object.layers.push_back(customLayer);
 
             int numScenarios = 1;
                 while (true) {
@@ -184,11 +195,11 @@ int main(int argc, char* argv[])
 
                     name_ss << "Custom Test #" << (each + 1) << " (" << projectileVelocity
                             << " m/s)";
-                    scenarios.push_back({name_ss.str(), 0.0, projectileVelocity});
+                    scenarios.push_back({name_ss.str(), 0.0, projectileVelocity, 0.0, 0.0});
                 }
 
                 if (scenarios.empty()) {
-                    scenarios.push_back({"Custom Default Test", 50000.0, 500.0});
+                    scenarios.push_back({"Custom Default Test", 50000.0, 500.0, 0.0, 0.0});
                 }
         }
         else if (choice == 3) {
@@ -212,23 +223,25 @@ int main(int argc, char* argv[])
                     munition.casing_density =
                         rodsFromGodDefaultValue.default_casing_density; // High-density Tungsten
                     munition.yield_strength =
-                        rodsFromGodDefaultValue
-                            .default_yield_strength; // 0 GPa (hydrodynamic erosion dominated at
-                                                     // hypervelocity)
+                        rodsFromGodDefaultValue.default_yield_strength; 
+                    munition.specific_heat = rodsFromGodDefaultValue.default_specific_heat;
+                    munition.melting_point = rodsFromGodDefaultValue.default_melting_point;
+                    munition.heat_of_fusion = rodsFromGodDefaultValue.default_heat_of_fusion;
+                    munition.area_moment_inertia = rodsFromGodDefaultValue.default_area_moment_inertia;
                 }
 
-            scenarios = {{"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0},
-                         {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0},
-                         {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0}};
+            scenarios = {{"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0, 0.0, 0.0},
+                         {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0, 0.0, 0.0},
+                         {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0, 0.0, 0.0}};
         }
 
         else { // choice == 1 or fallback
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
 
             scenarios = {
-                {"50,000 ft Drop", 50000.0, 500.0},
-                {"45,000 ft Drop", 45000.0, 400.0},
-                {"Subsonic Operational", 40000.0, 300.0},
+                {"50,000 ft Drop", 50000.0, 500.0, 0.0, 0.0},
+                {"45,000 ft Drop", 45000.0, 400.0, 0.0, 0.0},
+                {"Subsonic Operational", 40000.0, 300.0, 0.0, 0.0},
             };
         }
 
