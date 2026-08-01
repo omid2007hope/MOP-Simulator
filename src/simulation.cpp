@@ -59,7 +59,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             res.shock_damage_prob_percent = 0.0;
             res.regime = "Hypervelocity Kinetic Rod Penetration";
             res.outcome_summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
-            res.actual_penetration_depth = (res.velocity > 1500.0 || proj.yield_strength == 0.0)
+            res.actual_penetration_depth = (res.velocity > cons.hypervelocityThreshold || proj.yield_strength == 0.0)
                                                ? res.hydro_penetration
                                                : res.rigid_penetration;
         }
@@ -76,7 +76,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             res.casing_failure = false;
             double pressure_ratio = res.dynamic_pressure / proj.yield_strength;
             res.shock_damage_prob_percent =
-                std::min(100.0, std::max(0.0, std::pow(pressure_ratio, 1.5) * 85.0));
+                std::min(100.0, std::max(0.0, std::pow(pressure_ratio, cons.shockDamageExponent) * cons.shockDamageMultiplier));
             res.explosive_charge_survives = (res.shock_damage_prob_percent < 50.0);
                 if (!res.explosive_charge_survives) {
                     res.premature_detonation = true;
@@ -357,6 +357,9 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(dragCoefficient));
 
     replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(cons.SPEED_OF_SOUND));
+    replaceAll(html, "{{HYPERVELOCITY_THRESHOLD}}", std::to_string(cons.hypervelocityThreshold));
+    replaceAll(html, "{{SHOCK_DAMAGE_MULTIPLIER}}", std::to_string(cons.shockDamageMultiplier));
+    replaceAll(html, "{{SHOCK_DAMAGE_EXPONENT}}", std::to_string(cons.shockDamageExponent));
 
     out << html;
     out.close();

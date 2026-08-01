@@ -266,6 +266,9 @@
               const targetBearingStrength = {{TARGET_BEARING_STRENGTH}};
               const dragCoefficient = {{DRAG_COEFFICIENT}};
               const speedOfSound = {{SPEED_OF_SOUND}};
+              const hypervelocityThreshold = {{HYPERVELOCITY_THRESHOLD}};
+              const shockDamageMultiplier = {{SHOCK_DAMAGE_MULTIPLIER}};
+              const shockDamageExponent = {{SHOCK_DAMAGE_EXPONENT}};
 
               function init() {
                   const container = document.getElementById('canvas-container');
@@ -497,8 +500,7 @@
                   const yieldStr = projYieldStrength;
                   const isKinetic = (projExplosiveMass === 0 || projYieldStrength === 0);
 
-                  const Caliber_Radius_Head = 3.0;
-                  const cd = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * Math.pow(Caliber_Radius_Head, 2));
+                  const cd = dragCoefficient;
                   const area = Math.PI * Math.pow(projDiameter / 2.0, 2);
                   const rt = targetBearingStrength;
                   const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * squaredVelocity) / (2.0 * rt));
@@ -507,7 +509,7 @@
                   let fail = false, shockProb = 0.0, expSurvives = true, depth = rigidDepth, regime = "", summary = "";
                   if (isKinetic) {
                       fail = (yieldStr > 0 && pressure > yieldStr);
-                      depth = (vel > 1500.0 || yieldStr === 0) ? hydroDepth : rigidDepth;
+                      depth = (vel > hypervelocityThreshold || yieldStr === 0) ? hydroDepth : rigidDepth;
                       regime = "Hypervelocity Kinetic Rod Penetration";
                       summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
                   } else if (pressure > yieldStr) {
@@ -520,7 +522,7 @@
                   } else {
                       fail = false;
                       const pressureRatio = pressure / yieldStr;
-                      shockProb = Math.min(100.0, Math.max(0.0, Math.pow(pressureRatio, 1.5) * 85.0));
+                      shockProb = Math.min(100.0, Math.max(0.0, Math.pow(pressureRatio, shockDamageExponent) * shockDamageMultiplier));
                       expSurvives = (shockProb < 50.0);
                       depth = rigidDepth;
                       regime = expSurvives ? "Rigid Body Penetration" : "Rigid Body (Shock Failure)";

@@ -15,6 +15,11 @@ struct PhysicsConstants
     // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
     // Assigned 200 - insuring total destruction .
     const double compressiveStrengthOfUHPC = 200.0e6;
+    
+    // Engine behavior constants
+    const double hypervelocityThreshold = 1500.0;
+    const double shockDamageMultiplier = 85.0;
+    const double shockDamageExponent = 1.5;
 };
 
 // Target material specification
