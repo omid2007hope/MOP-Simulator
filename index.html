@@ -1167,7 +1167,7 @@
         const area = Math.PI * Math.pow(proj.diameter / 2.0, 2);
         const Caliber_Radius_Head = 3.0;
         const cd = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * Math.pow(Caliber_Radius_Head, 2));
-        const rt = 200.0e6; // 200 MPa target compressive bearing strength (UHPC)
+        const rt = target.compressiveStrength || 60.0e6; // Default to 60 MPa
         r.rigid_penetration =
           (proj.total_mass / (2.0 * area * target.density * cd)) *
           Math.log(1.0 + (target.density * cd * v2) / (2.0 * rt));
@@ -1270,7 +1270,7 @@
         // Build projectile & target from mode
         let proj, target, scenarios;
 
-        target = { name: "High-Quality Hardened Concrete", density: 2500.0 };
+        target = { name: "High-Quality Hardened Concrete", density: 2500.0, compressiveStrength: 60.0e6 };
 
         if (selectedMode === 1) {
           proj = {
@@ -1714,7 +1714,7 @@
         document.getElementById("val-rho").textContent = Math.round(rho);
 
         // Re-run simulation with slider values
-        const tempTarget = { name: simTarget.name, density: rho };
+        const tempTarget = { name: simTarget.name, density: rho, compressiveStrength: simTarget.compressiveStrength || 60.0e6 };
         const tempScenario = {
           name: "Live Parametric Tuning",
           altitude_ft: 0,
