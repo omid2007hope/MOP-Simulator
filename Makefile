@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++20 -Wall -Wextra -O2 -Iinclude
+CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude
 
 ifeq ($(OS),Windows_NT)
     EXE = .exe
