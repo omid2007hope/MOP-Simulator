@@ -18,6 +18,7 @@ struct CONCRETE_DEFAULT
 {
     const std::string default_name = "High-Quality Hardened Concrete";
     const double default_density = 2650.0; // kg/m^3
+    const double default_compressive_strength = 60.0e6; // 60 MPa
 };
 
 struct RODS_FROM_GOD_DEFAULT

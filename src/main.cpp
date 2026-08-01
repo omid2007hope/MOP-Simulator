@@ -10,8 +10,6 @@
 #include "default.hpp"
 #include "simulation.hpp"
 
-const bool allowEntry = true;
-
 void safeCin()
 {
         if (!std::cin) {
@@ -25,10 +23,10 @@ template <typename T>
 T getValidInput(const std::string& prompt, bool allowZero = false)
 {
     T valueEntry;
-        while (allowEntry == true) {
+        while (true) {
             std::cout << prompt;
                 if (std::cin >> valueEntry &&
-                    (valueEntry > 0 || (allowZero == true && valueEntry == 0))) {
+                    (valueEntry > 0 || (allowZero && valueEntry == 0))) {
                     return valueEntry;
                 }
                 if (std::cin.eof()) {
@@ -66,6 +64,7 @@ int main(int argc, char* argv[])
             CONCRETE_DEFAULT objectDefaultValue;
             object.name = objectDefaultValue.default_name;
             object.density = objectDefaultValue.default_density; // kg/m^3
+            object.compressiveStrength = objectDefaultValue.default_compressive_strength;
         }
 
     // Default projectile (GBU-57 MOP)
