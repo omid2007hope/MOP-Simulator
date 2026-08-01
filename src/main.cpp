@@ -45,10 +45,15 @@ int main(int argc, char* argv[])
 
     std::string basePath = ".";
         if (argc > 0) {
-            std::filesystem::path exePath = argv[0];
-            basePath = exePath.parent_path().parent_path().string();
-            if (basePath.empty())
-                basePath = ".";
+            std::error_code ec;
+            std::filesystem::path current = std::filesystem::absolute(argv[0], ec).parent_path();
+            while (!current.empty() && current != current.root_path()) {
+                if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
+                    basePath = current.string();
+                    break;
+                }
+                current = current.parent_path();
+            }
         }
 
     // Load databases
@@ -98,7 +103,7 @@ int main(int argc, char* argv[])
     std::cout << "---------------------------------------------------------------------------------"
                  "------------------\n";
 
-        while (allowEntry == true) {
+        while (true) {
             std::cout << "Enter choice [1, 2, or 3]: ";
                 if (std::cin >> choice && (choice == 1 || choice == 2 || choice == 3)) {
                     std::cout << "Scenario: " << choice << " Confirmed!";
@@ -151,8 +156,11 @@ int main(int argc, char* argv[])
             object.density =
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
+            double targetStrength = getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
+            object.compressiveStrength = targetStrength * 1e6;
+
             int numScenarios = 1;
-                while (allowEntry == true) {
+                while (true) {
                     std::cout << "Enter number of custom impact velocities to test [1 to 5]: ";
                         if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
                             break;
