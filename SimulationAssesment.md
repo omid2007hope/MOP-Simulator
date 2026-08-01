@@ -3,7 +3,9 @@
 Based on the provided physics engine, the simulation currently utilizes **closed-form analytical and empirical models**:
 
 - **Rigid Body Regime:** Employs a Work-Energy deceleration model based on the Forrestal equations, factoring in the Caliber-Radius-Head (CRH) geometry.
+
 - **Hydrodynamic Regime:** Utilizes the Alekseevskii-Tate limit equation for hypervelocity impacts.
+
 - **Failure Mechanics:** Uses dynamic impact pressure versus yield strength to determine casing failure, with an empirical probabilistic model for shock damage to the explosive payload.
 
 ## 2. What is Missing? (Theoretical Gaps)
@@ -11,9 +13,13 @@ Based on the provided physics engine, the simulation currently utilizes **closed
 While effective for fast approximations, the current analytical approach lacks several critical real-world physical phenomena:
 
 - **Obliquity and Angle of Attack (AoA):** The model assumes a perfectly perpendicular impact (0° obliquity) and a perfectly aligned trajectory (0° AoA). Real-world penetrators experience asymmetric forces that induce massive bending moments. These bending moments are the primary cause of penetrator failure (J-hooking, structural snapping), often occurring before compressive yield is reached.
+
 - **Time-Dependent Kinematics:** The current equations output a final depth directly. Real penetration involves complex time-integration where deceleration varies as the projectile slows down, and shock waves propagate back and forth through the penetrator body.
+
 - **Multi-layered & Heterogeneous Targets:** Real hardened targets are not uniform. They consist of soil overburden, air gaps, steel-reinforced concrete burster slabs, and varying rock strata. The current equation assumes a semi-infinite, uniform material.
+
 - **Mass Loss and Thermal Ablation:** High-speed friction and adiabatic heating cause the nose of the penetrator to melt and ablate, dynamically changing the mass, diameter, and CRH of the projectile mid-penetration.
+
 - **Rebar and Aggregate Interlock:** Concrete is modeled only by its compressive strength and density. Steel reinforcement (rebar) drastically alters the failure modes of the concrete and imposes severe, unpredictable point-loads on the penetrator casing.
 
 ---
