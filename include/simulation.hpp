@@ -11,10 +11,6 @@ struct PhysicsConstants
 {
     const double SPEED_OF_SOUND = 343.0;
     const double PI = std::numbers::pi;
-
-    // UHPC 2,650 kg/m³ typically between 150 MPa and 200 MPa.
-    // Assigned 200 - insuring total destruction .
-    const double compressiveStrengthOfUHPC = 200.0e6;
     
     // Engine behavior constants
     const double hypervelocityThreshold = 1500.0;
@@ -27,6 +23,7 @@ struct Target
 {
     std::string name;
     double density; // kg/m^3
+    double compressiveStrength;
 };
 
 // Projectile specification (e.g., GBU-57 MOP parameters)
