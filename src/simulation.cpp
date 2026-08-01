@@ -353,7 +353,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     replaceAll(html, "{{TARGET_NAME}}", target.name);
     replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
     replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(cons.compressiveStrengthOfUHPC));
-
+    double Caliber_Radius_Head = 3.0;
+    double dragCoefficient = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
     replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(dragCoefficient));
 
     replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(cons.SPEED_OF_SOUND));
