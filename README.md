@@ -47,16 +47,7 @@ cmake --build .
 > **Note:** Projectile and target definitions are loaded from JSON databases in the `data/` directory. If a JSON file is missing or a named entry is not found, the simulator falls back to hardcoded defaults.
 
 #### 🌐 Viewing `3d_visualizer.html`
-Due to browser CORS security restrictions when loading CDN scripts on local `file://` URLs, use a local web server to view the generated 3D scene:
-
-```bash
-# Using Node.js (Recommended)
-npx serve .
-
-# Or using Python
-python -m http.server 8080
-```
-Open `http://localhost:3000/3d_visualizer.html` (or `http://localhost:8080/3d_visualizer.html`) in your browser.
+You can view the 3D scene simply by double-clicking the generated `3d_visualizer.html` file to open it directly in your web browser. No local web server is required.
 
 ### Running Unit Tests
 

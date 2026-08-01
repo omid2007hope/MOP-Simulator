@@ -46,5 +46,5 @@ _Focus: Pushing the boundaries of the physics engine and introducing professiona
 
 - [ ] **Multi-Layered Target Simulation**: Upgrade the physics engine to calculate penetration through complex stratifications (e.g., 10m earth -> 5m reinforced concrete -> 1m steel vault).
 - [ ] **Deformation & Thermodynamics**: Introduce advanced mechanics simulating projectile mushrooming, mass loss via hydrodynamic erosion, and heat generation during hypervelocity impacts.
-- [ ] **Embedded Web Server GUI**: Replace static HTML generation with an embedded lightweight C++ web server (e.g., `cpp-httplib`). This will stream live simulation telemetry and 3D positional data to the browser in real-time.
+
 - [ ] **Python Bindings (pybind11)**: Create a Python API wrapper for the simulation core, empowering data scientists and engineers to run massive batch impact simulations and parameter sweeps directly from Jupyter Notebooks.
