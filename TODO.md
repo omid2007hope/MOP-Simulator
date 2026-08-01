@@ -35,8 +35,8 @@ _Focus: Refactoring the core architecture to support dynamic inputs, cleaner cod
 - [x] **Data-Driven Configuration**: Introduce a JSON or YAML parser (e.g., `nlohmann/json`) to load external databases of:
   - **Targets**: Soil, Granite, High-Quality Concrete, Steel Armor.
   - **Projectiles**: GBU-57 MOP, BLU-109, Custom Tungsten Rods.
-- [ ] **Web UI Physics Synchronization**: Fix the hardcoded JS physics bug by injecting the dynamic `casing_density` and `target_density` properties into the HTML payload.
-- [ ] **Robust CLI Interface**: Refactor `main.cpp` interactive prompts to use robust `while` loops that enforce strict validation and re-prompt on invalid user input.
+- [x] **Web UI Physics Synchronization**: Fix the hardcoded JS physics bug by injecting the dynamic `casing_density` and `target_density` properties into the HTML payload.
+- [x] **Robust CLI Interface**: Refactor `main.cpp` interactive prompts to use robust `while` loops that enforce strict validation and re-prompt on invalid user input.
 
 ---
 
