@@ -13,10 +13,11 @@ const bool allowEntry = true;
 
 void safeCin()
 {
-    if (std::cin && !std::cin.empty())
+    if (!std::cin) {
         std::cin.clear();
+    }
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-};
+}
 
 // Helper to safely read numeric input and re-prompt on failure
 template <typename T>
@@ -112,7 +113,6 @@ int main(int argc, char* argv[])
         if (choice == 2) {
             std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
             std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
-            safeCin();
             std::string projectileName;
             getline(std::cin, projectileName);
             if (projectileName.empty())
