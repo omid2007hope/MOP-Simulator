@@ -52,8 +52,9 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         // Time Integration Loop
         while (current_velocity > 0.0 && res.casing_failure == false &&
                current_depth < cumulative) {
-            // Find current layer
+            //  First layer of the object in Array
             size_t current_layer_idx = 0;
+            // Find current layer
                 for (size_t i = 0; i < layer_bottom_depths.size(); ++i) {
                         if (current_depth < layer_bottom_depths[i]) {
                             current_layer_idx = i;
@@ -63,8 +64,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             const auto& layer = target.layers[current_layer_idx];
 
+            double CHR = 0.0;
+            if (proj.diameter > 0.0) {
+                CHR = proj.curvature_noseReduce / proj.diameter;
+            }
+
             // Calculate Nose Performance Coefficient (N)
-            double Caliber_Radius_Head = 3.0;
+            double Caliber_Radius_Head = (CHR > 0.0) ? CHR : 3.0;
             double dragCoefficient =
                 (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
