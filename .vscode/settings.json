@@ -9,5 +9,9 @@
   "clangd.arguments": [
     "--query-driver=C:/msys64/ucrt64/bin/*,C:/Program Files/LLVM/bin/*",
     "--header-insertion=never"
+  ],
+  "cSpell.words": [
+    "exaption",
+    "gaurannty"
   ]
 }
