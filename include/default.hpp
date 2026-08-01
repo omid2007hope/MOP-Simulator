@@ -10,6 +10,7 @@ struct MOP_DEFAULT
     const std::string default_name = "GBU-57 Massive Ordnance Penetrator (MOP)";
     const double default_length = 6.2;
     const double default_diameter = 0.8;
+    const double curvature_noseReduce = 4.8; // meters (CHR=6)
     const double default_total_mass = 13600.0;
     const double default_explosive_mass = 2400.0;
     const double default_casing_density = 7800.0;
@@ -35,6 +36,7 @@ struct RODS_FROM_GOD_DEFAULT
     const std::string default_name = "Orbital Tungsten Kinetic Penetrator (Rods from God)";
     const double default_length = 6.1;
     const double default_diameter = 0.3;
+    const double curvature_noseReduce = 1.8; // meters (CHR=6)
     const double default_total_mass = 8300.0;
     const double default_explosive_mass = 0.0;     // 0 kg explosive
     const double default_casing_density = 19300.0; // High-density Tungsten

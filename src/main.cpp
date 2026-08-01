@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
             munition.name = mopDefaultValue.default_name;
             munition.length = mopDefaultValue.default_length;
             munition.diameter = mopDefaultValue.default_diameter;
+            munition.curvature_noseReduce = mopDefaultValue.curvature_noseReduce;
             munition.total_mass = mopDefaultValue.default_total_mass;
             munition.explosive_mass = mopDefaultValue.default_explosive_mass;
             munition.casing_density = mopDefaultValue.default_casing_density;
@@ -135,6 +136,9 @@ int main(int argc, char* argv[])
 
             munition.diameter =
                 getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
+
+            munition.curvature_noseReduce =
+                getValidInput<double>("Enter Projectile Nose Curvature Radius R (meters): ", true);
 
             munition.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
 
@@ -216,6 +220,7 @@ int main(int argc, char* argv[])
                     munition.name = rodsFromGodDefaultValue.default_name;
                     munition.length = rodsFromGodDefaultValue.default_length;
                     munition.diameter = rodsFromGodDefaultValue.default_diameter;
+                    munition.curvature_noseReduce = rodsFromGodDefaultValue.curvature_noseReduce;
                     munition.total_mass = rodsFromGodDefaultValue.default_total_mass;
                     munition.explosive_mass =
                         rodsFromGodDefaultValue
