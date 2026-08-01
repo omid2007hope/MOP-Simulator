@@ -358,24 +358,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
     replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
     replaceAll(html, "{{SCENARIOS_DATA}}", data.str());
-    replaceAll(html, "{{PROJ_NAME}}", escapeJSON(proj.name));
-    replaceAll(html, "{{PROJ_LENGTH}}", std::to_string(proj.length));
-    replaceAll(html, "{{PROJ_DIAMETER}}", std::to_string(proj.diameter));
-    replaceAll(html, "{{PROJ_MASS}}", std::to_string(proj.total_mass));
-    replaceAll(html, "{{PROJ_EXPLOSIVE_MASS}}", std::to_string(proj.explosive_mass));
-    replaceAll(html, "{{PROJ_CASING_DENSITY}}", std::to_string(proj.casing_density));
-    replaceAll(html, "{{PROJ_YIELD_STRENGTH}}", std::to_string(proj.yield_strength));
-    replaceAll(html, "{{TARGET_NAME}}", escapeJSON(target.name));
-    replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
-    replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(target.compressiveStrength));
-    double Caliber_Radius_Head = 3.0;
-    double dragCoefficient = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
-    replaceAll(html, "{{DRAG_COEFFICIENT}}", std::to_string(dragCoefficient));
 
-    replaceAll(html, "{{SPEED_OF_SOUND}}", std::to_string(cons.SPEED_OF_SOUND));
-    replaceAll(html, "{{HYPERVELOCITY_THRESHOLD}}", std::to_string(cons.hypervelocityThreshold));
-    replaceAll(html, "{{SHOCK_DAMAGE_MULTIPLIER}}", std::to_string(cons.shockDamageMultiplier));
-    replaceAll(html, "{{SHOCK_DAMAGE_EXPONENT}}", std::to_string(cons.shockDamageExponent));
 
     out << html;
     out.close();
