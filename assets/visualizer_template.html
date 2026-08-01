@@ -490,16 +490,18 @@
                   document.getElementById('val-rho').innerText = Math.round(rho);
 
                   const mach = vel / speedOfSound;
-                  const energy = 0.5 * projMass * vel * vel;
-                  const pressure = 0.5 * rho * vel * vel;
+                  const squaredVelocity = Math.pow(vel, 2);
+                  const energy = 0.5 * projMass * squaredVelocity;
+                  const pressure = 0.5 * rho * squaredVelocity;
 
                   const yieldStr = projYieldStrength;
                   const isKinetic = (projExplosiveMass === 0 || projYieldStrength === 0);
 
+                  const Caliber_Radius_Head = 3.0;
+                  const cd = (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * Math.pow(Caliber_Radius_Head, 2));
                   const area = Math.PI * Math.pow(projDiameter / 2.0, 2);
-                  const cd = dragCoefficient;
                   const rt = targetBearingStrength;
-                  const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * vel * vel) / (2.0 * rt));
+                  const rigidDepth = (projMass / (2.0 * area * rho * cd)) * Math.log(1.0 + (rho * cd * squaredVelocity) / (2.0 * rt));
                   const hydroDepth = projLength * Math.sqrt(projCasingDensity / rho);
 
                   let fail = false, shockProb = 0.0, expSurvives = true, depth = rigidDepth, regime = "", summary = "";
