@@ -21,6 +21,7 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath)
             Target t;
             t.name = item.value("name", "Unknown Target");
             t.density = item.value("density", 2500.0);
+            t.compressiveStrength = item.value("compressive_strength", 60.0e6);
             targets.push_back(t);
         }
     } catch (const std::exception& e) {

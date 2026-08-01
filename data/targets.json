@@ -1,18 +1,22 @@
 [
     {
         "name": "Soil",
-        "density": 1600.0
+        "density": 1600.0,
+        "compressive_strength": 5.0e6
     },
     {
         "name": "Granite",
-        "density": 2700.0
+        "density": 2700.0,
+        "compressive_strength": 130.0e6
     },
     {
         "name": "High-Quality Hardened Concrete",
-        "density": 2500.0
+        "density": 2500.0,
+        "compressive_strength": 60.0e6
     },
     {
         "name": "Steel Armor",
-        "density": 7850.0
+        "density": 7850.0,
+        "compressive_strength": 1000.0e6
     }
 ]

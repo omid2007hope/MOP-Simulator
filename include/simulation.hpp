@@ -3,15 +3,16 @@
 #ifndef SIMULATION_HPP
 #define SIMULATION_HPP
 
+#include <numbers>
 #include <string>
 #include <vector>
-#include <numbers>
+
 
 struct PhysicsConstants
 {
     const double SPEED_OF_SOUND = 343.0;
     const double PI = std::numbers::pi;
-    
+
     // Engine behavior constants
     const double hypervelocityThreshold = 1500.0;
     const double shockDamageMultiplier = 85.0;
