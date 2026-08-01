@@ -50,7 +50,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         }
 
         // Time Integration Loop
-        while (current_velocity > 0.0 && !res.casing_failure && current_depth < cumulative) {
+        while (current_velocity > 0.0 && res.casing_failure == false &&
+               current_depth < cumulative) {
             // Find current layer
             size_t current_layer_idx = 0;
                 for (size_t i = 0; i < layer_bottom_depths.size(); ++i) {
