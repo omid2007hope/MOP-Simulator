@@ -19,12 +19,22 @@ struct PhysicsConstants
     const double shockDamageExponent = 1.5;
 };
 
+// Target layer specification
+struct TargetLayer
+{
+    std::string material_name;
+    double thickness; // meters
+    double density; // kg/m^3
+    double compressiveStrength; // Pascals
+    double rebar_volume_fraction; // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
+    double rebar_yield_strength; // Pascals
+};
+
 // Target material specification
 struct Target
 {
     std::string name;
-    double density; // kg/m^3
-    double compressiveStrength;
+    std::vector<TargetLayer> layers;
 };
 
 // Projectile specification (e.g., GBU-57 MOP parameters)
@@ -37,6 +47,14 @@ struct Projectile
     double explosive_mass; // kg
     double casing_density; // kg/m^3
     double yield_strength; // Pascals (e.g., 2.0 GPa for Eglin steel)
+    
+    // Thermal ablation properties
+    double specific_heat;       // J/(kg*K)
+    double melting_point;       // Kelvin
+    double heat_of_fusion;      // J/kg
+    
+    // Structural properties
+    double area_moment_inertia; // m^4 (for bending moment calculations)
 };
 
 // Scenario input definition
@@ -45,6 +63,8 @@ struct ImpactScenario
     std::string name;
     double altitude_ft; // feet
     double velocity;    // m/s
+    double obliquity_angle; // Degrees (0 = perfectly perpendicular)
+    double angle_of_attack; // Degrees
 };
 
 // Simulation results for a given scenario
