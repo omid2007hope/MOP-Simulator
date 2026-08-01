@@ -7,15 +7,16 @@
 #include <string>
 #include <vector>
 #include "config_loader.hpp"
+#include "default.hpp"
 #include "simulation.hpp"
 
 const bool allowEntry = true;
 
 void safeCin()
 {
-    if (!std::cin) {
-        std::cin.clear();
-    }
+        if (!std::cin) {
+            std::cin.clear();
+        }
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
@@ -57,29 +58,32 @@ int main(int argc, char* argv[])
     auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
 
     // Default target
-    Target concrete;
+    Target object;
         if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
-            concrete = *t;
+            object = *t;
         }
         else {
-            concrete.name = "High-Quality Hardened Concrete";
-            concrete.density = 2500.0; // kg/m^3
+            CONCRETE_DEFAULT objectDefaultValue;
+            object.name = objectDefaultValue.default_name;
+            object.density = objectDefaultValue.default_density; // kg/m^3
         }
 
     // Default projectile (GBU-57 MOP)
-    Projectile mop;
+    Projectile munition;
         if (auto p = ConfigLoader::getProjectileByName(
                 projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
-            mop = *p;
+            munition = *p;
         }
         else {
-            mop.name = "GBU-57 Massive Ordnance Penetrator (MOP)";
-            mop.length = 6.2;
-            mop.diameter = 0.8;
-            mop.total_mass = 13600.0;
-            mop.explosive_mass = 2400.0;
-            mop.casing_density = 7800.0;
-            mop.yield_strength = 2.0e9; // 2.0 GPa
+            MOP_DEFAULT mopDefaultValue;
+
+            munition.name = mopDefaultValue.default_name;
+            munition.length = mopDefaultValue.default_length;
+            munition.diameter = mopDefaultValue.default_diameter;
+            munition.total_mass = mopDefaultValue.default_total_mass;
+            munition.explosive_mass = mopDefaultValue.default_explosive_mass;
+            munition.casing_density = mopDefaultValue.default_casing_density;
+            munition.yield_strength = mopDefaultValue.default_yield_strength;
         }
 
     std::cout << "================================================================================="
@@ -118,31 +122,34 @@ int main(int argc, char* argv[])
             if (projectileName.empty())
                 projectileName = "Undefined Projectile";
 
-            mop.name = projectileName;
+            munition.name = projectileName;
 
-            mop.length = getValidInput<double>("Enter Projectile Length L (meters): ", false);
+            munition.length = getValidInput<double>("Enter Projectile Length L (meters): ", false);
 
-            mop.diameter = getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
+            munition.diameter =
+                getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
 
-            mop.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
+            munition.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
 
                 while (true) {
-                    mop.explosive_mass = getValidInput<double>("Enter Explosive Mass (kg): ", true);
-                    if (mop.explosive_mass <= mop.total_mass)
+                    munition.explosive_mass =
+                        getValidInput<double>("Enter Explosive Mass (kg): ", true);
+                    if (munition.explosive_mass <= munition.total_mass)
                         break;
-                    std::cout << "Error: Explosive mass (" << mop.explosive_mass
-                              << " kg) cannot exceed total mass (" << mop.total_mass << " kg)!\n";
+                    std::cout << "Error: Explosive mass (" << munition.explosive_mass
+                              << " kg) cannot exceed total mass (" << munition.total_mass
+                              << " kg)!\n";
                 }
 
-            mop.casing_density =
+            munition.casing_density =
                 getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
 
             double yield =
                 getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa): ", true);
 
-            mop.yield_strength = yield * 1e9;
+            munition.yield_strength = yield * 1e9;
 
-            concrete.density =
+            object.density =
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
             int numScenarios = 1;
@@ -179,17 +186,24 @@ int main(int argc, char* argv[])
 
                 if (auto p = ConfigLoader::getProjectileByName(
                         projectilesDb, "Orbital Tungsten Kinetic Penetrator (Rods from God)")) {
-                    mop = *p;
+                    munition = *p;
                 }
                 else {
-                    mop.name = "Orbital Tungsten Kinetic Penetrator (Rods from God)";
-                    mop.length = 6.1;
-                    mop.diameter = 0.3;
-                    mop.total_mass = 8300.0;
-                    mop.explosive_mass = 0.0;     // 0 kg explosive (pure kinetic energy weapon)
-                    mop.casing_density = 19300.0; // High-density Tungsten
-                    mop.yield_strength =
-                        0.0; // 0 GPa (hydrodynamic erosion dominated at hypervelocity)
+                    RODS_FROM_GOD_DEFAULT rodsFromGodDefaultValue;
+
+                    munition.name = rodsFromGodDefaultValue.default_name;
+                    munition.length = rodsFromGodDefaultValue.default_length;
+                    munition.diameter = rodsFromGodDefaultValue.default_diameter;
+                    munition.total_mass = rodsFromGodDefaultValue.default_total_mass;
+                    munition.explosive_mass =
+                        rodsFromGodDefaultValue
+                            .default_explosive_mass; // 0 kg explosive (pure kinetic energy weapon)
+                    munition.casing_density =
+                        rodsFromGodDefaultValue.default_casing_density; // High-density Tungsten
+                    munition.yield_strength =
+                        rodsFromGodDefaultValue
+                            .default_yield_strength; // 0 GPa (hydrodynamic erosion dominated at
+                                                     // hypervelocity)
                 }
 
             scenarios = {{"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0},
@@ -209,7 +223,7 @@ int main(int argc, char* argv[])
 
     // Initialize Simulator
     PhysicsConstants cons;
-    ImpactSimulator simulator(mop, concrete, cons);
+    ImpactSimulator simulator(munition, object, cons);
 
     // Run simulations
     std::vector<SimulationResult> results;
