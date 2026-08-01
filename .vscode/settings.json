@@ -2,7 +2,7 @@
 
 {
   "code-runner.executorMap": {
-    "cpp": "cd \"$workspaceRoot\" && g++ -std=c++17 -Iinclude src/main.cpp src/simulation.cpp -o bin/sim && .\\bin\\sim"
+    "cpp": "cd \"$workspaceRoot\" && g++ -std=c++23 -Iinclude src/main.cpp src/simulation.cpp src/config_loader.cpp -o bin/sim && .\\bin\\sim"
   },
   "clang-format.executable": "C:\\Program Files\\LLVM\\bin\\clang-format.exe",
   "C_Cpp.clang_format_path": "C:\\Program Files\\LLVM\\bin\\clang-format.exe",

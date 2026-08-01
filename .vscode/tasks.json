@@ -8,13 +8,14 @@
       "label": "C/C++: g++ build sim",
       "command": "g++",
       "args": [
-        "-std=c++17",
+        "-std=c++23",
         "-Wall",
         "-Wextra",
         "-O2",
         "-Iinclude",
         "src/main.cpp",
         "src/simulation.cpp",
+        "src/config_loader.cpp",
         "-o",
         "${workspaceFolder}/bin/sim.exe"
       ],
