@@ -280,24 +280,39 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
         }
 }
 
-void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results)
+void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results, const std::string& basePath)
 {
-    std::string filename = "3d_visualizer.html";
+    std::string filename = basePath + "/3d_visualizer.html";
     std::ofstream out(filename);
         if (!out.is_open()) {
             std::cerr << "Error: Could not open " << filename << " for writing.\n";
             return;
         }
 
-    std::ifstream tpl("assets/visualizer_template.html");
+    std::ifstream tpl(basePath + "/assets/visualizer_template.html");
         if (!tpl.is_open()) {
-            std::cerr << "Error: Could not open template file assets/visualizer_template.html\n";
+            std::cerr << "Error: Could not open template file " << basePath << "/assets/visualizer_template.html\n";
             return;
         }
 
     std::stringstream buffer;
     buffer << tpl.rdbuf();
     std::string html = buffer.str();
+
+    auto escapeJSON = [](const std::string& s) {
+        std::string res;
+        for (char c : s) {
+            if (c == '"') res += "\\\"";
+            else if (c == '\\') res += "\\\\";
+            else if (c == '\b') res += "\\b";
+            else if (c == '\f') res += "\\f";
+            else if (c == '\n') res += "\\n";
+            else if (c == '\r') res += "\\r";
+            else if (c == '\t') res += "\\t";
+            else res += c;
+        }
+        return res;
+    };
 
     // Generate scenario buttons
     std::stringstream buttons;
@@ -307,14 +322,14 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                 << "\" class=\"px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap "
                    "transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 "
                    "hover:text-slate-950 border border-slate-700/60\">"
-                << results[i].scenario_name << "</button>\n";
+                << escapeJSON(results[i].scenario_name) << "</button>\n";
         }
 
     // Generate scenario data
     std::stringstream data;
         for (size_t i = 0; i < results.size(); ++i) {
             const auto& r = results[i];
-            data << "            { name: \"" << r.scenario_name << "\", velocity: " << r.velocity
+            data << "            { name: \"" << escapeJSON(r.scenario_name) << "\", velocity: " << r.velocity
                  << ", mach: " << r.mach_number << ", energy: " << (r.kinetic_energy / 1e9)
                  << ", pressure: " << (r.dynamic_pressure / 1e9)
                  << ", yield: " << (proj.yield_strength / 1e9)
@@ -325,7 +340,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", shock_prob: " << r.shock_damage_prob_percent
                  << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
                  << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
-                 << r.regime << "\", summary: \"" << r.outcome_summary << "\" }";
+                 << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary) << "\" }";
             if (i + 1 < results.size())
                 data << ",";
             data << "\n";
@@ -343,14 +358,14 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
     replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
     replaceAll(html, "{{SCENARIOS_DATA}}", data.str());
-    replaceAll(html, "{{PROJ_NAME}}", proj.name);
+    replaceAll(html, "{{PROJ_NAME}}", escapeJSON(proj.name));
     replaceAll(html, "{{PROJ_LENGTH}}", std::to_string(proj.length));
     replaceAll(html, "{{PROJ_DIAMETER}}", std::to_string(proj.diameter));
     replaceAll(html, "{{PROJ_MASS}}", std::to_string(proj.total_mass));
     replaceAll(html, "{{PROJ_EXPLOSIVE_MASS}}", std::to_string(proj.explosive_mass));
     replaceAll(html, "{{PROJ_CASING_DENSITY}}", std::to_string(proj.casing_density));
     replaceAll(html, "{{PROJ_YIELD_STRENGTH}}", std::to_string(proj.yield_strength));
-    replaceAll(html, "{{TARGET_NAME}}", target.name);
+    replaceAll(html, "{{TARGET_NAME}}", escapeJSON(target.name));
     replaceAll(html, "{{TARGET_DENSITY}}", std::to_string(target.density));
     replaceAll(html, "{{TARGET_BEARING_STRENGTH}}", std::to_string(target.compressiveStrength));
     double Caliber_Radius_Head = 3.0;

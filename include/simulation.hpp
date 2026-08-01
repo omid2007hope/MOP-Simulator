@@ -80,7 +80,7 @@ public:
     SimulationResult simulate(const ImpactScenario& scenario);
     void printAscii3DVisualizer(const SimulationResult& r);
     void printReport(const std::vector<SimulationResult>& results);
-    void generateHtml3DVisualizer(const std::vector<SimulationResult>& results);
+    void generateHtml3DVisualizer(const std::vector<SimulationResult>& results, const std::string& basePath);
 };
 
 #endif // SIMULATION_HPP
