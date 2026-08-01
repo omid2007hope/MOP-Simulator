@@ -20,79 +20,176 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.velocity = scenario.velocity;
     res.mach_number = scenario.velocity / cons.SPEED_OF_SOUND;
 
-    // To achieve maximum accuracy for the rigid body penetration model, we calculate
-    // the "Nose Performance Coefficient" (N) based on the Caliber-Radius-Head (CRH) geometry.
-    // For a deep penetrator like the GBU-57 MOP, the CRH is typically around 3.0 to 4.0.
-    double Caliber_Radius_Head = 3.0; // Caliber-Radius-Head
+    double current_velocity = scenario.velocity;
+    double current_mass = proj.total_mass;
+    double current_depth = 0.0;
 
-    // The exact geometric formula for the effective drag coefficient (N) of an ogive nose
-    // penetrating a solid target (derived from the Forrestal equation):
-    double dragCoefficient =
-        (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
+    // Obliquity and AoA
+    double obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
+    double angelOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
 
-    double squaredVelocity = std::pow(scenario.velocity, 2);
+    double dt = 1e-5; // 10 microseconds
+    double t = 0.0;
+    double current_temperature = 300.0; // Kelvin
 
-    // 1. Kinetic Energy calculation: E_k = 0.5 * m * v^2
-    res.kinetic_energy = 0.5 * proj.total_mass * squaredVelocity;
+    res.casing_failure = false;
+    res.premature_detonation = false;
+    res.explosive_charge_survives = true;
+    res.shock_damage_prob_percent = 0.0;
+    res.regime = "Time-Integrated Penetration";
+    res.outcome_summary = "Intact";
 
-    // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
-    res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
+    double max_dynamic_pressure = 0.0;
 
-    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model)
-    double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
+    // Convert target layers to cumulative depths
+    std::vector<double> layer_bottom_depths;
+    double cumulative = 0.0;
+        for (const auto& layer : target.layers) {
+            cumulative += layer.thickness;
+            layer_bottom_depths.push_back(cumulative);
+        }
 
-    if (area > 0.0 && target.compressiveStrength > 0.0 && target.density > 0.0 && dragCoefficient > 0.0) {
-        res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
-                                std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
-                                                   (2.0 * target.compressiveStrength));
-    } else {
-        res.rigid_penetration = 0.0;
-    }
+        // Time Integration Loop
+        while (current_velocity > 0.0 && !res.casing_failure && current_depth < cumulative) {
+            // Find current layer
+            size_t current_layer_idx = 0;
+                for (size_t i = 0; i < layer_bottom_depths.size(); ++i) {
+                        if (current_depth < layer_bottom_depths[i]) {
+                            current_layer_idx = i;
+                            break;
+                        }
+                }
 
-    // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
-    res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
+            const auto& layer = target.layers[current_layer_idx];
 
-    // 5. Kinetic rod check and structural integrity evaluation
+            // Calculate Nose Performance Coefficient (N)
+            double Caliber_Radius_Head = 3.0;
+            double dragCoefficient =
+                (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
+
+            double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
+
+            double squaredVelocity = current_velocity * current_velocity;
+
+            // Dynamic Pressure
+            double dynamic_pressure = 0.5 * layer.density * squaredVelocity;
+                if (dynamic_pressure > max_dynamic_pressure) {
+                    max_dynamic_pressure = dynamic_pressure;
+                }
+
+            // Bending Moment calculation (Asymmetric force)
+            double asymmetric_force =
+                dynamic_pressure * area * std::sin(obliquity_radians + angelOfAttack_radians);
+            double bending_moment = asymmetric_force * (proj.length / 2.0); // Simplified load
+
+            // Stress = M * y / I
+            double max_bending_stress = 0.0;
+                if (proj.area_moment_inertia > 0) {
+                    max_bending_stress =
+                        (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
+                }
+
+                // Check structural failure
+                if (proj.yield_strength > 0.0 && max_bending_stress > proj.yield_strength) {
+                    res.casing_failure = true;
+                    res.regime = "Structural Failure (J-Hook/Snap)";
+                    res.outcome_summary = "Bending moments exceeded casing yield strength.";
+                    break;
+                }
+
+            // Deceleration force (incorporating rebar)
+            // F = area * (strength + rebar_strength * rebar_frac) + drag * density * area * v^2
+            double effective_strength = layer.compressiveStrength +
+                                        (layer.rebar_yield_strength * layer.rebar_volume_fraction);
+            double deceleration_force = (area * effective_strength) +
+                                        (dragCoefficient * layer.density * area * squaredVelocity);
+
+            // Acceleration
+            double acceleration = -deceleration_force / current_mass;
+
+            // Kinematics update
+            current_velocity += acceleration * dt;
+            current_depth += current_velocity * dt * std::cos(obliquity_radians);
+
+            // Thermal Ablation (Simplified Frictional Heating)
+            // Energy converted to heat = Force * distance * friction_factor
+            double friction_factor = 0.1;
+            double heat_energy = (deceleration_force * friction_factor) * (current_velocity * dt);
+            double temp_increase = heat_energy / (current_mass * proj.specific_heat);
+            current_temperature += temp_increase;
+
+                // If we reach melting point, mass is lost to heat of fusion
+                if (current_temperature > proj.melting_point) {
+                    double excess_temp = current_temperature - proj.melting_point;
+                    double excess_heat = excess_temp * current_mass * proj.specific_heat;
+
+                        if (excess_heat > 0 && proj.heat_of_fusion > 0) {
+                            double mass_loss = excess_heat / proj.heat_of_fusion;
+                            current_mass -= mass_loss;
+                            current_temperature = proj.melting_point; // Clamp temperature
+
+                                if (current_mass < 0.1 * proj.total_mass) { // Burned up
+                                    res.casing_failure = true;
+                                    res.regime = "Thermal Destruction";
+                                    res.outcome_summary = "Projectile completely ablated.";
+                                    break;
+                                }
+                        }
+                }
+
+            t += dt;
+
+            // Failsafe for infinite loop (e.g. 10 seconds max)
+            if (t > 10.0)
+                break;
+        }
+
+    res.actual_penetration_depth = current_depth;
+    res.dynamic_pressure = max_dynamic_pressure;
+    res.kinetic_energy = 0.5 * proj.total_mass * std::pow(scenario.velocity, 2);
+    res.rigid_penetration = current_depth; // Backward compat
+    res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.layers[0].density);
+
+    // Shock Damage
     res.is_kinetic_rod = (proj.explosive_mass == 0.0 || proj.yield_strength == 0.0);
 
         if (res.is_kinetic_rod) {
-            res.casing_failure =
-                (proj.yield_strength > 0.0 && res.dynamic_pressure > proj.yield_strength);
-            res.premature_detonation = false;     // No explosive mass to detonate prematurely
-            res.explosive_charge_survives = true; // N/A for pure kinetic weapon
+                if (!res.casing_failure && max_dynamic_pressure > proj.yield_strength &&
+                    proj.yield_strength > 0) {
+                    res.casing_failure = true;
+                    res.regime = "Hydrodynamic Yield";
+                    res.outcome_summary = "Kinetic rod crushed by pressure.";
+                }
+                if (!res.casing_failure) {
+                    res.regime = "Hypervelocity Kinetic Rod Penetration";
+                }
             res.shock_damage_prob_percent = 0.0;
-            res.regime = "Hypervelocity Kinetic Rod Penetration";
-            res.outcome_summary = "Hydrodynamic erosion; deep kinetic cratering without explosives";
-            res.actual_penetration_depth = (res.velocity > cons.hypervelocityThreshold || proj.yield_strength == 0.0)
-                                               ? res.hydro_penetration
-                                               : res.rigid_penetration;
-        }
-        else if (res.dynamic_pressure > proj.yield_strength) {
-            res.casing_failure = true;
-            res.premature_detonation = true;
-            res.explosive_charge_survives = false;
-            res.shock_damage_prob_percent = 100.0;
-            res.regime = "Hydrodynamic / Hypervelocity";
-            res.outcome_summary = "Casing crushes/shatters; surface detonation";
-            res.actual_penetration_depth = res.hydro_penetration;
+            res.explosive_charge_survives = true;
         }
         else {
-            res.casing_failure = false;
-            double pressure_ratio = res.dynamic_pressure / proj.yield_strength;
-            res.shock_damage_prob_percent =
-                std::min(100.0, std::max(0.0, std::pow(pressure_ratio, cons.shockDamageExponent) * cons.shockDamageMultiplier));
-            res.explosive_charge_survives = (res.shock_damage_prob_percent < 50.0);
-                if (!res.explosive_charge_survives) {
+                if (!res.casing_failure && max_dynamic_pressure > proj.yield_strength) {
+                    res.casing_failure = true;
                     res.premature_detonation = true;
-                    res.regime = "Rigid Body (Shock Failure)";
-                    res.outcome_summary = "Casing intact; shock damages explosive payload";
+                    res.explosive_charge_survives = false;
+                    res.shock_damage_prob_percent = 100.0;
+                    res.regime = "Pressure Yield (Crush)";
+                    res.outcome_summary = "Casing crushed by dynamic pressure.";
                 }
-                else {
-                    res.premature_detonation = false;
-                    res.regime = "Rigid Body Penetration";
-                    res.outcome_summary = "Casing intact; smart-fuze detonates deep underground";
+                else if (!res.casing_failure) {
+                    double pressure_ratio = max_dynamic_pressure / proj.yield_strength;
+                    res.shock_damage_prob_percent =
+                        std::min(100.0,
+                                 std::max(0.0,
+                                          std::pow(pressure_ratio, cons.shockDamageExponent) *
+                                              cons.shockDamageMultiplier));
+                    res.explosive_charge_survives = (res.shock_damage_prob_percent < 50.0);
+                        if (!res.explosive_charge_survives) {
+                            res.premature_detonation = true;
+                            res.regime = "Shock Failure";
+                            res.outcome_summary =
+                                "Explosive charge detonated prematurely due to shock.";
+                        }
                 }
-            res.actual_penetration_depth = res.rigid_penetration;
         }
 
     return res;
@@ -142,7 +239,7 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
                          ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Deep Kinetic Channel]\n";
             std::cout << "    .   Concrete Target         |         \\     /     Max Penetration: "
                       << std::setprecision(1) << r.actual_penetration_depth << " meters    |\n";
-            std::cout << "    .   (Density: " << target.density
+            std::cout << "    .   (Density: " << target.layers[0].density
                       << " kg/m^3) |          \\___/      (" << r.actual_penetration_depth * 3.28084
                       << " feet deep into target) |\n";
             std::cout << "    .                           |              *                         "
@@ -176,7 +273,7 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
                          ".~ [Erosion / Crater Zone]\n";
             std::cout << "    .   Concrete Target         |   Casing/Payload damaged upon impact.  "
                          "     |\n";
-            std::cout << "    .   (Density: " << target.density
+            std::cout << "    .   (Density: " << target.layers[0].density
                       << " kg/m^3) |   Max Penetration Depth:                    |\n";
             std::cout << "    .                           |   D = " << std::setprecision(2)
                       << r.actual_penetration_depth << " m ("
@@ -214,7 +311,7 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
                          ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]\n";
             std::cout << "    .   Concrete Target         |         \\     /                       "
                          "      |\n";
-            std::cout << "    .   (Density: " << target.density
+            std::cout << "    .   (Density: " << target.layers[0].density
                       << " kg/m^3) |          \\___/  <-- Reaches " << std::setprecision(1)
                       << r.actual_penetration_depth << " meters    |\n";
             std::cout << "    .                           |              *      ("
@@ -244,13 +341,14 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
               << ")\n";
     std::cout << "  - Casing Density : " << proj.casing_density << " kg/m^3\n";
     std::cout << "  - Yield Strength : " << proj.yield_strength / 1e9 << " GPa\n";
-    std::cout << "Target     : " << target.name << " (Density: " << target.density << " kg/m^3)\n";
+    std::cout << "Target     : " << target.name << " (Density: " << target.layers[0].density
+              << " kg/m^3)\n";
     std::cout << "---------------------------------------------------------------------------------"
                  "------------------\n";
     std::cout << "Alekseevskii-Tate Hydrodynamic Limit: P = L * sqrt(rho_p / rho_t) = "
               << std::fixed << std::setprecision(2)
-              << proj.length * std::sqrt(proj.casing_density / target.density) << " m ("
-              << proj.length * std::sqrt(proj.casing_density / target.density) * 3.28084
+              << proj.length * std::sqrt(proj.casing_density / target.layers[0].density) << " m ("
+              << proj.length * std::sqrt(proj.casing_density / target.layers[0].density) * 3.28084
               << " ft)\n";
     std::cout << "================================================================================="
                  "==================\n\n";
@@ -284,20 +382,22 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
         }
 }
 
-void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results, const std::string& basePath)
+void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
+                                               const std::string& basePath)
 {
     std::ifstream tpl(basePath + "/assets/visualizer_template.html");
-    if (!tpl.is_open()) {
-        std::cerr << "Error: Could not open template file " << basePath << "/assets/visualizer_template.html\n";
-        return;
-    }
+        if (!tpl.is_open()) {
+            std::cerr << "Error: Could not open template file " << basePath
+                      << "/assets/visualizer_template.html\n";
+            return;
+        }
 
     std::string filename = basePath + "/3d_visualizer.html";
     std::ofstream out(filename);
-    if (!out.is_open()) {
-        std::cerr << "Error: Could not open " << filename << " for writing.\n";
-        return;
-    }
+        if (!out.is_open()) {
+            std::cerr << "Error: Could not open " << filename << " for writing.\n";
+            return;
+        }
 
     std::stringstream buffer;
     buffer << tpl.rdbuf();
@@ -305,16 +405,24 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
     auto escapeJSON = [](const std::string& s) {
         std::string res;
-        for (char c : s) {
-            if (c == '"') res += "\\\"";
-            else if (c == '\\') res += "\\\\";
-            else if (c == '\b') res += "\\b";
-            else if (c == '\f') res += "\\f";
-            else if (c == '\n') res += "\\n";
-            else if (c == '\r') res += "\\r";
-            else if (c == '\t') res += "\\t";
-            else res += c;
-        }
+            for (char c : s) {
+                if (c == '"')
+                    res += "\\\"";
+                else if (c == '\\')
+                    res += "\\\\";
+                else if (c == '\b')
+                    res += "\\b";
+                else if (c == '\f')
+                    res += "\\f";
+                else if (c == '\n')
+                    res += "\\n";
+                else if (c == '\r')
+                    res += "\\r";
+                else if (c == '\t')
+                    res += "\\t";
+                else
+                    res += c;
+            }
         return res;
     };
 
@@ -333,8 +441,9 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     std::stringstream data;
         for (size_t i = 0; i < results.size(); ++i) {
             const auto& r = results[i];
-            data << "            { name: \"" << escapeJSON(r.scenario_name) << "\", velocity: " << r.velocity
-                 << ", mach: " << r.mach_number << ", energy: " << (r.kinetic_energy / 1e9)
+            data << "            { name: \"" << escapeJSON(r.scenario_name)
+                 << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
+                 << ", energy: " << (r.kinetic_energy / 1e9)
                  << ", pressure: " << (r.dynamic_pressure / 1e9)
                  << ", yield: " << (proj.yield_strength / 1e9)
                  << ", depth: " << r.actual_penetration_depth
@@ -344,9 +453,11 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", shock_prob: " << r.shock_damage_prob_percent
                  << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
                  << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
-                 << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary) << "\""
+                 << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary)
+                 << "\""
                  << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
-                 << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \"" << escapeJSON(target.name) << "\" }";
+                 << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
+                 << escapeJSON(target.name) << "\" }";
             if (i + 1 < results.size())
                 data << ",";
             data << "\n";
@@ -364,7 +475,6 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 
     replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
     replaceAll(html, "{{SCENARIOS_DATA}}", data.str());
-
 
     out << html;
     out.close();
