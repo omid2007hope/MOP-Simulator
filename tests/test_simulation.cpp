@@ -20,7 +20,7 @@ int main()
 
     // Initialize test target and projectile using defaults
     CONCRETE_DEFAULT concreteDef;
-    Target concrete {concreteDef.default_name, concreteDef.default_density, 200.0e6};
+    Target concrete {concreteDef.default_name, concreteDef.default_density, concreteDef.default_compressive_strength};
 
     MOP_DEFAULT mopDef;
     Projectile mop {mopDef.default_name, mopDef.default_length, mopDef.default_diameter,

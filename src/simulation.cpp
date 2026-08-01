@@ -38,12 +38,16 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // 2. Dynamic Impact Pressure approximation: P_dyn = 0.5 * rho_t * v^2
     res.dynamic_pressure = 0.5 * target.density * squaredVelocity;
 
-    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model
+    // 3. Rigid body penetration depth into concrete/rock (Work-Energy deceleration model)
     double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
 
-    res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
-                            std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
-                                               (2.0 * target.compressiveStrength));
+    if (area > 0.0 && target.compressiveStrength > 0.0 && target.density > 0.0 && dragCoefficient > 0.0) {
+        res.rigid_penetration = (proj.total_mass / (2.0 * area * target.density * dragCoefficient)) *
+                                std::log(1.0 + (target.density * dragCoefficient * squaredVelocity) /
+                                                   (2.0 * target.compressiveStrength));
+    } else {
+        res.rigid_penetration = 0.0;
+    }
 
     // 4. Alekseevskii-Tate Hydrodynamic Limit Equation: P = L * sqrt(rho_p / rho_t)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.density);
@@ -282,18 +286,18 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
 
 void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResult>& results, const std::string& basePath)
 {
+    std::ifstream tpl(basePath + "/assets/visualizer_template.html");
+    if (!tpl.is_open()) {
+        std::cerr << "Error: Could not open template file " << basePath << "/assets/visualizer_template.html\n";
+        return;
+    }
+
     std::string filename = basePath + "/3d_visualizer.html";
     std::ofstream out(filename);
-        if (!out.is_open()) {
-            std::cerr << "Error: Could not open " << filename << " for writing.\n";
-            return;
-        }
-
-    std::ifstream tpl(basePath + "/assets/visualizer_template.html");
-        if (!tpl.is_open()) {
-            std::cerr << "Error: Could not open template file " << basePath << "/assets/visualizer_template.html\n";
-            return;
-        }
+    if (!out.is_open()) {
+        std::cerr << "Error: Could not open " << filename << " for writing.\n";
+        return;
+    }
 
     std::stringstream buffer;
     buffer << tpl.rdbuf();

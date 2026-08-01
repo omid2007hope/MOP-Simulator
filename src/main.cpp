@@ -165,6 +165,10 @@ int main(int argc, char* argv[])
                         if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
                             break;
                         }
+                    if (std::cin.eof()) {
+                        std::cerr << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
+                        exit(1);
+                    }
                     safeCin();
                     std::cout << "Invalid Entry, please try again!\n";
                 }
@@ -222,7 +226,7 @@ int main(int argc, char* argv[])
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
 
             scenarios = {
-                {"50, 000ft Drop", 50000.0, 500.0},
+                {"50,000 ft Drop", 50000.0, 500.0},
                 {"45,000 ft Drop", 45000.0, 400.0},
                 {"Subsonic Operational", 40000.0, 300.0},
             };
