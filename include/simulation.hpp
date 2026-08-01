@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-
 struct PhysicsConstants
 {
     const double SPEED_OF_SOUND = 343.0;
@@ -23,11 +22,11 @@ struct PhysicsConstants
 struct TargetLayer
 {
     std::string material_name;
-    double thickness; // meters
-    double density; // kg/m^3
-    double compressiveStrength; // Pascals
+    double thickness;             // meters
+    double density;               // kg/m^3
+    double compressiveStrength;   // Pascals
     double rebar_volume_fraction; // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
-    double rebar_yield_strength; // Pascals
+    double rebar_yield_strength;  // Pascals
 };
 
 // Target material specification
@@ -41,18 +40,19 @@ struct Target
 struct Projectile
 {
     std::string name;
-    double length;         // meters
-    double diameter;       // meters
-    double total_mass;     // kg
-    double explosive_mass; // kg
-    double casing_density; // kg/m^3
-    double yield_strength; // Pascals (e.g., 2.0 GPa for Eglin steel)
-    
+    double length;               // meters
+    double diameter;             // meters
+    double curvature_noseReduce; // meters
+    double total_mass;           // kg
+    double explosive_mass;       // kg
+    double casing_density;       // kg/m^3
+    double yield_strength;       // Pascals (e.g., 2.0 GPa for Eglin steel)
+
     // Thermal ablation properties
-    double specific_heat;       // J/(kg*K)
-    double melting_point;       // Kelvin
-    double heat_of_fusion;      // J/kg
-    
+    double specific_heat;  // J/(kg*K)
+    double melting_point;  // Kelvin
+    double heat_of_fusion; // J/kg
+
     // Structural properties
     double area_moment_inertia; // m^4 (for bending moment calculations)
 };
@@ -61,8 +61,8 @@ struct Projectile
 struct ImpactScenario
 {
     std::string name;
-    double altitude_ft; // feet
-    double velocity;    // m/s
+    double altitude_ft;     // feet
+    double velocity;        // m/s
     double obliquity_angle; // Degrees (0 = perfectly perpendicular)
     double angle_of_attack; // Degrees
 };
@@ -100,7 +100,8 @@ public:
     SimulationResult simulate(const ImpactScenario& scenario);
     void printAscii3DVisualizer(const SimulationResult& r);
     void printReport(const std::vector<SimulationResult>& results);
-    void generateHtml3DVisualizer(const std::vector<SimulationResult>& results, const std::string& basePath);
+    void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
+                                  const std::string& basePath);
 };
 
 #endif // SIMULATION_HPP
