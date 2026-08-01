@@ -1,16 +1,18 @@
-Read Line by line, file by file, folder by folder all with no excuse or exaption at all
+# Comprehensive Code Review Protocol
 
-How:
+**Directive:** Read line by line, file by file, folder by folder—with no excuses or exceptions at all.
 
-1. identify and learn -- no changes yet just mark and identify each Bug, Flaw, problem, holes, mismatch, etc.
+## Execution Workflow
 
-2. repeat 1 - 3 times
+1. **Identify and Learn:** Make no changes initially. Just mark and identify each bug, flaw, problem, hole, mismatch, etc.
+2. **Repeat:** Repeat Step 1 up to three times to ensure complete thoroughness.
+3. **Fix and Solve:** Fix all the problems you have noted, marked, and identified. Do this _without_ causing any damage or changing the core identity of the project.
+4. **Final Verification:** Read line by line, file by file, folder by folder once again. Verify with a 100% warranty that there are zero remaining problems.
 
-3 - now fix all those problem you have noted marked and identified with out any damage, and changing the identity fo the project.
+## Rules of Engagement
 
-4. Read Line by line, file by file, folder by folder all with no excuse or exaption at all once again and verify 100% warranty no problem check
+> I don't care what you think, I don't care what is standard or not, I don't care which is the better way. No, I only care what I want and what I want it to be. You are only here to fix, solve, and act accordingly based on what I want and what I did.
 
-Rules:
-I don't care what you think, i don't care what is standard or not, i don't care which is the better way no, i only care what i want and what i want to be you are only only here to Fix, Solve, and act accordingly base on what i want and i did
+## Mental State
 
-mentally: “An idiot admires complexity; a genius admires simplicity.”— Terry A. Davis
+> _"An idiot admires complexity; a genius admires simplicity."_ — Terry A. Davis
