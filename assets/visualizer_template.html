@@ -263,7 +263,7 @@
                   targetBlock.add(line);
 
                   // Projectile
-                  const projGeom = new THREE.CylinderGeometry(projDiameter/2, projDiameter/2, projLength, 32);
+                  const projGeom = new THREE.CylinderGeometry((currentData.proj_diameter || 0.8)/2, (currentData.proj_diameter || 0.8)/2, (currentData.proj_length || 6.2), 32);
                   const projMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.15 });
                   projectile = new THREE.Mesh(projGeom, projMat);
                   scene.add(projectile);
@@ -295,14 +295,9 @@
                   scene.add(rulerGroup);
 
                   // Set dynamic defaults
-                  document.title = `${projName} vs ${targetName} - 3D Simulation Visualizer`;
+                  document.title = `${currentData.proj_name || 'Projectile'} vs ${currentData.target_name || 'Target'} - 3D Simulation Visualizer`;
 
-                  const rhoSlider = document.getElementById('slider-rho');
-                  if (targetDensity > rhoSlider.max) rhoSlider.max = targetDensity * 1.5;
-                  if (targetDensity < rhoSlider.min) rhoSlider.min = targetDensity * 0.5;
-                  rhoSlider.value = targetDensity;
 
-                  document.getElementById('val-rho').innerText = Math.round(targetDensity);
 
                   window.addEventListener('resize', onWindowResize);
                   selectScenario(0);
@@ -413,12 +408,6 @@
                           btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
                       }
                   });
-                  const velSlider = document.getElementById('slider-vel');
-                  if (data.velocity > velSlider.max) velSlider.max = data.velocity * 1.5;
-                  if (data.velocity < velSlider.min) velSlider.min = data.velocity * 0.5;
-                  velSlider.value = data.velocity;
-
-                  document.getElementById('val-vel').innerText = Math.round(data.velocity);
                   updateVisuals(data);
               }
 

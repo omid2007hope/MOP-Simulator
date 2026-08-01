@@ -340,7 +340,9 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", shock_prob: " << r.shock_damage_prob_percent
                  << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
                  << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
-                 << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary) << "\" }";
+                 << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary) << "\""
+                 << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
+                 << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \"" << escapeJSON(target.name) << "\" }";
             if (i + 1 < results.size())
                 data << ",";
             data << "\n";
