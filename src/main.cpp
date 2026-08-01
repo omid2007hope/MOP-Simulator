@@ -11,6 +11,13 @@
 
 const bool allowEntry = true;
 
+void safeCin()
+{
+    if (std::cin && !std::cin.empty())
+        std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+};
+
 // Helper to safely read numeric input and re-prompt on failure
 template <typename T>
 T getValidInput(const std::string& prompt, bool allowZero = false)
@@ -22,12 +29,12 @@ T getValidInput(const std::string& prompt, bool allowZero = false)
                     (valueEntry > 0 || (allowZero == true && valueEntry == 0))) {
                     return valueEntry;
                 }
-            if (std::cin.eof()) {
-                std::cerr << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
-                exit(1);
-            }
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                if (std::cin.eof()) {
+                    std::cerr
+                        << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
+                    exit(1);
+                }
+            safeCin();
             std::cout << "Invalid Entry, please try again!\n";
         }
 }
@@ -37,11 +44,12 @@ int main(int argc, char* argv[])
     int choice = 2;
 
     std::string basePath = ".";
-    if (argc > 0) {
-        std::filesystem::path exePath = argv[0];
-        basePath = exePath.parent_path().parent_path().string();
-        if (basePath.empty()) basePath = ".";
-    }
+        if (argc > 0) {
+            std::filesystem::path exePath = argv[0];
+            basePath = exePath.parent_path().parent_path().string();
+            if (basePath.empty())
+                basePath = ".";
+        }
 
     // Load databases
     auto targetsDb = ConfigLoader::loadTargets(basePath + "/data/targets.json");
@@ -90,12 +98,12 @@ int main(int argc, char* argv[])
             std::cout << "Enter choice [1, 2, or 3]: ";
                 if (std::cin >> choice && (choice == 1 || choice == 2 || choice == 3)) {
                     std::cout << "Scenario: " << choice << " Confirmed!";
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear buffer for getline
+                    safeCin();
                     break;
                 }
-            if (std::cin.eof()) exit(1);
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if (std::cin.eof())
+                exit(1);
+            safeCin();
             std::cout << "Invalid Entry, please try again!\n";
         }
 
@@ -104,7 +112,7 @@ int main(int argc, char* argv[])
         if (choice == 2) {
             std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
             std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
-
+            safeCin();
             std::string projectileName;
             getline(std::cin, projectileName);
             if (projectileName.empty())
@@ -118,11 +126,13 @@ int main(int argc, char* argv[])
 
             mop.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
 
-            while (true) {
-                mop.explosive_mass = getValidInput<double>("Enter Explosive Mass (kg): ", true);
-                if (mop.explosive_mass <= mop.total_mass) break;
-                std::cout << "Error: Explosive mass (" << mop.explosive_mass << " kg) cannot exceed total mass (" << mop.total_mass << " kg)!\n";
-            }
+                while (true) {
+                    mop.explosive_mass = getValidInput<double>("Enter Explosive Mass (kg): ", true);
+                    if (mop.explosive_mass <= mop.total_mass)
+                        break;
+                    std::cout << "Error: Explosive mass (" << mop.explosive_mass
+                              << " kg) cannot exceed total mass (" << mop.total_mass << " kg)!\n";
+                }
 
             mop.casing_density =
                 getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
@@ -141,8 +151,7 @@ int main(int argc, char* argv[])
                         if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
                             break;
                         }
-                    std::cin.clear();
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    safeCin();
                     std::cout << "Invalid Entry, please try again!\n";
                 }
 
