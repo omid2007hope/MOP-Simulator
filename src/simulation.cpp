@@ -70,10 +70,19 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 auto it = std::find_if(eachAirLayer.eachLayer.rbegin(),
                                        eachAirLayer.eachLayer.rend(),
                                        [targetAltitude](const AltitudeDensityPoint& p) {
-                                           return p.altitude_ft == targetAltitude;
+                                           return p.altitude_ft <= targetAltitude;
                                        });
                 return (it != eachAirLayer.eachLayer.rend()) ? it->density : 1.225;
             };
+
+            double current_density = findAirDensityByAltitude(current_altitude);
+            double fall_distance_m = (dropAltitude - current_altitude) * 0.3048;
+
+            double velocityAtCurrentAltitude = std::sqrt(
+                ((2.0 * proj.total_mass * cons.gravity) / (current_density * area * dragCoefficient)) *
+                (1.0 -
+                 std::exp(-(current_density * area * dragCoefficient * fall_distance_m) /
+                          proj.total_mass)));
         }
 
     size_t current_air_layer_idx = 0;
@@ -88,12 +97,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                        current_altitude >= Max_Altitude_Array[current_air_layer_idx]) {
                     current_air_layer_idx++;
                 }
-
-            double velocity = std::sqrt(
-                ((2.0 * proj.total_mass * 9.81) / (*area * dragCoefficient)) *
-                (1.0 -
-                 std::exp(-(air.levels * area * dragCoefficient * (scenario.altitude_ft * 0.3048)) /
-                          proj.total_mass)));
 
             // ! new up there
 
