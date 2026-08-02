@@ -64,12 +64,12 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     double current_altitude = dropAltitude;
 
     auto findAirDensityByAltitude = [&](double targetAltitude) -> double {
-        auto it = std::find_if(eachAirLayer.eachLayer.rbegin(),
-                               eachAirLayer.eachLayer.rend(),
-                               [targetAltitude](const AltitudeDensityPoint& p) {
-                                   return p.altitude_ft <= targetAltitude;
-                               });
-        return (it != eachAirLayer.eachLayer.rend()) ? it->density : 1.225;
+        for (auto it = eachAirLayer.eachLayer.rbegin(); it != eachAirLayer.eachLayer.rend(); ++it) {
+            if (it->altitude_ft <= targetAltitude) {
+                return it->density;
+            }
+        }
+        return 1.225;
     };
 
     if (dropAltitude > 0.0) {
@@ -218,9 +218,10 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         }
                     }
 
-                    // Acceleration
+                    // Acceleration (incorporating gravity component)
                     double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
-                    double acceleration = -deceleration_force / safe_mass;
+                    double gravity_component = cons.gravity * std::cos(obliquity_radians);
+                    double acceleration = gravity_component - (deceleration_force / safe_mass);
 
                     // Kinematics update
                     current_velocity += acceleration * dt;
@@ -572,28 +573,27 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                "==================\n\n";
 
         // Print Summary Table
-        std::cout << std::left << std::setw(20) << "Scenario" << std::right << std::setw(10)
-                  << "Velocity" << std::right << std::setw(7) << "Mach" << std::right
-                  << std::setw(11) << "Dyn.Press" << std::right << std::setw(11) << "Depth (m)"
-                  << std::right << std::setw(11) << "Shock Dmg"
-                  << "  " << std::left << std::setw(22) << "Regime" << std::left << std::setw(20)
-                  << "Outcome" << "\n";
-        std::cout << std::string(112, '-') << "\n";
+        std::cout << std::left << std::setw(20) << "Scenario" 
+                  << std::right << std::setw(12) << "Velocity" 
+                  << std::right << std::setw(9) << "Mach" 
+                  << std::right << std::setw(14) << "Dyn.Press" 
+                  << std::right << std::setw(12) << "Depth (m)"
+                  << std::right << std::setw(12) << "Shock Dmg"
+                  << "  " << std::left << std::setw(30) << "Regime" 
+                  << std::left << std::setw(20) << "Outcome" << "\n";
+        std::cout << std::string(130, '-') << "\n";
 
             for (const auto& r : results) {
-                std::cout << std::left << std::setw(20) << r.scenario_name << std::right
-                          << std::setw(8) << std::fixed << std::setprecision(1) << r.velocity
-                          << "m/s" << std::right << std::setw(6) << std::fixed
-                          << std::setprecision(1) << r.mach_number << "x" << std::right
-                          << std::setw(9) << std::fixed << std::setprecision(2)
-                          << (r.dynamic_pressure / 1e9) << "GPa" << std::right << std::setw(9)
-                          << std::fixed << std::setprecision(1) << r.actual_penetration_depth << "m"
-                          << std::right << std::setw(9) << std::fixed << std::setprecision(0)
-                          << r.shock_damage_prob_percent << "%"
-                          << "  " << std::left << std::setw(22) << r.regime << std::left
-                          << std::setw(20) << r.outcome_summary << "\n";
+                std::cout << std::left << std::setw(20) << r.scenario_name 
+                          << std::right << std::setw(8) << std::fixed << std::setprecision(1) << r.velocity << " m/s" 
+                          << std::right << std::setw(6) << std::fixed << std::setprecision(1) << r.mach_number << "x" 
+                          << std::right << std::setw(9) << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa" 
+                          << std::right << std::setw(9) << std::fixed << std::setprecision(1) << r.actual_penetration_depth << " m"
+                          << std::right << std::setw(10) << std::fixed << std::setprecision(0) << r.shock_damage_prob_percent << "%"
+                          << "  " << std::left << std::setw(30) << r.regime 
+                          << std::left << std::setw(20) << r.outcome_summary << "\n";
             }
-        std::cout << std::string(112, '-') << "\n\n";
+        std::cout << std::string(130, '-') << "\n\n";
 
             // Print ASCII 3D cross sections for all simulated scenarios
             for (const auto& r : results) {

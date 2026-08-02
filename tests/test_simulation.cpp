@@ -109,6 +109,5 @@ int main()
     std::cout << "                      [PASS] ALL UNIT TESTS PASSED SUCCESSFULLY!                                   \n";
     std::cout << "===================================================================================================\n\n";
 
-    system("pause");
     return 0;
 }

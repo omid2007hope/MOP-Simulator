@@ -100,7 +100,8 @@ int main(int argc, char* argv[])
                 break;
             } else if (tos_agree == "N" || tos_agree == "n" || tos_agree == "NO" || tos_agree == "no" || tos_agree == "No") {
                 std::cout << "\nAccess Denied. You must agree to the Terms of Service to use this simulator.\n";
-                system("pause");
+                std::cout << "\nPress Enter to exit...";
+                std::cin.get();
                 return 1;
             }
         }
@@ -211,7 +212,11 @@ int main(int argc, char* argv[])
                     prompt_ss << "  -> Enter Drop Altitude #" << (i + 1)
                               << " (feet) [e.g., 50000, 20000, 15]: ";
 
-                    double dropAltitude_ft = getValidInput<double>(prompt_ss.str());
+                    double dropAltitude_ft = getValidInput<double>(prompt_ss.str(), true);
+                    
+                    std::stringstream vel_ss;
+                    vel_ss << "  -> Enter Initial Velocity #" << (i + 1) << " (m/s) [0 for atmospheric drop from rest]: ";
+                    double initial_velocity = getValidInput<double>(vel_ss.str(), true);
                     
                     std::stringstream obliq_ss;
                     obliq_ss << "  -> Enter Obliquity Angle #" << (i + 1) << " (Degrees, 0 for perpendicular): ";
@@ -225,7 +230,7 @@ int main(int argc, char* argv[])
 
                     name_ss << "Custom Test #" << (i + 1) << " (" << dropAltitude_ft
                             << " ft drop)";
-                    scenarios.push_back({name_ss.str(), dropAltitude_ft, 0.0, obliquity, aoa});
+                    scenarios.push_back({name_ss.str(), dropAltitude_ft, initial_velocity, obliquity, aoa});
                 }
 
                 if (scenarios.empty()) {
@@ -275,8 +280,8 @@ int main(int argc, char* argv[])
     // Generate 3D HTML WebGL visualizer
     simulator.generateHtml3DVisualizer(results, basePath);
 
-    std::cout << "\n";
-    system("pause");
+    std::cout << "\nPress Enter to exit...";
+    std::cin.get();
 
     return 0;
 }
