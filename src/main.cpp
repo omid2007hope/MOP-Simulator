@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
     std::cout << "================================================================================="
                  "==================\n";
-    std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.5 (WITH 3D "
+    std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.8 (WITH 3D "
                  "VISUALIZATION)                \n";
     std::cout << "================================================================================="
                  "==================\n\n";

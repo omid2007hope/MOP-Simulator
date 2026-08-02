@@ -1,7 +1,7 @@
 # // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 cmake_minimum_required(VERSION 3.15)
-project(MOPSimulator VERSION 2.5.0 LANGUAGES CXX)
+project(MOPSimulator VERSION 2.8.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

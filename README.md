@@ -175,7 +175,7 @@ MOP Simulator/
 ├── bin/                          # Output directory for compiled executables
 ├── build/                        # Intermediate compilation object files
 ├── Makefile                      # Standard build script (GCC/Clang/MinGW, C++20)
-├── CMakeLists.txt                # CMake build configuration (project V2.5.0)
+├── CMakeLists.txt                # CMake build configuration (project V2.8.0)
 ├── .clang-format                 # Code formatting configuration
 ├── LICENSE                       # GNU Affero General Public License v3.0
 ├── README.md                     # Project documentation (this file)
