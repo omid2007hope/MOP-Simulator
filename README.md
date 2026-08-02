@@ -1,192 +1,179 @@
-# MOP - Massive Ordnance Penetrator Bomb Simulator
+```
+  _________________________________________________________________________________________
+ /                                                                                         \
+|  [!] END-USER LICENSE AGREEMENT (EULA) & TERMS OF SERVICE [!]                             |
+|                                                                                           |
+|  WARNING: This software is a high-fidelity, advanced physics and penetration simulator.   |
+|  Usage of this application is strictly restricted to recreational, educational, and      |
+|  hobbyist purposes. Due to the extreme accuracy and sensitive nature of the simulated     |
+|  models, any unauthorized, commercial, or malicious application may result in severe      |
+|  legal consequences.                                                                      |
+|                                                                                           |
+|  DISCLAIMER OF WARRANTY: This software is provided "AS IS", without warranty of any       |
+|  kind, express or implied.                                                                |
+|  LIMITATION OF LIABILITY: In no event shall the author(s) be liable for any claim,        |
+|  damages, or other liability arising from, out of, or in connection with the software     |
+|  or the use or other dealings in the software.                                            |
+|  By using this repository, you acknowledge that this tool is not certified for real-world |
+|  engineering, defense analysis, or physical destructive testing.                          |
+ \_________________________________________________________________________________________/
+```
 
-A C++ physics and penetration mechanics simulator for high-mass earth-penetrating ordnance like the **GBU-57 Massive Ordnance Penetrator (MOP)**. This project models terminal ballistic impact physics, structural casing integrity, and hydrodynamic soil/concrete penetration limits, featuring both a terminal ASCII cross-section renderer and a dynamically generated **Three.js WebGL 3D interactive visualizer**.
+# C++ Impact Physics & Terminal Ballistics Penetration Simulator v2.8
+
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
+![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
+![License](https://img.shields.io/badge/License-AGPLv3-g.svg)
+![Build](https://img.shields.io/badge/Build-MinGW%20%2F%20GCC-green.svg)
+![Status](https://img.shields.io/badge/Physics-Validated-orange.svg)
+
+A high-performance C++23 terminal ballistics simulation engine designed to model high-velocity kinetic impact, deep target penetration, structural failure, and thermodynamic behavior of heavy penetrators (e.g., GBU-57 MOP, BLU-109, and Orbital Tungsten Rods) into multi-layered geological and reinforced concrete structures.
+
+Includes an automated, zero-dependency **Interactive WebGL 3D Visualization Pipeline** generated directly from C++ trajectory integrations.
 
 ---
 
-## 🛠️ How to Build and Run
+## 🔬 Core Physics & Mathematical Framework
 
-### Prerequisites
-- Any modern C++ compiler supporting **C++20** or later (`g++`, `clang++`, or MSVC `cl`).
-- Optional: `make` / `mingw32-make` or `cmake`.
+The simulation engine integrates continuum mechanics, cavity expansion theory, and dynamic structural failure models step-by-step through depth.
 
-### Compilation
+### 1. Cavity Expansion & Deceleration Model (Modified Forrestal / Poncelet)
+For penetration into reinforced concrete and geological strata, the deceleration force $F_z$ is governed by cavity expansion dynamics:
 
-Using **Make / MinGW Make**:
-```bash
-make
-# or on Windows with MinGW:
+$$ F_z = -\frac{\pi D^2}{4} \left( S f_c' + N \rho_t v^2 \right) $$
+
+Where:
+- $D$: Projectile diameter ($m$)
+- $f_c'$: Unconfined compressive strength of the current target layer ($Pa$)
+- $S$: Empirical target strength multiplier ($S = 82.6 \cdot (f_c')^{-0.544}$)
+- $N$: Nose shape coefficient derived from Caliber Radius Head ($\text{CRH}$)
+- $\rho_t$: Target material density ($kg/m^3$)
+- $v$: Instantaneous velocity ($m/s$)
+
+### 2. Hydrodynamic Penetration Limit (Alekseevskii-Tate Model)
+At hypervelocity speeds ($v > 1200\ m/s$), dynamic pressures exceed the yield strength of both the target and the penetrator casing, shifting the regime into hydrodynamic fluid-like erosion:
+
+$$ P_{dyn} = \frac{1}{2} \rho_t v^2 $$
+
+$$ L_{max} = L_0 \sqrt{\frac{\rho_p}{\rho_t}} $$
+
+Where $\rho_p$ is casing density and $L_0$ is original penetrator length.
+
+### 3. Failure Regimes & Damage Mechanics
+The simulator continuously evaluates three primary destruction regimes during penetration:
+- **Pressure Yield (Crush)**: Casing walls collapse when dynamic pressure exceeds material yield strength ($P_{dyn} > \sigma_y$).
+- **Structural Bending Moment (J-Hooking / Snap)**: Oblique impacts ($\theta > 0$) with angle of attack ($\alpha$) generate asymmetric normal forces, creating a bending moment $M_{bending}$. If stress exceeds $\sigma_y \cdot Z$ (where $Z$ is the section modulus $I/y$), the casing snaps.
+- **Thermodynamic Filler Detonation (Cook-off)**: Sliding friction thermal energy $Q_{fric} = \mu \cdot F_n \cdot v \cdot \Delta t$ transfers into the explosive core. If filler temperature exceeds critical ignition thresholds, early detonation occurs mid-penetration.
+
+---
+
+## 📁 Repository & Architecture Layout
+
+```text
+MOP Simulator/
+├── assets/
+│   └── visualizer_template.html   # Three.js 3D WebGL visualization template
+├── bin/
+│   ├── sim.exe                    # Production CLI simulator binary (V2.8)
+│   └── test_simulation.exe        # Automated physics unit testing binary
+├── build/                         # Object files compiled during build
+├── data/
+│   ├── projectiles.json           # Presets for GBU-57 MOP, BLU-109, Tungsten Rods
+│   └── targets.json               # Layered targets (Concrete, Soil, Granite)
+├── documents/
+│   ├── Ai/                        # AI coding directives, architecture & workflow
+│   ├── commands/                  # Command references (compiling, testing, deploy)
+│   ├── contribution/              # Contributor guidelines, Roadmap & JSON schema
+│   ├── learning/                  # Post-mortems, console lifecycle & WebGL pipeline
+│   └── physic/                    # Physics equations, Poncelet math & yield limits
+├── include/
+│   ├── config_loader.hpp          # JSON database parser interfaces
+│   ├── default.hpp                # Hardcoded default presets (GBU-57, Granite)
+│   ├── nlohmann/json.hpp          # Single-header JSON library
+│   └── simulation.hpp             # Physics structures & simulator engine interface
+├── src/
+│   ├── config_loader.cpp          # Target/Projectile JSON loading implementation
+│   ├── main.cpp                   # Application entry, EULA logic & CLI menus
+│   └── simulation.cpp             # Core numerical integrator & 3D HTML exporter
+├── tests/
+│   └── test_simulation.cpp        # C++ unit test suite covering 4 core physics regimes
+├── CMakeLists.txt                 # CMake project configuration (V2.8.0)
+├── Makefile                       # MinGW / GCC C++23 build pipeline
+└── README.md                      # Primary documentation
+```
+
+---
+
+## 🛠️ Build & Compilation
+
+### Requirements
+- **Compiler**: GCC / MinGW-w64 with **C++23** support (`g++ >= 13.0`)
+- **Build System**: `mingw32-make` or `make` or `CMake`
+
+### 1. Compile Main Binary & Tests (`Makefile`)
+Open PowerShell / Terminal in the project root:
+
+```powershell
+# Clean previous build artifacts
+mingw32-make clean
+
+# Build production executable (bin/sim.exe)
 mingw32-make
+
+# Build and run physics verification test suite (bin/test_simulation.exe)
+mingw32-make test
 ```
 
-Using **GCC / MinGW** directly:
-```bash
-g++ -std=c++20 -O2 -Iinclude src/main.cpp src/simulation.cpp src/config_loader.cpp -o bin/sim.exe
-```
-
-Using **CMake**:
-```bash
-mkdir build && cd build
+### 2. Alternative Build via CMake
+```powershell
+mkdir build
+cd build
 cmake ..
 cmake --build .
 ```
 
-### Running the Simulator
-
-```bash
-./bin/sim.exe
-```
-
-1. **Select Mode**:
-   - `[1]` Run Standard GBU-57 MOP Presets (Mach ~0.9 to Mach ~1.5).
-   - `[2]` Interactive Custom Parameter Input.
-   - `[3]` Orbital Kinetic Strike Preset ("Rods from God" Tungsten Penetrators).
-2. View the console summary report and ASCII cross-sections.
-3. The simulator loads `assets/visualizer_template.html`, injects dynamic simulation data via template placeholders, and outputs `3d_visualizer.html` in the root directory.
-
-> **Note:** Projectile and target definitions are loaded from JSON databases in the `data/` directory. If a JSON file is missing or a named entry is not found, the simulator falls back to hardcoded defaults.
-
-#### 🌐 Viewing `3d_visualizer.html`
-You can view the 3D scene simply by double-clicking the generated `3d_visualizer.html` file to open it directly in your web browser. No local web server is required.
-
-### Running Unit Tests
-
-To run the automated physics and penetration regime unit tests:
-```bash
-make test
-# or on Windows with MinGW:
-mingw32-make test
-```
-
-Or with CMake:
-```bash
-cd build
-ctest --output-on-failure
-```
-
 ---
 
-## 🌟 Key Features
+## 🚀 Usage Modes
 
-- **Physics-Based Terminal Ballistics**: Evaluates kinetic energy ($E_k$), dynamic impact pressure ($P_{dyn}$), and fluid penetration limits.
-- **Alekseevskii-Tate Hydrodynamic Model**: Calculates maximum hydrodynamic penetration depth ($P = L \cdot \sqrt{\rho_p / \rho_t}$) in target media (e.g., hardened concrete).
-- **Forrestal Rigid-Body Penetration Model**: Calculates deep underground penetration depth using an ogive-nose CRH-based drag coefficient and a work-energy deceleration model against UHPC compressive strength.
-- **Casing Failure & Regimes**: Distinguishes between **Rigid Body Penetration** (deep underground drilling), **Rigid Body Shock Failure** (casing intact but explosive payload damaged by shock), and **Hydrodynamic / Hypervelocity Casing Failure** (surface crushing/detonation).
-- **Kinetic Rod Detection**: Automatically identifies zero-explosive / zero-yield projectiles as pure kinetic energy weapons and applies the appropriate hydrodynamic erosion physics regime.
-- **Shock Damage Probability**: Calculates the probability of explosive charge failure from impact shock as a function of pressure ratio.
-- **Data-Driven Configuration**: Projectile specs and target materials are loaded from external JSON databases (`data/projectiles.json`, `data/targets.json`) using [nlohmann/json](https://github.com/nlohmann/json), with safe hardcoded fallbacks.
-- **Dual Visualizer**:
-  - **Terminal ASCII 3D Cross-Sections**: Instant visual output in the command line for each scenario (Kinetic Rod, Surface Detonation, and Deep Rigid Penetration modes).
-  - **Interactive 3D WebGL HTML Generation**: Generates `3d_visualizer.html` from an external template (`assets/visualizer_template.html`) with Three.js, camera controls, orbit navigation, and HUD metrics.
-- **Robust Interactive CLI**: Validated input loops with `getValidInput<T>()` that enforce strict numeric validation and re-prompt on invalid entries.
-
----
-
-## 🌐 Web Application (Standalone)
-
-The simulator is also available as a **self-contained web application** — no compilation or build step needed.
-
-### Quick Start
-
-1. Open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).
-2. Select a simulation mode:
-   - **GBU-57 MOP Standard** — preset altitude drop scenarios
-   - **Custom Parameters** — define your own projectile and target
-   - **Orbital Kinetic Strike** — "Rods from God" tungsten penetrators
-3. Click **Launch Simulation** → interactive 3D WebGL visualization + data HUD
-4. Use parametric sliders for live re-simulation, switch camera views, and toggle the results table.
-
-### Deploy to a Domain
-
-The `index.html` is fully self-contained and can be deployed to any static hosting provider:
-
-**GitHub Pages** (free):
-```bash
-# Push to a gh-pages branch or enable Pages on main
-git add index.html
-git commit -m "Add web simulator"
-git push
-# Then enable GitHub Pages in Settings → Pages → Deploy from branch
-```
-
-**Netlify / Vercel**: Drag and drop the project folder, or connect your GitHub repo.
-
----
-
-## 📐 Physics & Engineering Models
-
-### 1. Kinetic Energy
-$$E_k = \frac{1}{2} m v^2$$
-
-### 2. Dynamic Impact Pressure
-$$P_{dyn} = \frac{1}{2} \rho_t v^2$$
-
-Where $\rho_t$ is the density of the target material (e.g., $2500 \text{ kg/m}^3$ for hardened concrete).
-
-### 3. Casing Structural Failure Criterion
-If $P_{dyn} > \sigma_y$ (where $\sigma_y$ is the yield strength of the casing, e.g. $2.0 \text{ GPa}$ for Eglin steel):
-- Casing crushes/shatters upon impact.
-- Causes surface/near-surface premature detonation.
-- Hydrodynamic limit caps penetration.
-
-If $P_{dyn} \le \sigma_y$:
-- Casing remains intact and rigid like a drill bit.
-- Shock damage probability is computed: $P_{shock} = \min\left(100,\ \left(\frac{P_{dyn}}{\sigma_y}\right)^{1.5} \times 85\right)$
-- If $P_{shock} < 50\%$: explosive survives → smart-fuze triggers deep underground.
-- If $P_{shock} \ge 50\%$: explosive fails from shock → premature detonation underground.
-
-### 4. Alekseevskii-Tate Hydrodynamic Penetration Limit
-$$P = L \cdot \sqrt{\frac{\rho_p}{\rho_t}}$$
-Where:
-- $L$ = Projectile length ($\text{meters}$)
-- $\rho_p$ = Casing density ($\text{kg/m}^3$)
-- $\rho_t$ = Target density ($\text{kg/m}^3$)
-
-### 5. Forrestal Rigid-Body Penetration Model
-$$D = \frac{m}{2 A \rho_t N} \cdot \ln\left(1 + \frac{\rho_t N v^2}{2 \sigma_c}\right)$$
-Where:
-- $m$ = Total projectile mass ($\text{kg}$)
-- $A$ = Cross-sectional area of the projectile ($\text{m}^2$)
-- $N$ = Ogive nose drag coefficient derived from the Caliber-Radius-Head (CRH): $N = \frac{8 \cdot CRH - 1}{24 \cdot CRH^2}$
-- $\sigma_c$ = Compressive strength of UHPC ($200 \text{ MPa}$)
-
----
-
-## 📁 Repository Structure
+Upon executing `bin/sim.exe`, users are presented with the mandatory EULA consent check followed by 3 execution modes:
 
 ```text
-MOP Simulator/
-├── index.html                    # Standalone web application (UI + Sim + 3D Visualizer)
-├── assets/
-│   └── visualizer_template.html  # External HTML/JS template for 3D visualizer generation
-├── data/
-│   ├── projectiles.json          # Projectile database (GBU-57, BLU-109, Tungsten Rod)
-│   └── targets.json              # Target material database (Soil, Granite, Concrete, Steel)
-├── include/
-│   ├── simulation.hpp            # Public API: PhysicsConstants, data structs, ImpactSimulator class
-│   ├── config_loader.hpp         # ConfigLoader class for JSON database loading
-│   └── nlohmann/                 # nlohmann/json header-only library (vendored)
-├── src/
-│   ├── main.cpp                  # CLI entry point, mode selection, validated input loops
-│   ├── simulation.cpp            # Core physics engine, ASCII renderer, HTML template generator
-│   └── config_loader.cpp         # JSON file parsing and projectile/target lookup
-├── tests/
-│   └── test_simulation.cpp       # Unit tests for ballistics, failure regimes, and kinetic rods
-├── bin/                          # Output directory for compiled executables
-├── build/                        # Intermediate compilation object files
-├── Makefile                      # Standard build script (GCC/Clang/MinGW, C++20)
-├── CMakeLists.txt                # CMake build configuration (project V2.8.0)
-├── .clang-format                 # Code formatting configuration
-├── LICENSE                       # GNU Affero General Public License v3.0
-├── README.md                     # Project documentation (this file)
-├── TODO.md                       # Project vision, bug tracker, and development roadmap
-└── 3d_visualizer.html            # Generated Three.js WebGL visualizer output
+Select Simulation Mode:
+  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)
+  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)
+  [3] Orbital Kinetic Strike Preset ("Rods from God" Tungsten Penetrators)
 ```
+
+### Interactive Output
+The simulator generates:
+1. **Console Terminal Report**: Instantaneous energy breakdown (GJ), maximum dynamic pressure (GPa), entry/exit velocities, penetration depth ($m$), and failure regime status.
+2. **ASCII Cross-Section Plot**: Character-based depth slice of target cratering and projectile stopping location.
+3. **HTML WebGL 3D Interactive Visualizer**: Generates `output_3d_visualizer.html` in the project root for 3D graphics rendering in any web browser.
 
 ---
 
-## 📄 License
+## 🌐 Interactive 3D WebGL Visualizer
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+The engine automatically exports `output_3d_visualizer.html` combining:
+- **Three.js Graphics Rendering**: Interactive orbit controls, multi-layered target translucency, depth markers, and shockwave propagation rings.
+- **Dynamic Physics Charts**: Real-time Chart.js telemetry plotting Velocity vs. Depth and Dynamic Pressure vs. Depth.
 
-Copyright © 2026 Omid Teimory. All Rights Reserved. See [LICENSE](LICENSE) for full licensing terms.
+---
+
+## 🧪 Unit Test Suite Verification
+
+Run `mingw32-make test` to execute 4 automated physics validation tests:
+1. **Subsonic Time-Integrated Penetration** ($340\ m/s$ into reinforced concrete — intact survival).
+2. **Hypervelocity Hydrodynamic Failure** ($1500\ m/s$ impact — pressure yield crush & Tate depth calculation).
+3. **Orbital Tungsten Kinetic Rod Strike** ($3400\ m/s$, $0$ explosive filler — hypervelocity kinetic erosion).
+4. **Oblique Impact Bending Structural Failure** ($30^\circ$ obliquity, $5^\circ$ AoA — J-Hook bending snap detection).
+
+---
+
+## 📜 License & Copyright
+
+**Copyright (c) 2026 Omid Teimory. All Rights Reserved.**
+
+Licensed under the GNU Affero General Public License v3.0 (AGPLv3). See `LICENSE` for details.
