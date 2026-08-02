@@ -55,8 +55,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     double dragCoefficient =
         (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
-    // ! new down here
-
     AirLayers eachAirLayer;
     AltitudeDensityPoint airLayerData;
 
@@ -78,6 +76,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         double next_print_altitude = dropAltitude - 5000.0;
         bool sonic_boom_triggered = false;
         double t_drop = 0.0;
+        int drop_frame_counter = 0;
         
         while (current_altitude > 0.0) {
             double current_density = findAirDensityByAltitude(current_altitude);
@@ -105,7 +104,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             }
 
             // Save telemetry frame every 10 steps (0.1s) or on sonic boom to keep JSON size reasonable
-            static int drop_frame_counter = 0;
             if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame) {
                 TelemetryFrame frame;
                 frame.time = t_drop;
@@ -139,143 +137,143 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.velocity = current_velocity;
     res.mach_number = current_velocity / cons.SPEED_OF_SOUND;
 
-            // Convert target layers to fullDepth depths
-            std::vector<double> layer_bottom_depths;
-            double fullDepth = 0.0;
-                for (const auto& layer : target.layers) {
-                    fullDepth += layer.thickness;
-                    layer_bottom_depths.push_back(fullDepth);
-                }
+    // Convert target layers to fullDepth depths
+    std::vector<double> layer_bottom_depths;
+    double fullDepth = 0.0;
+    for (const auto& layer : target.layers) {
+        fullDepth += layer.thickness;
+        layer_bottom_depths.push_back(fullDepth);
+    }
 
-            size_t current_layer_idx = 0;
-            size_t last_layer_idx = 0;
-            double next_print_depth = 1.0;
+    size_t current_layer_idx = 0;
+    size_t last_layer_idx = 0;
+    double next_print_depth = 1.0;
+    int pen_frame_counter = 0;
 
-            if (!target.layers.empty()) {
-                std::cout << "--- Ground Penetration Commenced ---\n";
-                std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[0].material_name << "\n";
+    if (!target.layers.empty()) {
+        std::cout << "--- Ground Penetration Commenced ---\n";
+        std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[0].material_name << "\n";
+    }
+
+    // Time Integration Loop
+    while (current_velocity > 0.0 && !res.casing_failure &&
+           current_depth < fullDepth) {
+        // Advance layer if we've pierced the current one
+        while (current_layer_idx < layer_bottom_depths.size() &&
+               current_depth >= layer_bottom_depths[current_layer_idx]) {
+            current_layer_idx++;
+        }
+
+        if (current_layer_idx >= target.layers.size()) {
+            res.regime = "Target Perforated";
+            res.outcome_summary =
+                "Projectile completely pierced all target layers.";
+            break;
+        }
+
+        if (current_layer_idx != last_layer_idx) {
+            last_layer_idx = current_layer_idx;
+            std::cout << "  [LAYER BREACH] Pierced into layer: " 
+                      << target.layers[current_layer_idx].material_name << "\n";
+        }
+
+        const auto& layer = target.layers[current_layer_idx];
+
+        double squaredVelocity = current_velocity * current_velocity;
+
+        // Dynamic Pressure
+        double dynamic_pressure = 0.5 * layer.density * squaredVelocity;
+        if (dynamic_pressure > max_dynamic_pressure) {
+            max_dynamic_pressure = dynamic_pressure;
+        }
+
+        // Deceleration force (incorporating rebar)
+        // Work-energy based deceleration force
+        double effective_strength =
+            layer.compressive_strength +
+            (layer.rebar_yield_strength * layer.rebar_volume_fraction);
+        double deceleration_force =
+            (area * effective_strength) +
+            (dragCoefficient * layer.density * area * squaredVelocity);
+
+        // Obliquity/Bending structural failure check
+        if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
+            double asymmetric_force = dynamic_pressure * area * std::sin(obliquity_radians + angleOfAttack_radians);
+            double bending_moment = asymmetric_force * (proj.length / 2.0);
+
+            // Stress = M * y / I
+            double max_bending_stress = 0.0;
+            if (proj.area_moment_inertia > 0) {
+                max_bending_stress =
+                    (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
             }
 
-                // Time Integration Loop
-                while (current_velocity > 0.0 && !res.casing_failure &&
-                       current_depth < fullDepth) {
-                        // Advance layer if we've pierced the current one
-                        while (current_layer_idx < layer_bottom_depths.size() &&
-                               current_depth >= layer_bottom_depths[current_layer_idx]) {
-                            current_layer_idx++;
-                        }
+            // Check structural failure
+            if (proj.yield_strength > 0.0 && max_bending_stress > proj.yield_strength) {
+                res.casing_failure = true;
+                res.regime = "Structural Failure (J-Hook/Snap)";
+                res.outcome_summary = "Bending moments exceeded casing yield strength.";
+                break;
+            }
+        }
 
-                        if (current_layer_idx >= target.layers.size()) {
-                            res.regime = "Target Perforated";
-                            res.outcome_summary =
-                                "Projectile completely pierced all target layers.";
-                            break;
-                        }
+        // Acceleration (incorporating gravity component)
+        double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
+        double gravity_component = cons.gravity * std::cos(obliquity_radians);
+        double acceleration = gravity_component - (deceleration_force / safe_mass);
 
-                        if (current_layer_idx != last_layer_idx) {
-                            last_layer_idx = current_layer_idx;
-                            std::cout << "  [LAYER BREACH] Pierced into layer: " 
-                                      << target.layers[current_layer_idx].material_name << "\n";
-                        }
+        // Kinematics update
+        current_velocity += acceleration * dt;
+        current_depth += current_velocity * dt * std::cos(obliquity_radians);
 
-                    const auto& layer = target.layers[current_layer_idx];
+        // Thermal Ablation (Simplified Frictional Heating)
+        // Energy converted to heat = Force * distance * friction_factor
+        double friction_factor = cons.frictionFactor;
+        double heat_energy =
+            (deceleration_force * friction_factor) * (current_velocity * dt);
+        double temp_increase = heat_energy / (safe_mass * proj.specific_heat);
+        current_temperature += temp_increase;
 
-                    double squaredVelocity = current_velocity * current_velocity;
+        // If we reach melting point, mass is lost to heat of fusion
+        if (current_temperature > proj.melting_point) {
+            double excess_temp = current_temperature - proj.melting_point;
+            double excess_heat = excess_temp * safe_mass * proj.specific_heat;
 
-                    // Dynamic Pressure
-                    double dynamic_pressure = 0.5 * layer.density * squaredVelocity;
-                        if (dynamic_pressure > max_dynamic_pressure) {
-                            max_dynamic_pressure = dynamic_pressure;
-                        }
+            if (excess_heat > 0 && proj.heat_of_fusion > 0) {
+                double mass_loss = excess_heat / proj.heat_of_fusion;
+                current_mass -= mass_loss;
+                current_temperature = proj.melting_point; // Clamp temperature
 
-                    // Deceleration force (incorporating rebar)
-                    // Work-energy based deceleration force
-                    double effective_strength =
-                        layer.compressive_strength +
-                        (layer.rebar_yield_strength * layer.rebar_volume_fraction);
-                    double deceleration_force =
-                        (area * effective_strength) +
-                        (dragCoefficient * layer.density * area * squaredVelocity);
+                if (current_mass < 0.1 * proj.total_mass) { // Burned up
+                    res.casing_failure = true;
+                    res.regime = "Thermal Destruction";
+                    res.outcome_summary = "Projectile completely ablated.";
+                    break;
+                }
+            }
+        }
 
-                    // Obliquity/Bending structural failure check
-                    if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
-                        double asymmetric_force = dynamic_pressure * area * std::sin(obliquity_radians + angleOfAttack_radians);
-                        double bending_moment = asymmetric_force * (proj.length / 2.0);
+        if (current_depth >= next_print_depth) {
+            double g_force = acceleration / cons.gravity;
+            std::cout << "  [Penetration T+ " << std::fixed << std::setprecision(2) << (t * 1000.0) << " ms] Depth: " 
+                      << std::setprecision(1) << current_depth 
+                      << " m | Vel: " << std::setprecision(1) << current_velocity << " m/s | Decel: " 
+                      << std::setprecision(0) << g_force << " G | Temp: " 
+                      << current_temperature << " K | Layer: " << layer.material_name << "\n";
+            next_print_depth += 1.0;
+        }
 
-                        // Stress = M * y / I
-                        double max_bending_stress = 0.0;
-                        if (proj.area_moment_inertia > 0) {
-                            max_bending_stress =
-                                (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
-                        }
-
-                        // Check structural failure
-                        if (proj.yield_strength > 0.0 && max_bending_stress > proj.yield_strength) {
-                            res.casing_failure = true;
-                            res.regime = "Structural Failure (J-Hook/Snap)";
-                            res.outcome_summary = "Bending moments exceeded casing yield strength.";
-                            break;
-                        }
-                    }
-
-                    // Acceleration (incorporating gravity component)
-                    double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
-                    double gravity_component = cons.gravity * std::cos(obliquity_radians);
-                    double acceleration = gravity_component - (deceleration_force / safe_mass);
-
-                    // Kinematics update
-                    current_velocity += acceleration * dt;
-                    current_depth += current_velocity * dt * std::cos(obliquity_radians);
-
-                    // Thermal Ablation (Simplified Frictional Heating)
-                    // Energy converted to heat = Force * distance * friction_factor
-                    double friction_factor = cons.frictionFactor;
-                    double heat_energy =
-                        (deceleration_force * friction_factor) * (current_velocity * dt);
-                    double temp_increase = heat_energy / (safe_mass * proj.specific_heat);
-                    current_temperature += temp_increase;
-
-                        // If we reach melting point, mass is lost to heat of fusion
-                        if (current_temperature > proj.melting_point) {
-                            double excess_temp = current_temperature - proj.melting_point;
-                            double excess_heat = excess_temp * safe_mass * proj.specific_heat;
-
-                                if (excess_heat > 0 && proj.heat_of_fusion > 0) {
-                                    double mass_loss = excess_heat / proj.heat_of_fusion;
-                                    current_mass -= mass_loss;
-                                    current_temperature = proj.melting_point; // Clamp temperature
-
-                                        if (current_mass < 0.1 * proj.total_mass) { // Burned up
-                                            res.casing_failure = true;
-                                            res.regime = "Thermal Destruction";
-                                            res.outcome_summary = "Projectile completely ablated.";
-                                            break;
-                                        }
-                                }
-                        }
-
-                    if (current_depth >= next_print_depth) {
-                        double g_force = acceleration / cons.gravity;
-                        std::cout << "  [Penetration T+ " << std::fixed << std::setprecision(2) << (t * 1000.0) << " ms] Depth: " 
-                                  << std::setprecision(1) << current_depth 
-                                  << " m | Vel: " << std::setprecision(1) << current_velocity << " m/s | Decel: " 
-                                  << std::setprecision(0) << g_force << " G | Temp: " 
-                                  << current_temperature << " K | Layer: " << layer.material_name << "\n";
-                        next_print_depth += 1.0;
-                    }
-
-                    // Add telemetry frame every 20 iterations (200 microseconds)
-                    static int pen_frame_counter = 0;
-                    if (pen_frame_counter++ % 20 == 0) {
-                        TelemetryFrame frame;
-                        frame.time = t;
-                        frame.altitude = 0.0;
-                        frame.depth = current_depth;
-                        frame.velocity = current_velocity;
-                        frame.mach = current_velocity / cons.SPEED_OF_SOUND;
-                        frame.dynamic_pressure = dynamic_pressure;
-                        res.penetration_frames.push_back(frame);
-                    }
+        // Add telemetry frame every 20 iterations (200 microseconds)
+        if (pen_frame_counter++ % 20 == 0) {
+            TelemetryFrame frame;
+            frame.time = t;
+            frame.altitude = 0.0;
+            frame.depth = current_depth;
+            frame.velocity = current_velocity;
+            frame.mach = current_velocity / cons.SPEED_OF_SOUND;
+            frame.dynamic_pressure = dynamic_pressure;
+            res.penetration_frames.push_back(frame);
+        }
 
                     t += dt;
 
