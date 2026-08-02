@@ -78,7 +78,32 @@ int main(int argc, char* argv[])
     std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.5 (WITH 3D "
                  "VISUALIZATION)                \n";
     std::cout << "================================================================================="
-                 "==================\n";
+                 "==================\n\n";
+                 
+    std::cout << "[!] MANDATORY TERMS OF SERVICE [!]\n";
+    std::cout << "This is a real, powerful and sophisticated simulator.\n";
+    std::cout << "Using this must be only for fun, education, and hobby purposes.\n";
+    std::cout << "Any other usage can cause legal issues due to the HIGH QUALITY AND ACCURACY OF SIMULATOR.\n\n";
+    
+    std::string tos_agree;
+    while (true) {
+        std::cout << "Do you agree to these terms? (Y/N): ";
+        if (std::cin >> tos_agree) {
+            if (tos_agree == "Y" || tos_agree == "y" || tos_agree == "YES" || tos_agree == "yes" || tos_agree == "Yes") {
+                safeCin();
+                std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
+                break;
+            } else if (tos_agree == "N" || tos_agree == "n" || tos_agree == "NO" || tos_agree == "no" || tos_agree == "No") {
+                std::cout << "\nAccess Denied. You must agree to the Terms of Service to use this simulator.\n";
+                system("pause");
+                return 1;
+            }
+        }
+        if (std::cin.eof()) return 1;
+        safeCin();
+        std::cout << "Invalid Entry. Please type Y or N.\n";
+    }
+
     std::cout << "Select Simulation Mode:\n";
     std::cout << "  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)\n";
     std::cout << "  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)\n";
