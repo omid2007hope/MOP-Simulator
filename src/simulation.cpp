@@ -20,6 +20,27 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.velocity = scenario.velocity;
     res.mach_number = scenario.velocity / cons.SPEED_OF_SOUND;
 
+    res.casing_failure = false;
+    res.premature_detonation = false;
+    res.explosive_charge_survives = true;
+    res.shock_damage_prob_percent = 0.0;
+    res.regime = "Time-Integrated Penetration";
+    res.outcome_summary = "Intact";
+
+    double current_velocity = scenario.velocity;
+    double current_mass = proj.total_mass;
+    double current_depth = 0.0;
+
+    // Obliquity and AoA
+    double obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
+    double angleOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
+
+    double dt = 1e-5; // 10 microseconds
+    double t = 0.0;
+    double current_temperature = 300.0; // Kelvin
+
+    double max_dynamic_pressure = 0.0;
+
     double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
 
     double CRH = 0.0;
@@ -29,6 +50,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     // Calculate Nose Performance Coefficient (N)
     double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
+
     double dragCoefficient =
         (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
@@ -39,15 +61,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     double maxAltitude_ft = eachAirLayer.eachLayer.size() - 1;
     double dropAltitude = scenario.altitude_ft;
+    double current_altitude = dropAltitude;
 
-    double current_altitude;
+        while (res.casing_failure == false && dropAltitude < maxAltitude_ft &&
+               current_altitude <= dropAltitude) {
+            double findAirDensityByAltitude(const std::vector<double>& eachAirLayer.eachLayer) {
+                std::find_if(eachLayer.rbegin(), eachLayer.rend()),
+                [current_altitude](const current_density& p)
 
-    double findAirDensityByAltitude(const std::vector<double>& eachAirLayer.eachLayer) {
-        std::find_if(eachLayer.rbegin(), eachLayer.rend()),
-        [current_altitude](const current_density& p)
-
-        { return p.Altitude == targetAltitude }
-    };
+                { return p.Altitude == targetAltitude }
+            };
+        };
 
     size_t current_air_layer_idx = 0;
 
@@ -69,27 +93,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                           proj.total_mass)));
 
             // ! new up there
-
-            double current_velocity = scenario.velocity;
-            double current_mass = proj.total_mass;
-            double current_depth = 0.0;
-
-            // Obliquity and AoA
-            double obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
-            double angleOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
-
-            double dt = 1e-5; // 10 microseconds
-            double t = 0.0;
-            double current_temperature = 300.0; // Kelvin
-
-            res.casing_failure = false;
-            res.premature_detonation = false;
-            res.explosive_charge_survives = true;
-            res.shock_damage_prob_percent = 0.0;
-            res.regime = "Time-Integrated Penetration";
-            res.outcome_summary = "Intact";
-
-            double max_dynamic_pressure = 0.0;
 
             // Convert target layers to fullDepth depths
             std::vector<double> layer_bottom_depths;
