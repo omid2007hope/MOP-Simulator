@@ -245,5 +245,8 @@ int main(int argc, char* argv[])
     // Generate 3D HTML WebGL visualizer
     simulator.generateHtml3DVisualizer(results, basePath);
 
+    std::cout << "\n";
+    system("pause");
+
     return 0;
 }

@@ -95,9 +95,9 @@ int main()
     std::cout << "         -> [PASS] Bending moment exceeded yield strength as expected.\n";
     std::cout << "         -> [PASS] Regime: " << resOblique.regime << "\n\n";
 
-    std::cout << "===================================================================================================\n";
     std::cout << "                      [PASS] ALL UNIT TESTS PASSED SUCCESSFULLY!                                   \n";
-    std::cout << "===================================================================================================\n";
+    std::cout << "===================================================================================================\n\n";
 
+    system("pause");
     return 0;
 }
