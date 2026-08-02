@@ -26,7 +26,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     // Obliquity and AoA
     double obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
-    double angelOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
+    double angleOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
 
     double dt = 1e-5; // 10 microseconds
     double t = 0.0;
@@ -49,18 +49,23 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             layer_bottom_depths.push_back(cumulative);
         }
 
+    size_t current_layer_idx = 0;
+
         // Time Integration Loop
         while (current_velocity > 0.0 && res.casing_failure == false &&
                current_depth < cumulative) {
-            //  First layer of the object in Array
-            size_t current_layer_idx = 0;
-            // Find current layer
-                for (size_t i = 0; i < layer_bottom_depths.size(); ++i) {
-                        if (current_depth < layer_bottom_depths[i]) {
-                            current_layer_idx = i;
-                            break;
-                        }
-                }
+            
+            // Advance layer if we've pierced the current one
+            while (current_layer_idx < layer_bottom_depths.size() && 
+                   current_depth >= layer_bottom_depths[current_layer_idx]) {
+                current_layer_idx++;
+            }
+            
+            if (current_layer_idx >= target.layers.size()) {
+                res.regime = "Target Perforated";
+                res.outcome_summary = "Projectile completely pierced all target layers.";
+                break;
+            }
 
             const auto& layer = target.layers[current_layer_idx];
 
@@ -86,7 +91,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             // Bending Moment calculation (Asymmetric force)
             double asymmetric_force =
-                dynamic_pressure * area * std::sin(obliquity_radians + angelOfAttack_radians);
+                dynamic_pressure * area * std::sin(obliquity_radians + angleOfAttack_radians);
             double bending_moment = asymmetric_force * (proj.length / 2.0); // Simplified load
 
             // Stress = M * y / I
@@ -120,7 +125,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             // Thermal Ablation (Simplified Frictional Heating)
             // Energy converted to heat = Force * distance * friction_factor
-            double friction_factor = 0.1;
+            double friction_factor = cons.frictionFactor;
             double heat_energy = (deceleration_force * friction_factor) * (current_velocity * dt);
             double temp_increase = heat_energy / (current_mass * proj.specific_heat);
             current_temperature += temp_increase;
@@ -155,7 +160,15 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.dynamic_pressure = max_dynamic_pressure;
     res.kinetic_energy = 0.5 * proj.total_mass * std::pow(scenario.velocity, 2);
     res.rigid_penetration = current_depth; // Backward compat
-    res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / target.layers[0].density);
+    
+    double total_thickness = 0.0;
+    double weighted_density_sum = 0.0;
+    for (const auto& layer : target.layers) {
+        weighted_density_sum += layer.density * layer.thickness;
+        total_thickness += layer.thickness;
+    }
+    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : target.layers[0].density;
+    res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
 
     // Shock Damage
     res.is_kinetic_rod = (proj.explosive_mass == 0.0 || proj.yield_strength == 0.0);
@@ -348,14 +361,22 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
               << ")\n";
     std::cout << "  - Casing Density : " << proj.casing_density << " kg/m^3\n";
     std::cout << "  - Yield Strength : " << proj.yield_strength / 1e9 << " GPa\n";
-    std::cout << "Target     : " << target.name << " (Density: " << target.layers[0].density
-              << " kg/m^3)\n";
+    std::cout << "Target     : " << target.name << " (Layers: " << target.layers.size() << ")\n";
     std::cout << "---------------------------------------------------------------------------------"
                  "------------------\n";
-    std::cout << "Alekseevskii-Tate Hydrodynamic Limit: P = L * sqrt(rho_p / rho_t) = "
+                 
+    double total_thickness = 0.0;
+    double weighted_density_sum = 0.0;
+    for (const auto& layer : target.layers) {
+        weighted_density_sum += layer.density * layer.thickness;
+        total_thickness += layer.thickness;
+    }
+    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : target.layers[0].density;
+                 
+    std::cout << "Alekseevskii-Tate Hydrodynamic Limit (Avg Target Density): P = L * sqrt(rho_p / rho_t) = "
               << std::fixed << std::setprecision(2)
-              << proj.length * std::sqrt(proj.casing_density / target.layers[0].density) << " m ("
-              << proj.length * std::sqrt(proj.casing_density / target.layers[0].density) * 3.28084
+              << proj.length * std::sqrt(proj.casing_density / average_density) << " m ("
+              << proj.length * std::sqrt(proj.casing_density / average_density) * 3.28084
               << " ft)\n";
     std::cout << "================================================================================="
                  "==================\n\n";
@@ -394,8 +415,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
 {
     std::ifstream tpl(basePath + "/assets/visualizer_template.html");
         if (!tpl.is_open()) {
-            std::cerr << "Error: Could not open template file " << basePath
-                      << "/assets/visualizer_template.html\n";
+            std::cerr << "[!] Warning: HTML Visualizer template not found at " << basePath
+                      << "/assets/visualizer_template.html. Visualizer will not be generated.\n";
             return;
         }
 
