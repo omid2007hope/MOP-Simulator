@@ -76,6 +76,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         std::cout << "\n--- Simulating Atmospheric Drop from " << dropAltitude << " ft ---\n";
         double dt_drop = 0.01; // 10ms for drop integration
         double next_print_altitude = dropAltitude - 5000.0;
+        bool sonic_boom_triggered = false;
+        double t_drop = 0.0;
         
         while (current_altitude > 0.0) {
             double current_density = findAirDensityByAltitude(current_altitude);
@@ -92,16 +94,29 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             // Altitude decrease = velocity (m/s) * dt (s) * conversion to ft
             current_altitude -= (current_velocity * dt_drop) * 3.28084;
 
+            if (current_velocity >= cons.SPEED_OF_SOUND && !sonic_boom_triggered) {
+                sonic_boom_triggered = true;
+                std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ " 
+                          << std::fixed << std::setprecision(2) << t_drop << "s (Altitude: " 
+                          << std::setprecision(0) << current_altitude 
+                          << " ft | Density: " << std::setprecision(3) << current_density << " kg/m^3) <<<\n";
+            }
+
             if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
-                std::cout << "  [Drop] Alt: " << std::fixed << std::setprecision(0) << current_altitude 
-                          << " ft | Vel: " << std::setprecision(1) << current_velocity << " m/s | Density: " 
+                double g_force = acceleration / cons.gravity;
+                std::cout << "  [Drop T+ " << std::fixed << std::setprecision(1) << t_drop << "s] Alt: " 
+                          << std::setprecision(0) << current_altitude 
+                          << " ft | Vel: " << std::setprecision(1) << current_velocity << " m/s | Accel: "
+                          << std::setprecision(2) << g_force << " G | Density: " 
                           << std::setprecision(3) << current_density << " kg/m^3\n";
                 next_print_altitude -= 5000.0;
             }
+            t_drop += dt_drop;
         }
         
         current_altitude = 0.0;
-        std::cout << "  [Impact] Alt: 0 ft | Impact Velocity: " << std::fixed << std::setprecision(1) << current_velocity << " m/s\n";
+        std::cout << "  [Impact T+ " << std::fixed << std::setprecision(2) << t_drop << "s] Alt: 0 ft | Impact Velocity: " 
+                  << std::setprecision(1) << current_velocity << " m/s\n";
         std::cout << "--------------------------------------------------------\n\n";
     }
     
@@ -118,6 +133,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 }
 
             size_t current_layer_idx = 0;
+            size_t last_layer_idx = 0;
+            double next_print_depth = 1.0;
+
+            if (!target.layers.empty()) {
+                std::cout << "--- Ground Penetration Commenced ---\n";
+                std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[0].material_name << "\n";
+            }
 
                 // Time Integration Loop
                 while (current_velocity > 0.0 && !res.casing_failure &&
@@ -133,6 +155,12 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                             res.outcome_summary =
                                 "Projectile completely pierced all target layers.";
                             break;
+                        }
+
+                        if (current_layer_idx != last_layer_idx) {
+                            last_layer_idx = current_layer_idx;
+                            std::cout << "  [LAYER BREACH] Pierced into layer: " 
+                                      << target.layers[current_layer_idx].material_name << "\n";
                         }
 
                     const auto& layer = target.layers[current_layer_idx];
@@ -211,12 +239,30 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                                 }
                         }
 
+                    if (current_depth >= next_print_depth) {
+                        double g_force = acceleration / cons.gravity;
+                        std::cout << "  [Penetration T+ " << std::fixed << std::setprecision(2) << (t * 1000.0) << " ms] Depth: " 
+                                  << std::setprecision(1) << current_depth 
+                                  << " m | Vel: " << std::setprecision(1) << current_velocity << " m/s | Decel: " 
+                                  << std::setprecision(0) << g_force << " G | Temp: " 
+                                  << current_temperature << " K | Layer: " << layer.material_name << "\n";
+                        next_print_depth += 1.0;
+                    }
+
                     t += dt;
 
                     // Failsafe for infinite loop (e.g. 10 seconds max)
                     if (t > 10.0)
                         break;
                 }
+            
+            if (current_velocity <= 0.0) {
+                std::string final_layer = current_layer_idx < target.layers.size() ? target.layers[current_layer_idx].material_name : "Unknown";
+                std::cout << "  [FULL STOP at T+ " << std::fixed << std::setprecision(2) << (t * 1000.0) << " ms] Projectile came to rest at Depth: " 
+                          << std::setprecision(2) << current_depth 
+                          << " m inside layer: " << final_layer << "\n";
+            }
+            std::cout << "------------------------------------\n\n";
 
             res.actual_penetration_depth = current_depth;
             res.dynamic_pressure = max_dynamic_pressure;
