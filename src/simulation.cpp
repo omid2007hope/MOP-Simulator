@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 #include "simulation.hpp"
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -65,13 +66,14 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
         while (res.casing_failure == false && dropAltitude < maxAltitude_ft &&
                current_altitude <= dropAltitude) {
-            double findAirDensityByAltitude(const std::vector<double>& eachAirLayer.eachLayer) {
-                std::find_if(eachLayer.rbegin(), eachLayer.rend()),
-                [current_altitude](const current_density& p)
-
-                { return p.Altitude == targetAltitude }
+            auto findAirDensityByAltitude = [&](double targetAltitude) -> double {
+                auto it = std::find_if(eachAirLayer.eachLayer.rbegin(), eachAirLayer.eachLayer.rend(),
+                                       [targetAltitude](const AltitudeDensityPoint& p) {
+                                           return p.altitude_ft == targetAltitude;
+                                       });
+                return (it != eachAirLayer.eachLayer.rend()) ? it->density : 1.225;
             };
-        };
+        }
 
     size_t current_air_layer_idx = 0;
 
