@@ -60,45 +60,54 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     AirLayers eachAirLayer;
     AltitudeDensityPoint airLayerData;
 
-    double maxAltitude_ft = eachAirLayer.eachLayer.size() - 1;
     double dropAltitude = scenario.altitude_ft;
     double current_altitude = dropAltitude;
 
-        while (res.casing_failure == false && dropAltitude < maxAltitude_ft &&
-               current_altitude <= dropAltitude) {
-            auto findAirDensityByAltitude = [&](double targetAltitude) -> double {
-                auto it = std::find_if(eachAirLayer.eachLayer.rbegin(),
-                                       eachAirLayer.eachLayer.rend(),
-                                       [targetAltitude](const AltitudeDensityPoint& p) {
-                                           return p.altitude_ft <= targetAltitude;
-                                       });
-                return (it != eachAirLayer.eachLayer.rend()) ? it->density : 1.225;
-            };
+    auto findAirDensityByAltitude = [&](double targetAltitude) -> double {
+        auto it = std::find_if(eachAirLayer.eachLayer.rbegin(),
+                               eachAirLayer.eachLayer.rend(),
+                               [targetAltitude](const AltitudeDensityPoint& p) {
+                                   return p.altitude_ft <= targetAltitude;
+                               });
+        return (it != eachAirLayer.eachLayer.rend()) ? it->density : 1.225;
+    };
 
+    if (dropAltitude > 0.0) {
+        std::cout << "\n--- Simulating Atmospheric Drop from " << dropAltitude << " ft ---\n";
+        double dt_drop = 0.01; // 10ms for drop integration
+        double next_print_altitude = dropAltitude - 5000.0;
+        
+        while (current_altitude > 0.0) {
             double current_density = findAirDensityByAltitude(current_altitude);
-            double fall_distance_m = (dropAltitude - current_altitude) * 0.3048;
+            
+            // Drag force: F_d = 0.5 * rho * v^2 * Cd * A
+            double drag_force = 0.5 * current_density * std::pow(current_velocity, 2) * dragCoefficient * area;
+            
+            // Net acceleration: a = g - F_d / m
+            double acceleration = cons.gravity - (drag_force / proj.total_mass);
+            
+            // Update velocity and altitude
+            current_velocity += acceleration * dt_drop;
+            
+            // Altitude decrease = velocity (m/s) * dt (s) * conversion to ft
+            current_altitude -= (current_velocity * dt_drop) * 3.28084;
 
-            double velocityAtCurrentAltitude = std::sqrt(
-                ((2.0 * proj.total_mass * cons.gravity) / (current_density * area * dragCoefficient)) *
-                (1.0 -
-                 std::exp(-(current_density * area * dragCoefficient * fall_distance_m) /
-                          proj.total_mass)));
+            if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
+                std::cout << "  [Drop] Alt: " << std::fixed << std::setprecision(0) << current_altitude 
+                          << " ft | Vel: " << std::setprecision(1) << current_velocity << " m/s | Density: " 
+                          << std::setprecision(3) << current_density << " kg/m^3\n";
+                next_print_altitude -= 5000.0;
+            }
         }
-
-    size_t current_air_layer_idx = 0;
-
-    // For now!
-
-        // Time Integration Loop
-        while (res.casing_failure == false && current_altitude > 0.0 &&
-               current_altitude < dropAltitude) {
-                // Advance layer if we've pierced the current one
-                while (current_air_layer_idx < eachAirLayer.eachLayer.size() &&
-                       current_altitude >= eachAirLayer.eachLayer[current_air_layer_idx].altitude_ft) {
-                    current_air_layer_idx++;
-                }
-
-            // ! new up there
+        
+        current_altitude = 0.0;
+        std::cout << "  [Impact] Alt: 0 ft | Impact Velocity: " << std::fixed << std::setprecision(1) << current_velocity << " m/s\n";
+        std::cout << "--------------------------------------------------------\n\n";
+    }
+    
+    // Update result with final impact velocity
+    res.velocity = current_velocity;
+    res.mach_number = current_velocity / cons.SPEED_OF_SOUND;
 
             // Convert target layers to fullDepth depths
             std::vector<double> layer_bottom_depths;
@@ -276,8 +285,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         }
                 }
 
-            return res;
-        }
     return res;
 }
 
