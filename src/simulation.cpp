@@ -40,13 +40,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     double dropAltitude = scenario.altitude_ft;
     double current_altitude = scenario.altitude_ft;
 
-    std::vector<double> Max_Altitude_Array;
-
-    double maxAltitude_ft = 0.0;
-        for (const auto& airLayer : eachAirLayer.eachLayer) {
-            maxAltitude_ft += airLayerData.altitude_ft;
-            Max_Altitude_Array.push_back(maxAltitude_ft);
-        }
+    double maxAltitude_ft = eachAirLayer.eachLayer.size() - 1;
 
     size_t current_air_layer_idx = 0;
 
@@ -62,7 +56,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 }
 
             double velocity = std::sqrt(
-                ((2.0 * proj.total_mass * 9.81) / (air.levels * area * dragCoefficient)) *
+                ((2.0 * proj.total_mass * 9.81) / (*area * dragCoefficient)) *
                 (1.0 -
                  std::exp(-(air.levels * area * dragCoefficient * (scenario.altitude_ft * 0.3048)) /
                           proj.total_mass)));
