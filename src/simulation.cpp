@@ -67,7 +67,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         while (res.casing_failure == false && dropAltitude < maxAltitude_ft &&
                current_altitude <= dropAltitude) {
             auto findAirDensityByAltitude = [&](double targetAltitude) -> double {
-                auto it = std::find_if(eachAirLayer.eachLayer.rbegin(), eachAirLayer.eachLayer.rend(),
+                auto it = std::find_if(eachAirLayer.eachLayer.rbegin(),
+                                       eachAirLayer.eachLayer.rend(),
                                        [targetAltitude](const AltitudeDensityPoint& p) {
                                            return p.altitude_ft == targetAltitude;
                                        });
