@@ -13,9 +13,9 @@ struct PhysicsConstants
     const double PI = std::numbers::pi;
 
     // Engine behavior constants
-    const double hypervelocityThreshold = 1500.0;
     const double shockDamageMultiplier = 85.0;
     const double shockDamageExponent = 1.5;
+    const double frictionFactor = 0.1;
 };
 
 // Target layer specification
