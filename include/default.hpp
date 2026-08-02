@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 #ifndef DEFAULT_HPP
 #define DEFAULT_HPP
 

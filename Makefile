@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude
 

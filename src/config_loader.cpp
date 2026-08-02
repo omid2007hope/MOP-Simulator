@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 #include "config_loader.hpp"
 #include "nlohmann/json.hpp"
 #include <fstream>

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
 #ifndef CONFIG_LOADER_HPP
 #define CONFIG_LOADER_HPP
 
