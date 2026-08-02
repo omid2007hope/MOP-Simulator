@@ -176,20 +176,28 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.is_kinetic_rod = (proj.explosive_mass == 0.0 || proj.yield_strength == 0.0);
 
         if (res.is_kinetic_rod) {
-                if (!res.casing_failure && max_dynamic_pressure > proj.yield_strength &&
-                    proj.yield_strength > 0) {
+                if (res.casing_failure) {
+                    // Already failed due to bending or thermal destruction
+                }
+                else if (max_dynamic_pressure > proj.yield_strength && proj.yield_strength > 0) {
                     res.casing_failure = true;
                     res.regime = "Hydrodynamic Yield";
                     res.outcome_summary = "Kinetic rod crushed by pressure.";
                 }
-                if (!res.casing_failure) {
+                else {
                     res.regime = "Hypervelocity Kinetic Rod Penetration";
                 }
             res.shock_damage_prob_percent = 0.0;
             res.explosive_charge_survives = true;
         }
         else {
-                if (!res.casing_failure && max_dynamic_pressure > proj.yield_strength) {
+                if (res.casing_failure) {
+                    // Casing already failed in the loop (e.g. J-Hook or Thermal)
+                    res.explosive_charge_survives = false;
+                    res.premature_detonation = true;
+                    res.shock_damage_prob_percent = 100.0;
+                }
+                else if (max_dynamic_pressure > proj.yield_strength) {
                     res.casing_failure = true;
                     res.premature_detonation = true;
                     res.explosive_charge_survives = false;
@@ -197,7 +205,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     res.regime = "Pressure Yield (Crush)";
                     res.outcome_summary = "Casing crushed by dynamic pressure.";
                 }
-                else if (!res.casing_failure) {
+                else {
                     double pressure_ratio = max_dynamic_pressure / proj.yield_strength;
                     res.shock_damage_prob_percent =
                         std::min(100.0,
