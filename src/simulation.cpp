@@ -93,8 +93,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         while (res.casing_failure == false && current_altitude > 0.0 &&
                current_altitude < dropAltitude) {
                 // Advance layer if we've pierced the current one
-                while (current_air_layer_idx < Max_Altitude_Array.size() &&
-                       current_altitude >= Max_Altitude_Array[current_air_layer_idx]) {
+                while (current_air_layer_idx < eachAirLayer.eachLayer.size() &&
+                       current_altitude >= eachAirLayer.eachLayer[current_air_layer_idx].altitude_ft) {
                     current_air_layer_idx++;
                 }
 
@@ -278,6 +278,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             return res;
         }
+    return res;
+}
 
     void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
     {
