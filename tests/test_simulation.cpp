@@ -31,7 +31,6 @@ int main()
     SimulationResult resSub = simulator.simulate(subScenario);
 
     double expectedKE_sub = 0.5 * mop.total_mass * (340.0 * 340.0);
-    double expectedPDyn_sub = 0.5 * concrete.layers[0].density * (340.0 * 340.0); // max pressure will be in first layer roughly
     double total_thickness = 0.0;
     double weighted_density_sum = 0.0;
     for (const auto& layer : concrete.layers) {
@@ -42,6 +41,7 @@ int main()
     double expectedHydro_depth = mop.length * std::sqrt(mop.casing_density / average_density);
 
     assert(approxEqual(resSub.kinetic_energy, expectedKE_sub, 1.0));
+    assert(resSub.dynamic_pressure > 0.0 && resSub.dynamic_pressure < mop.yield_strength);
     assert(approxEqual(resSub.hydro_penetration, expectedHydro_depth, 1e-3));
     assert(resSub.casing_failure == false);
     assert(resSub.premature_detonation == false);
