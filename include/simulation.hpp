@@ -9,6 +9,7 @@
 
 struct PhysicsConstants
 {
+    const double gravity = 9.81;
     const double SPEED_OF_SOUND = 343.0;
     const double PI = std::numbers::pi;
 
