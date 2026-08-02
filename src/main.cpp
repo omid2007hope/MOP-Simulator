@@ -61,37 +61,16 @@ int main(int argc, char* argv[])
     auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
 
     // Default target
-    Target object;
+    Target object = CONCRETE_DEFAULT;
         if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
             object = *t;
         }
-        else {
-            CONCRETE_DEFAULT objectDefaultValue;
-            object.name = objectDefaultValue.default_name;
-            object.layers = objectDefaultValue.default_layers;
-        }
 
     // Default projectile (GBU-57 MOP)
-    Projectile munition;
+    Projectile munition = MOP_DEFAULT;
         if (auto p = ConfigLoader::getProjectileByName(
                 projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
             munition = *p;
-        }
-        else {
-            MOP_DEFAULT mopDefaultValue;
-
-            munition.name = mopDefaultValue.default_name;
-            munition.length = mopDefaultValue.default_length;
-            munition.diameter = mopDefaultValue.default_diameter;
-            munition.curvature_noseReduce = mopDefaultValue.curvature_noseReduce;
-            munition.total_mass = mopDefaultValue.default_total_mass;
-            munition.explosive_mass = mopDefaultValue.default_explosive_mass;
-            munition.casing_density = mopDefaultValue.default_casing_density;
-            munition.yield_strength = mopDefaultValue.default_yield_strength;
-            munition.specific_heat = mopDefaultValue.default_specific_heat;
-            munition.melting_point = mopDefaultValue.default_melting_point;
-            munition.heat_of_fusion = mopDefaultValue.default_heat_of_fusion;
-            munition.area_moment_inertia = mopDefaultValue.default_area_moment_inertia;
         }
 
     std::cout << "================================================================================="
@@ -166,7 +145,7 @@ int main(int argc, char* argv[])
             object.layers.clear();
             TargetLayer customLayer;
             customLayer.material_name = "Custom Layer";
-            customLayer.thickness = 100.0;
+            customLayer.thickness = getValidInput<double>("Enter Target Layer Thickness (meters): ", false);
             
             customLayer.rebar_volume_fraction =
                 getValidInput<double>("Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
@@ -196,25 +175,25 @@ int main(int argc, char* argv[])
                     std::cout << "Invalid Entry, please try again!\n";
                 }
 
-                for (int each = 0; each < numScenarios; ++each) {
+                for (int i = 0; i < numScenarios; ++i) {
                     std::stringstream prompt_ss;
 
-                    prompt_ss << "  -> Enter Velocity #" << (each + 1)
+                    prompt_ss << "  -> Enter Velocity #" << (i + 1)
                               << " (m/s) [e.g., 3500, 2000, 350]: ";
 
                     double projectileVelocity = getValidInput<double>(prompt_ss.str());
                     
                     std::stringstream obliq_ss;
-                    obliq_ss << "  -> Enter Obliquity Angle #" << (each + 1) << " (Degrees, 0 for perpendicular): ";
+                    obliq_ss << "  -> Enter Obliquity Angle #" << (i + 1) << " (Degrees, 0 for perpendicular): ";
                     double obliquity = getValidInput<double>(obliq_ss.str(), true);
 
                     std::stringstream aoa_ss;
-                    aoa_ss << "  -> Enter Angle of Attack #" << (each + 1) << " (Degrees): ";
+                    aoa_ss << "  -> Enter Angle of Attack #" << (i + 1) << " (Degrees): ";
                     double aoa = getValidInput<double>(aoa_ss.str(), true);
 
                     std::stringstream name_ss;
 
-                    name_ss << "Custom Test #" << (each + 1) << " (" << projectileVelocity
+                    name_ss << "Custom Test #" << (i + 1) << " (" << projectileVelocity
                             << " m/s)";
                     scenarios.push_back({name_ss.str(), 0.0, projectileVelocity, obliquity, aoa});
                 }
@@ -232,24 +211,7 @@ int main(int argc, char* argv[])
                     munition = *p;
                 }
                 else {
-                    RODS_FROM_GOD_DEFAULT rodsFromGodDefaultValue;
-
-                    munition.name = rodsFromGodDefaultValue.default_name;
-                    munition.length = rodsFromGodDefaultValue.default_length;
-                    munition.diameter = rodsFromGodDefaultValue.default_diameter;
-                    munition.curvature_noseReduce = rodsFromGodDefaultValue.curvature_noseReduce;
-                    munition.total_mass = rodsFromGodDefaultValue.default_total_mass;
-                    munition.explosive_mass =
-                        rodsFromGodDefaultValue
-                            .default_explosive_mass; // 0 kg explosive (pure kinetic energy weapon)
-                    munition.casing_density =
-                        rodsFromGodDefaultValue.default_casing_density; // High-density Tungsten
-                    munition.yield_strength =
-                        rodsFromGodDefaultValue.default_yield_strength; 
-                    munition.specific_heat = rodsFromGodDefaultValue.default_specific_heat;
-                    munition.melting_point = rodsFromGodDefaultValue.default_melting_point;
-                    munition.heat_of_fusion = rodsFromGodDefaultValue.default_heat_of_fusion;
-                    munition.area_moment_inertia = rodsFromGodDefaultValue.default_area_moment_inertia;
+                    munition = RODS_FROM_GOD_DEFAULT;
                 }
 
             scenarios = {{"LEO Orbital Strike (Mach 10)", 100000.0, 3400.0, 0.0, 0.0},
