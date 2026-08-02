@@ -18,15 +18,36 @@ struct PhysicsConstants
     const double frictionFactor = 0.1;
 };
 
+struct AltitudeDensityPoint
+{
+    double altitude_ft = 0.0; // Altitude in feet
+    double density = 1.225;   // Air density in kg/m^3
+};
+
+struct AirDensityAtAltitudes
+{
+    std::vector<AltitudeDensityPoint> levels = {
+        {0.0, 1.2250},
+        {10000.0, 0.9041},
+        {20000.0, 0.6531},
+        {30000.0, 0.4581},
+        {40000.0, 0.3119},
+        {50000.0, 0.2031},
+        {60000.0, 0.1268},
+        {70000.0, 0.0765},
+        {80000.0, 0.0457}
+    };
+};
+
 // Target layer specification
 struct TargetLayer
 {
     std::string material_name;
-    double thickness = 1.0;             // meters
-    double density = 2500.0;            // kg/m^3
-    double compressiveStrength = 60.0e6;// Pascals
-    double rebar_volume_fraction = 0.0; // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
-    double rebar_yield_strength = 0.0;  // Pascals
+    double thickness = 1.0;              // meters
+    double density = 2500.0;             // kg/m^3
+    double compressiveStrength = 60.0e6; // Pascals
+    double rebar_volume_fraction = 0.0;  // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
+    double rebar_yield_strength = 0.0;   // Pascals
 };
 
 // Target material specification
@@ -43,14 +64,14 @@ struct Projectile
     double length = 1.0;               // meters
     double diameter = 0.1;             // meters
     double curvature_noseReduce = 0.6; // meters
-    double total_mass = 100.0;          // kg
+    double total_mass = 100.0;         // kg
     double explosive_mass = 0.0;       // kg
     double casing_density = 7800.0;    // kg/m^3
-    double yield_strength = 1.0e9;      // Pascals (e.g., 2.0 GPa for Eglin steel)
+    double yield_strength = 1.0e9;     // Pascals (e.g., 2.0 GPa for Eglin steel)
 
     // Thermal ablation properties
-    double specific_heat = 460.0;  // J/(kg*K)
-    double melting_point = 1800.0;  // Kelvin
+    double specific_heat = 460.0;     // J/(kg*K)
+    double melting_point = 1800.0;    // Kelvin
     double heat_of_fusion = 272000.0; // J/kg
 
     // Structural properties
