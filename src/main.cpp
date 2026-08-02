@@ -28,6 +28,7 @@ T getValidInput(const std::string& prompt, bool allowZero = false)
             std::cout << prompt;
                 if (std::cin >> valueEntry &&
                     (valueEntry > 0 || (allowZero && valueEntry == 0))) {
+                    safeCin();
                     return valueEntry;
                 }
                 if (std::cin.eof()) {
@@ -99,6 +100,7 @@ int main(int argc, char* argv[])
                 std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
                 break;
             } else if (tos_agree == "N" || tos_agree == "n" || tos_agree == "NO" || tos_agree == "no" || tos_agree == "No") {
+                safeCin();
                 std::cout << "\nAccess Denied. You must agree to the Terms of Service to use this simulator.\n";
                 std::cout << "\nPress Enter to exit...";
                 std::cin.get();
@@ -196,6 +198,7 @@ int main(int argc, char* argv[])
                 while (true) {
                     std::cout << "Enter number of custom impact velocities to test [1 to 5]: ";
                         if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
+                            safeCin();
                             break;
                         }
                     if (std::cin.eof()) {
