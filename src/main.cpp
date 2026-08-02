@@ -207,10 +207,10 @@ int main(int argc, char* argv[])
                 for (int i = 0; i < numScenarios; ++i) {
                     std::stringstream prompt_ss;
 
-                    prompt_ss << "  -> Enter Velocity #" << (i + 1)
-                              << " (m/s) [e.g., 3500, 2000, 350]: ";
+                    prompt_ss << "  -> Enter Drop Altitude #" << (i + 1)
+                              << " (feet) [e.g., 50000, 20000, 15]: ";
 
-                    double projectileVelocity = getValidInput<double>(prompt_ss.str());
+                    double dropAltitude_ft = getValidInput<double>(prompt_ss.str());
                     
                     std::stringstream obliq_ss;
                     obliq_ss << "  -> Enter Obliquity Angle #" << (i + 1) << " (Degrees, 0 for perpendicular): ";
@@ -222,9 +222,9 @@ int main(int argc, char* argv[])
 
                     std::stringstream name_ss;
 
-                    name_ss << "Custom Test #" << (i + 1) << " (" << projectileVelocity
-                            << " m/s)";
-                    scenarios.push_back({name_ss.str(), 0.0, projectileVelocity, obliquity, aoa});
+                    name_ss << "Custom Test #" << (i + 1) << " (" << dropAltitude_ft
+                            << " ft drop)";
+                    scenarios.push_back({name_ss.str(), dropAltitude_ft, 0.0, obliquity, aoa});
                 }
 
                 if (scenarios.empty()) {
