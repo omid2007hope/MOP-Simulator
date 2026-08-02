@@ -67,6 +67,7 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
             p.name = item.value("name", "Unknown Projectile");
             p.length = item.value("length", 1.0);
             p.diameter = item.value("diameter", 0.1);
+            p.curvature_noseReduce = item.value("curvature_noseReduce", 6.0 * p.diameter);
             p.total_mass = item.value("total_mass", 100.0);
             p.explosive_mass = item.value("explosive_mass", 0.0);
             p.casing_density = item.value("casing_density", 7800.0);
