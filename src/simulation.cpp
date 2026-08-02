@@ -37,10 +37,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     AirLayers eachAirLayer;
     AltitudeDensityPoint airLayerData;
 
-    double dropAltitude = scenario.altitude_ft;
-    double current_altitude = scenario.altitude_ft;
-
     double maxAltitude_ft = eachAirLayer.eachLayer.size() - 1;
+    double dropAltitude = scenario.altitude_ft;
+
+    double current_altitude;
+
+    double findAirDensityByAltitude(const std::vector<double>& eachAirLayer.eachLayer) {
+        std::find_if(eachLayer.rbegin(), eachLayer.rend()),
+        [current_altitude](const current_density& p)
+
+        { return p.Altitude == targetAltitude }
+    };
 
     size_t current_air_layer_idx = 0;
 
