@@ -22,11 +22,11 @@ struct PhysicsConstants
 struct TargetLayer
 {
     std::string material_name;
-    double thickness;             // meters
-    double density;               // kg/m^3
-    double compressiveStrength;   // Pascals
-    double rebar_volume_fraction; // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
-    double rebar_yield_strength;  // Pascals
+    double thickness = 1.0;             // meters
+    double density = 2500.0;            // kg/m^3
+    double compressiveStrength = 60.0e6;// Pascals
+    double rebar_volume_fraction = 0.0; // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
+    double rebar_yield_strength = 0.0;  // Pascals
 };
 
 // Target material specification
@@ -40,50 +40,50 @@ struct Target
 struct Projectile
 {
     std::string name;
-    double length;               // meters
-    double diameter;             // meters
-    double curvature_noseReduce; // meters
-    double total_mass;           // kg
-    double explosive_mass;       // kg
-    double casing_density;       // kg/m^3
-    double yield_strength;       // Pascals (e.g., 2.0 GPa for Eglin steel)
+    double length = 1.0;               // meters
+    double diameter = 0.1;             // meters
+    double curvature_noseReduce = 0.6; // meters
+    double total_mass = 100.0;          // kg
+    double explosive_mass = 0.0;       // kg
+    double casing_density = 7800.0;    // kg/m^3
+    double yield_strength = 1.0e9;      // Pascals (e.g., 2.0 GPa for Eglin steel)
 
     // Thermal ablation properties
-    double specific_heat;  // J/(kg*K)
-    double melting_point;  // Kelvin
-    double heat_of_fusion; // J/kg
+    double specific_heat = 460.0;  // J/(kg*K)
+    double melting_point = 1800.0;  // Kelvin
+    double heat_of_fusion = 272000.0; // J/kg
 
     // Structural properties
-    double area_moment_inertia; // m^4 (for bending moment calculations)
+    double area_moment_inertia = 0.02; // m^4 (for bending moment calculations)
 };
 
 // Scenario input definition
 struct ImpactScenario
 {
     std::string name;
-    double altitude_ft;     // feet
-    double velocity;        // m/s
-    double obliquity_angle; // Degrees (0 = perfectly perpendicular)
-    double angle_of_attack; // Degrees
+    double altitude_ft = 0.0;     // feet
+    double velocity = 0.0;        // m/s
+    double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
+    double angle_of_attack = 0.0; // Degrees
 };
 
 // Simulation results for a given scenario
 struct SimulationResult
 {
     std::string scenario_name;
-    double altitude_ft;
-    double velocity;
-    double mach_number;
-    double kinetic_energy;   // Joules
-    double dynamic_pressure; // Pascals
-    bool casing_failure;
-    bool premature_detonation;
-    double hydro_penetration;         // meters (Alekseevskii-Tate limit)
-    double rigid_penetration;         // meters (Work-energy concrete deceleration model)
-    double actual_penetration_depth;  // meters (Selected depth based on regime)
-    double shock_damage_prob_percent; // 0% to 100% chance of explosive failure from shock
-    bool explosive_charge_survives;   // true if charge holds intact without shock damage
-    bool is_kinetic_rod;              // true if explosive_mass == 0 or yield_strength == 0
+    double altitude_ft = 0.0;
+    double velocity = 0.0;
+    double mach_number = 0.0;
+    double kinetic_energy = 0.0;   // Joules
+    double dynamic_pressure = 0.0; // Pascals
+    bool casing_failure = false;
+    bool premature_detonation = false;
+    double hydro_penetration = 0.0;         // meters (Alekseevskii-Tate limit)
+    double rigid_penetration = 0.0;         // meters (Work-energy concrete deceleration model)
+    double actual_penetration_depth = 0.0;  // meters (Selected depth based on regime)
+    double shock_damage_prob_percent = 0.0; // 0% to 100% chance of explosive failure from shock
+    bool explosive_charge_survives = true;  // true if charge holds intact without shock damage
+    bool is_kinetic_rod = false;            // true if explosive_mass == 0 or yield_strength == 0
     std::string regime;
     std::string outcome_summary;
 };

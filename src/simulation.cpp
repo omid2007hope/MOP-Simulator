@@ -69,13 +69,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             const auto& layer = target.layers[current_layer_idx];
 
-            double CHR = 0.0;
+            double CRH = 0.0;
             if (proj.diameter > 0.0) {
-                CHR = proj.curvature_noseReduce / proj.diameter;
+                CRH = proj.curvature_noseReduce / proj.diameter;
             }
 
             // Calculate Nose Performance Coefficient (N)
-            double Caliber_Radius_Head = (CHR > 0.0) ? CHR : 3.0;
+            double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
             double dragCoefficient =
                 (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
@@ -117,7 +117,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                                         (dragCoefficient * layer.density * area * squaredVelocity);
 
             // Acceleration
-            double acceleration = -deceleration_force / current_mass;
+            double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
+            double acceleration = -deceleration_force / safe_mass;
 
             // Kinematics update
             current_velocity += acceleration * dt;
@@ -127,13 +128,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             // Energy converted to heat = Force * distance * friction_factor
             double friction_factor = cons.frictionFactor;
             double heat_energy = (deceleration_force * friction_factor) * (current_velocity * dt);
-            double temp_increase = heat_energy / (current_mass * proj.specific_heat);
+            double temp_increase = heat_energy / (safe_mass * proj.specific_heat);
             current_temperature += temp_increase;
 
                 // If we reach melting point, mass is lost to heat of fusion
                 if (current_temperature > proj.melting_point) {
                     double excess_temp = current_temperature - proj.melting_point;
-                    double excess_heat = excess_temp * current_mass * proj.specific_heat;
+                    double excess_heat = excess_temp * safe_mass * proj.specific_heat;
 
                         if (excess_heat > 0 && proj.heat_of_fusion > 0) {
                             double mass_loss = excess_heat / proj.heat_of_fusion;
@@ -167,7 +168,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         weighted_density_sum += layer.density * layer.thickness;
         total_thickness += layer.thickness;
     }
-    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : target.layers[0].density;
+    double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
+    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
 
     // Shock Damage
@@ -257,9 +259,10 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
             std::cout << "    "
                          ".~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\\.~.~.~./"
                          ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Deep Kinetic Channel]\n";
+            double target_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
             std::cout << "    .   Concrete Target         |         \\     /     Max Penetration: "
                       << std::setprecision(1) << r.actual_penetration_depth << " meters    |\n";
-            std::cout << "    .   (Density: " << target.layers[0].density
+            std::cout << "    .   (Density: " << target_density
                       << " kg/m^3) |          \\___/      (" << r.actual_penetration_depth * 3.28084
                       << " feet deep into target) |\n";
             std::cout << "    .                           |              *                         "
@@ -293,7 +296,8 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
                          ".~ [Erosion / Crater Zone]\n";
             std::cout << "    .   Concrete Target         |   Casing/Payload damaged upon impact.  "
                          "     |\n";
-            std::cout << "    .   (Density: " << target.layers[0].density
+            double target_density2 = target.layers.empty() ? 2500.0 : target.layers[0].density;
+            std::cout << "    .   (Density: " << target_density2
                       << " kg/m^3) |   Max Penetration Depth:                    |\n";
             std::cout << "    .                           |   D = " << std::setprecision(2)
                       << r.actual_penetration_depth << " m ("
@@ -331,7 +335,8 @@ void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
                          ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]\n";
             std::cout << "    .   Concrete Target         |         \\     /                       "
                          "      |\n";
-            std::cout << "    .   (Density: " << target.layers[0].density
+            double target_density3 = target.layers.empty() ? 2500.0 : target.layers[0].density;
+            std::cout << "    .   (Density: " << target_density3
                       << " kg/m^3) |          \\___/  <-- Reaches " << std::setprecision(1)
                       << r.actual_penetration_depth << " meters    |\n";
             std::cout << "    .                           |              *      ("
@@ -371,7 +376,8 @@ void ImpactSimulator::printReport(const std::vector<SimulationResult>& results)
         weighted_density_sum += layer.density * layer.thickness;
         total_thickness += layer.thickness;
     }
-    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : target.layers[0].density;
+    double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
+    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
                  
     std::cout << "Alekseevskii-Tate Hydrodynamic Limit (Avg Target Density): P = L * sqrt(rho_p / rho_t) = "
               << std::fixed << std::setprecision(2)
