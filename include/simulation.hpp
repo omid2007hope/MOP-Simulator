@@ -24,19 +24,17 @@ struct AltitudeDensityPoint
     double density = 1.225;   // Air density in kg/m^3
 };
 
-struct AirDensityAtAltitudes
+struct AirLayers
 {
-    std::vector<AltitudeDensityPoint> levels = {
-        {0.0, 1.2250},
-        {10000.0, 0.9041},
-        {20000.0, 0.6531},
-        {30000.0, 0.4581},
-        {40000.0, 0.3119},
-        {50000.0, 0.2031},
-        {60000.0, 0.1268},
-        {70000.0, 0.0765},
-        {80000.0, 0.0457}
-    };
+    std::vector<AltitudeDensityPoint> eachLayer = {{0.0, 1.2250},
+                                                   {10000.0, 0.9041},
+                                                   {20000.0, 0.6531},
+                                                   {30000.0, 0.4581},
+                                                   {40000.0, 0.3119},
+                                                   {50000.0, 0.2031},
+                                                   {60000.0, 0.1268},
+                                                   {70000.0, 0.0765},
+                                                   {80000.0, 0.0457}};
 };
 
 // Target layer specification
