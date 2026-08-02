@@ -80,10 +80,14 @@ int main(int argc, char* argv[])
     std::cout << "================================================================================="
                  "==================\n\n";
                  
-    std::cout << "[!] MANDATORY TERMS OF SERVICE [!]\n";
-    std::cout << "This is a real, powerful and sophisticated simulator.\n";
-    std::cout << "Using this must be only for fun, education, and hobby purposes.\n";
-    std::cout << "Any other usage can cause legal issues due to the HIGH QUALITY AND ACCURACY OF SIMULATOR.\n\n";
+    std::cout << "[!] END-USER LICENSE AGREEMENT (EULA) & TERMS OF SERVICE [!]\n";
+    std::cout << "WARNING: This software is a high-fidelity, advanced physics and penetration simulator.\n";
+    std::cout << "Usage of this application is strictly restricted to recreational, educational, and hobbyist purposes.\n";
+    std::cout << "Due to the extreme accuracy and sensitive nature of the simulated models, any unauthorized, commercial, or malicious application may result in severe legal consequences.\n\n";
+    std::cout << "DISCLAIMER OF WARRANTY: This software is provided \"AS IS\", without warranty of any kind, express or implied.\n";
+    std::cout << "LIMITATION OF LIABILITY: In no event shall the author(s) be liable for any claim, damages, or other liability\n";
+    std::cout << "arising from, out of, or in connection with the software or the use or other dealings in the software.\n";
+    std::cout << "By proceeding, you acknowledge that this tool is not certified for real-world engineering, defense analysis, or physical destructive testing.\n\n";
     
     std::string tos_agree;
     while (true) {
