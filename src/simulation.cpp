@@ -120,7 +120,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             size_t current_layer_idx = 0;
 
                 // Time Integration Loop
-                while (current_velocity > 0.0 && res.casing_failure == false &&
+                while (current_velocity > 0.0 && !res.casing_failure &&
                        current_depth < fullDepth) {
                         // Advance layer if we've pierced the current one
                         while (current_layer_idx < layer_bottom_depths.size() &&
@@ -220,7 +220,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             res.actual_penetration_depth = current_depth;
             res.dynamic_pressure = max_dynamic_pressure;
-            res.kinetic_energy = 0.5 * proj.total_mass * std::pow(scenario.velocity, 2);
+            res.kinetic_energy = 0.5 * proj.total_mass * std::pow(res.velocity, 2);
             res.rigid_penetration = current_depth; // Backward compat
 
             double total_thickness = 0.0;

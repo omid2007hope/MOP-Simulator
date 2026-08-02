@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <limits>

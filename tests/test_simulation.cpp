@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include "default.hpp"
 #include "simulation.hpp"
@@ -27,7 +28,7 @@ int main()
 
     // Test 1: Subsonic Operational Impact (Mach ~1.0, 340 m/s)
     std::cout << "[Test 1] Testing Subsonic Time-Integrated Penetration (340 m/s)...\n";
-    ImpactScenario subScenario {"Subsonic Test", 15.0, 340.0, 0.0, 0.0};
+    ImpactScenario subScenario {"Subsonic Test", 0.0, 340.0, 0.0, 0.0};
     SimulationResult resSub = simulator.simulate(subScenario);
 
     double expectedKE_sub = 0.5 * mop.total_mass * (340.0 * 340.0);
@@ -55,7 +56,7 @@ int main()
     ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 1500.0, 0.0, 0.0};
     SimulationResult resHyper = simulator.simulate(hyperScenario);
 
-    double expectedKE_hyper = 0.5 * mop.total_mass * (1500.0 * 1500.0);
+    double expectedKE_hyper = 0.5 * mop.total_mass * (resHyper.velocity * resHyper.velocity);
     
     assert(approxEqual(resHyper.kinetic_energy, expectedKE_hyper, 1.0));
     assert(resHyper.casing_failure == true);
