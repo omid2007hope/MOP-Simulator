@@ -160,12 +160,20 @@ int main(int argc, char* argv[])
 
             munition.yield_strength = yield * 1e9;
 
+            munition.area_moment_inertia =
+                getValidInput<double>("Enter Area Moment of Inertia (m^4) [e.g., 0.02]: ", true);
+
             object.layers.clear();
             TargetLayer customLayer;
             customLayer.material_name = "Custom Layer";
             customLayer.thickness = 100.0;
-            customLayer.rebar_volume_fraction = 0.0;
-            customLayer.rebar_yield_strength = 0.0;
+            
+            customLayer.rebar_volume_fraction =
+                getValidInput<double>("Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
+            
+            double rebarYield = 
+                getValidInput<double>("Enter Target Rebar Yield Strength (MPa, e.g., 400): ", true);
+            customLayer.rebar_yield_strength = rebarYield * 1e6;
             
             customLayer.density =
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
@@ -195,11 +203,20 @@ int main(int argc, char* argv[])
                               << " (m/s) [e.g., 3500, 2000, 350]: ";
 
                     double projectileVelocity = getValidInput<double>(prompt_ss.str());
+                    
+                    std::stringstream obliq_ss;
+                    obliq_ss << "  -> Enter Obliquity Angle #" << (each + 1) << " (Degrees, 0 for perpendicular): ";
+                    double obliquity = getValidInput<double>(obliq_ss.str(), true);
+
+                    std::stringstream aoa_ss;
+                    aoa_ss << "  -> Enter Angle of Attack #" << (each + 1) << " (Degrees): ";
+                    double aoa = getValidInput<double>(aoa_ss.str(), true);
+
                     std::stringstream name_ss;
 
                     name_ss << "Custom Test #" << (each + 1) << " (" << projectileVelocity
                             << " m/s)";
-                    scenarios.push_back({name_ss.str(), 0.0, projectileVelocity, 0.0, 0.0});
+                    scenarios.push_back({name_ss.str(), 0.0, projectileVelocity, obliquity, aoa});
                 }
 
                 if (scenarios.empty()) {

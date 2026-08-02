@@ -31,6 +31,7 @@ int main()
     mop.diameter = mopDef.default_diameter;
     mop.total_mass = mopDef.default_total_mass;
     mop.explosive_mass = mopDef.default_explosive_mass;
+    mop.curvature_noseReduce = mopDef.curvature_noseReduce;
     mop.casing_density = mopDef.default_casing_density;
     mop.yield_strength = mopDef.default_yield_strength;
     mop.specific_heat = mopDef.default_specific_heat;
@@ -86,6 +87,7 @@ int main()
     rod.diameter = rfgDef.default_diameter;
     rod.total_mass = rfgDef.default_total_mass;
     rod.explosive_mass = rfgDef.default_explosive_mass;
+    rod.curvature_noseReduce = rfgDef.curvature_noseReduce;
     rod.casing_density = rfgDef.default_casing_density;
     rod.yield_strength = rfgDef.default_yield_strength;
     rod.specific_heat = rfgDef.default_specific_heat;
@@ -105,6 +107,16 @@ int main()
     std::cout << "         -> [PASS] Identified as Kinetic Rod (Zero explosive mass & zero yield limit).\n";
     std::cout << "         -> [PASS] Regime: " << resRod.regime << "\n";
     std::cout << "         -> [PASS] Depth reached before erosion/crush: " << resRod.actual_penetration_depth << " m\n\n";
+
+    // Test 4: Oblique Impact Bending Structural Failure (400 m/s, 30 deg obliquity, 5 deg AoA)
+    std::cout << "[Test 4] Testing Oblique Impact Bending Structural Failure (Obliquity 30 deg, AoA 5 deg, 400 m/s)...\n";
+    ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 30.0, 5.0};
+    SimulationResult resOblique = simulator.simulate(obliqueScenario);
+    
+    assert(resOblique.casing_failure == true);
+    assert(resOblique.regime == "Structural Failure (J-Hook/Snap)");
+    std::cout << "         -> [PASS] Bending moment exceeded yield strength as expected.\n";
+    std::cout << "         -> [PASS] Regime: " << resOblique.regime << "\n\n";
 
     std::cout << "===================================================================================================\n";
     std::cout << "                      [PASS] ALL UNIT TESTS PASSED SUCCESSFULLY!                                   \n";
