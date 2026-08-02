@@ -173,14 +173,22 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                             max_dynamic_pressure = dynamic_pressure;
                         }
 
-                    // Bending Moment calculation (Asymmetric force)
-                    double asymmetric_force = dynamic_pressure * area *
-                                              std::sin(obliquity_radians + angleOfAttack_radians);
-                    double bending_moment =
-                        asymmetric_force * (proj.length / 2.0); // Simplified load
+                    // Deceleration force (incorporating rebar)
+                    // Work-energy based deceleration force
+                    double effective_strength =
+                        layer.compressive_strength +
+                        (layer.rebar_yield_strength * layer.rebar_volume_fraction);
+                    double deceleration_force =
+                        (area * effective_strength) +
+                        (dragCoefficient * layer.density * area * squaredVelocity);
 
-                    // Stress = M * y / I
-                    double max_bending_stress = 0.0;
+                    // Obliquity/Bending structural failure check
+                    if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
+                        double asymmetric_force = dynamic_pressure * area * std::sin(obliquity_radians + angleOfAttack_radians);
+                        double bending_moment = asymmetric_force * (proj.length / 2.0);
+
+                        // Stress = M * y / I
+                        double max_bending_stress = 0.0;
                         if (proj.area_moment_inertia > 0) {
                             max_bending_stress =
                                 (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
@@ -193,16 +201,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                             res.outcome_summary = "Bending moments exceeded casing yield strength.";
                             break;
                         }
-
-                    // Deceleration force (incorporating rebar)
-                    // F = area * (strength + rebar_strength * rebar_frac) + drag * density * area *
-                    // v^2
-                    double effective_strength =
-                        layer.compressiveStrength +
-                        (layer.rebar_yield_strength * layer.rebar_volume_fraction);
-                    double deceleration_force =
-                        (area * effective_strength) +
-                        (dragCoefficient * layer.density * area * squaredVelocity);
+                    }
 
                     // Acceleration
                     double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;

@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
             double targetStrength = getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
-            customLayer.compressiveStrength = targetStrength * 1e6;
+            customLayer.compressive_strength = targetStrength * 1e6;
             object.layers.push_back(customLayer);
 
             int numScenarios = 1;

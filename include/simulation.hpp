@@ -44,7 +44,7 @@ struct TargetLayer
     std::string material_name;
     double thickness = 1.0;              // meters
     double density = 2500.0;             // kg/m^3
-    double compressiveStrength = 60.0e6; // Pascals
+    double compressive_strength = 60.0e6; // Pascals
     double rebar_volume_fraction = 0.0;  // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
     double rebar_yield_strength = 0.0;   // Pascals
 };
