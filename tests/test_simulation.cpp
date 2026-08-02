@@ -47,6 +47,12 @@ int main()
     assert(resSub.casing_failure == false);
     assert(resSub.premature_detonation == false);
     assert(resSub.regime == "Time-Integrated Penetration");
+    
+    // Telemetry integrity check
+    assert(resSub.drop_frames.empty()); // 0.0 initial altitude means no drop phase
+    assert(!resSub.penetration_frames.empty());
+    assert(resSub.penetration_frames.front().time >= 0.0);
+    
     std::cout << "         -> [PASS] Kinetic Energy: " << (resSub.kinetic_energy / 1e9) << " GJ\n";
     std::cout << "         -> [PASS] Max Dynamic Pressure: " << (resSub.dynamic_pressure / 1e9) << " GPa (< 2.0 GPa Yield)\n";
     std::cout << "         -> [PASS] Casing remained intact in time-integrated regime.\n\n";
@@ -63,6 +69,10 @@ int main()
     // Based on the new logic, it might fail from crushing (Pressure Yield) or Thermal
     // Depending on what happens first. The pressure yield should happen immediately.
     assert(resHyper.premature_detonation == true || resHyper.regime == "Thermal Destruction");
+    
+    assert(!resHyper.drop_frames.empty()); // 50,000 ft drop
+    assert(!resHyper.penetration_frames.empty());
+    
     std::cout << "         -> [PASS] Kinetic Energy: " << (resHyper.kinetic_energy / 1e9) << " GJ\n";
     std::cout << "         -> [PASS] Dynamic Pressure: " << (resHyper.dynamic_pressure / 1e9) << " GPa (> 2.0 GPa Yield)\n";
     std::cout << "         -> [PASS] Failure correctly detected. Regime: " << resHyper.regime << "\n";
