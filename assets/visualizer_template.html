@@ -203,8 +203,13 @@
               ];
 
               let scene, camera, renderer, controls;
-              let targetBlock, projectile, shockwave, crater, rulerGroup;
+              let targetBlock, projectile, shockwave, crater, rulerGroup, explosionSphere, boomRing;
               let currentData = scenarios[0];
+
+              // Animation State
+              let animState = 'IDLE'; // DROPPING, PENETRATING, EXPLODING, DONE
+              let animIndex = 0;
+              let animTimer = 0;
 
               function init() {
                   const container = document.getElementById('canvas-container');
@@ -244,15 +249,11 @@
                   gridHelper.position.y = 0;
                   scene.add(gridHelper);
 
-                  // Target Concrete Block (Translucent Cube)
+                  // Target Concrete Block
                   const blockGeom = new THREE.BoxGeometry(24, 70, 24);
                   const blockMat = new THREE.MeshPhysicalMaterial({
-                      color: 0x334155,
-                      transparent: true,
-                      opacity: 0.28,
-                      roughness: 0.6,
-                      metalness: 0.2,
-                      depthWrite: false
+                      color: 0x334155, transparent: true, opacity: 0.28,
+                      roughness: 0.6, metalness: 0.2, depthWrite: false
                   });
                   targetBlock = new THREE.Mesh(blockGeom, blockMat);
                   targetBlock.position.set(0, -35, 0);
@@ -272,14 +273,30 @@
                   const craterGeom = new THREE.CylinderGeometry(1.0, 0.5, 10, 32);
                   const craterMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.75 });
                   crater = new THREE.Mesh(craterGeom, craterMat);
+                  crater.visible = false;
                   scene.add(crater);
 
-                  // Shockwave Sphere
+                  // Underground Shockwave Sphere
                   const shockGeom = new THREE.SphereGeometry(3.5, 32, 32);
                   const shockMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.45, wireframe: true });
                   shockwave = new THREE.Mesh(shockGeom, shockMat);
-                  shockwave.position.set(0, 0, 0);
+                  shockwave.visible = false;
                   scene.add(shockwave);
+
+                  // Explosion Fireball (Underground)
+                  const expGeom = new THREE.SphereGeometry(5.0, 32, 32);
+                  const expMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
+                  explosionSphere = new THREE.Mesh(expGeom, expMat);
+                  explosionSphere.visible = false;
+                  scene.add(explosionSphere);
+
+                  // Sonic Boom Ring (Air)
+                  const ringGeom = new THREE.RingGeometry(1, 1.2, 32);
+                  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+                  boomRing = new THREE.Mesh(ringGeom, ringMat);
+                  boomRing.rotation.x = Math.PI / 2;
+                  boomRing.visible = false;
+                  scene.add(boomRing);
 
                   // 3D Depth Measurement Ruler
                   rulerGroup = new THREE.Group();
@@ -294,11 +311,6 @@
                   }
                   scene.add(rulerGroup);
 
-                  // Set dynamic defaults
-                  document.title = `${currentData.proj_name || 'Projectile'} vs ${currentData.target_name || 'Target'} - 3D Simulation Visualizer`;
-
-
-
                   window.addEventListener('resize', onWindowResize);
                   selectScenario(0);
                   animate();
@@ -311,96 +323,45 @@
                   else if (mode === 'bottom') { camera.position.set(20, -55, 25); controls.target.set(0, -35, 0); }
               }
 
-              function updateVisuals(data) {
-                  currentData = data;
-                  document.getElementById('hud-scenario').innerText = data.name;
-                  document.getElementById('hud-velocity').innerText = data.velocity.toFixed(1) + ' m/s';
-                  document.getElementById('hud-mach').innerText = 'Mach ' + data.mach.toFixed(1);
-                  document.getElementById('hud-pressure').innerText = data.pressure.toFixed(2) + ' GPa';
-                  document.getElementById('hud-yield').innerText = data.yield.toFixed(2) + ' GPa';
-                  document.getElementById('hud-depth').innerText = data.depth.toFixed(2) + ' m (' + (data.depth * 3.28084).toFixed(1) + ' ft)';
-                  document.getElementById('hud-shock').innerText = data.shock_prob.toFixed(1) + '%';
+              function updateHUD(frame, isFinal = false) {
+                  document.getElementById('hud-velocity').innerText = frame.v.toFixed(1) + ' m/s';
+                  document.getElementById('hud-mach').innerText = 'Mach ' + frame.m.toFixed(1);
+                  if (frame.p !== undefined) {
+                      document.getElementById('hud-pressure').innerText = frame.p.toFixed(2) + ' GPa';
+                  }
+                  document.getElementById('hud-depth').innerText = Math.abs(frame.y).toFixed(2) + ' m';
+              }
 
+              function buildFinalBadges(data) {
                   const regimeBadge = document.getElementById('hud-regime-badge');
                   const expBadge = document.getElementById('hud-exp-badge');
-
-                  // Dynamic target block scaling
-                  const blockHeight = Math.max(30, data.depth * 1.35);
-                  targetBlock.scale.set(1, blockHeight / 70.0, 1);
-                  targetBlock.position.set(0, -blockHeight / 2, 0);
-
+                  document.getElementById('hud-scenario').innerText = data.name;
+                  document.getElementById('hud-yield').innerText = data.yield.toFixed(2) + ' GPa';
+                  document.getElementById('hud-shock').innerText = data.shock_prob.toFixed(1) + '%';
+                  
                   if (data.is_kinetic) {
-                      regimeBadge.innerText = 'HYPERVELOCITY KINETIC ROD MODE';
+                      regimeBadge.innerText = 'HYPERVELOCITY KINETIC ROD';
                       regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-purple-500/20 text-purple-400 border border-purple-500/50 shadow-lg shadow-purple-500/10';
-                      expBadge.innerText = 'PAYLOAD: ZERO EXPLOSIVE MASS (SOLID ROD)';
+                      expBadge.innerText = 'PAYLOAD: ZERO EXPLOSIVE MASS';
                       expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-slate-800/80 text-slate-300 border border-slate-700';
-
-                      projectile.position.set(0, -data.depth + (3.1), 0);
-                      projectile.scale.set(1, 1, 1);
-                      projectile.material.color.setHex(0xc084fc); // Neon purple
-                      projectile.material.emissive = new THREE.Color(0x581c87);
-
-                      crater.visible = true;
-                      crater.scale.set(1.2, data.depth / 10.0, 1.2);
-                      crater.position.set(0, -data.depth / 2, 0);
-                      crater.material.color.setHex(0xa855f7);
-
-                      shockwave.visible = true;
-                      shockwave.material.color.setHex(0xa855f7);
-                      shockwave.scale.set(2.2, 1.2, 2.2);
-
-                      document.getElementById('info-text').innerHTML =
-                          `<span class="text-purple-400 font-bold">Kinetic Orbital Bombardment Regime</span><br>` +
-                          `Solid tungsten penetrator moving at hypervelocity generates hydrodynamic plasma erosion without explosive detonation. Depth reached: <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
+                      document.getElementById('info-text').innerHTML = `<span class="text-purple-400 font-bold">Kinetic Orbital Bombardment</span><br>Depth reached: <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
                   } else if (data.fail || !data.exp_survives) {
-                      regimeBadge.innerText = data.fail ? 'CASING SHATTER / SURFACE DETONATION' : 'IMPACT SHOCK FUZE FAILURE';
+                      regimeBadge.innerText = data.fail ? 'CASING SHATTER' : 'FUZE FAILURE';
                       regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-lg shadow-rose-500/10';
-                      expBadge.innerText = data.fail ? 'PAYLOAD DESTROYED BY STRUCTURAL CRUSH' : `EXPLOSIVE CHARGE FAILED (SHOCK: ${data.shock_prob.toFixed(0)}%)`;
+                      expBadge.innerText = data.fail ? 'PAYLOAD DESTROYED' : `EXPLOSIVE CHARGE FAILED`;
                       expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-rose-950/60 text-rose-300 border border-rose-800/60';
-
-                      projectile.position.set(0, -data.depth / 2, 0);
-                      projectile.scale.set(1.8, 0.4, 1.8); // Crushed
-                      projectile.material.color.setHex(0xf87171);
-                      projectile.material.emissive = new THREE.Color(0x7f1d1d);
-
-                      crater.visible = true;
-                      crater.scale.set(1.5, data.depth / 10.0, 1.5);
-                      crater.position.set(0, -data.depth / 2, 0);
-                      crater.material.color.setHex(0xef4444);
-
-                      shockwave.visible = true;
-                      shockwave.material.color.setHex(0xef4444);
-                      shockwave.scale.set(1.8, 0.8, 1.8);
-
-                      document.getElementById('info-text').innerHTML =
-                          `<span class="text-rose-400 font-bold">Structural / Shock Failure</span><br>` +
-                          `Dynamic impact pressure (${data.pressure.toFixed(2)} GPa) or extreme G-deceleration shock wave fractures the bomb casing or fuze payload. Penetration halted at <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
+                      document.getElementById('info-text').innerHTML = `<span class="text-rose-400 font-bold">Structural / Shock Failure</span><br>Penetration halted at <span class="text-white font-mono">${data.depth.toFixed(1)}m</span>.`;
                   } else {
-                      regimeBadge.innerText = 'RIGID DRILL PENETRATION (SUCCESS)';
+                      regimeBadge.innerText = 'RIGID DRILL PENETRATION';
                       regimeBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-black tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-500/10';
-                      expBadge.innerText = `PAYLOAD SURVIVED (SHOCK RISK: ${data.shock_prob.toFixed(1)}%)`;
+                      expBadge.innerText = `PAYLOAD SURVIVED`;
                       expBadge.className = 'px-3 py-1.5 rounded-lg text-center text-[11px] font-bold tracking-wide bg-emerald-950/60 text-emerald-300 border border-emerald-800/60';
-
-                      projectile.position.set(0, -data.depth + (3.1), 0);
-                      projectile.scale.set(1, 1, 1);
-                      projectile.material.color.setHex(0x38bdf8);
-                      projectile.material.emissive = new THREE.Color(0x0284c7);
-
-                      crater.visible = true;
-                      crater.scale.set(0.8, data.depth / 10.0, 0.8);
-                      crater.position.set(0, -data.depth / 2, 0);
-                      crater.material.color.setHex(0x06b6d4);
-
-                      shockwave.visible = false;
-
-                      document.getElementById('info-text').innerHTML =
-                          `<span class="text-emerald-400 font-bold">Deep Underground Detonation</span><br>` +
-                          `Casing withstands impact pressure (< 2.0 GPa) and payload survives deceleration shock (< 50% risk). Drills cleanly down to <span class="text-white font-mono">${data.depth.toFixed(1)}m</span> before detonating.`;
+                      document.getElementById('info-text').innerHTML = `<span class="text-emerald-400 font-bold">Deep Underground Detonation</span><br>Drills cleanly down to <span class="text-white font-mono">${data.depth.toFixed(1)}m</span> before detonating.`;
                   }
               }
 
               function selectScenario(index) {
-                  const data = scenarios[index];
+                  currentData = scenarios[index];
                   document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
                       if (i === index) {
                           btn.className = "px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/30 scale-105";
@@ -408,7 +369,32 @@
                           btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
                       }
                   });
-                  updateVisuals(data);
+                  
+                  // Reset environment
+                  const blockHeight = Math.max(30, currentData.depth * 1.35);
+                  targetBlock.scale.set(1, blockHeight / 70.0, 1);
+                  targetBlock.position.set(0, -blockHeight / 2, 0);
+
+                  projectile.scale.set(1, 1, 1);
+                  projectile.position.set(0, 80, 0);
+                  projectile.material.color.setHex(0xf8fafc);
+                  projectile.material.emissive.setHex(0x000000);
+
+                  crater.visible = false;
+                  shockwave.visible = false;
+                  explosionSphere.visible = false;
+                  boomRing.visible = false;
+
+                  buildFinalBadges(currentData);
+                  
+                  // Start Animation
+                  if (currentData.drop_frames && currentData.drop_frames.length > 0) {
+                      animState = 'DROPPING';
+                  } else {
+                      animState = 'PENETRATING'; // Fallback if no drop frames
+                  }
+                  animIndex = 0;
+                  animTimer = 0;
               }
 
               function onWindowResize() {
@@ -419,10 +405,93 @@
 
               function animate() {
                   requestAnimationFrame(animate);
+
+                  if (animState === 'DROPPING') {
+                      if (animIndex < currentData.drop_frames.length) {
+                          const frame = currentData.drop_frames[animIndex];
+                          // Map altitude to Y space (0 at ground, say 80 max for visual sky)
+                          // frame.y is negative altitude in meters
+                          const maxAlt = currentData.drop_frames[0].y;
+                          const norm = frame.y / maxAlt;
+                          projectile.position.y = norm * 80;
+
+                          if (frame.sb) {
+                              boomRing.visible = true;
+                              boomRing.position.copy(projectile.position);
+                              boomRing.scale.set(1, 1, 1);
+                              boomRing.material.opacity = 1.0;
+                          }
+
+                          updateHUD(frame);
+                          animIndex += 2; // Speed up drop visually
+                      } else {
+                          animState = 'PENETRATING';
+                          animIndex = 0;
+                          crater.visible = true;
+                      }
+                  } else if (animState === 'PENETRATING') {
+                      if (animIndex < currentData.pen_frames.length) {
+                          const frame = currentData.pen_frames[animIndex];
+                          projectile.position.y = -frame.y + 3.1;
+                          
+                          crater.scale.set(1.2, frame.y / 10.0, 1.2);
+                          crater.position.y = -frame.y / 2;
+
+                          updateHUD(frame);
+                          animIndex++;
+                      } else {
+                          animState = 'EXPLODING';
+                          animTimer = 0;
+                      }
+                  } else if (animState === 'EXPLODING') {
+                      animTimer++;
+                      if (animTimer === 1) {
+                          if (currentData.is_kinetic) {
+                              projectile.material.color.setHex(0xc084fc);
+                              projectile.material.emissive.setHex(0x581c87);
+                              crater.material.color.setHex(0xa855f7);
+                              shockwave.visible = true;
+                              shockwave.material.color.setHex(0xa855f7);
+                              shockwave.position.copy(projectile.position);
+                          } else if (currentData.fail || !currentData.exp_survives) {
+                              projectile.scale.set(1.8, 0.4, 1.8);
+                              projectile.material.color.setHex(0xf87171);
+                              projectile.material.emissive.setHex(0x7f1d1d);
+                              crater.material.color.setHex(0xef4444);
+                          } else {
+                              explosionSphere.visible = true;
+                              explosionSphere.position.copy(projectile.position);
+                              explosionSphere.scale.set(0.1, 0.1, 0.1);
+                          }
+                      }
+
+                      if (explosionSphere.visible) {
+                          explosionSphere.scale.addScalar(0.5);
+                          explosionSphere.material.opacity -= 0.02;
+                          if (explosionSphere.material.opacity <= 0) {
+                              explosionSphere.visible = false;
+                              animState = 'DONE';
+                          }
+                      } else if (shockwave.visible) {
+                          shockwave.scale.addScalar(0.1);
+                          if (animTimer > 60) animState = 'DONE';
+                      } else {
+                          if (animTimer > 30) animState = 'DONE';
+                      }
+                  }
+
+                  // Boom ring logic independent of state
+                  if (boomRing.visible) {
+                      boomRing.scale.addScalar(0.8);
+                      boomRing.material.opacity -= 0.03;
+                      if (boomRing.material.opacity <= 0) boomRing.visible = false;
+                  }
+
                   if (shockwave.visible) {
                       shockwave.rotation.y += 0.015;
                       shockwave.rotation.x += 0.008;
                   }
+
                   controls.update();
                   renderer.render(scene, camera);
               }

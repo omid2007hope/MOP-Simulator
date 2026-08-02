@@ -87,6 +87,16 @@ struct ImpactScenario
     double angle_of_attack = 0.0; // Degrees
 };
 
+struct TelemetryFrame {
+    double time = 0.0;
+    double altitude = 0.0;
+    double depth = 0.0;
+    double velocity = 0.0;
+    double mach = 0.0;
+    double dynamic_pressure = 0.0;
+    bool is_sonic_boom = false;
+};
+
 // Simulation results for a given scenario
 struct SimulationResult
 {
@@ -106,6 +116,9 @@ struct SimulationResult
     bool is_kinetic_rod = false;            // true if explosive_mass == 0 or yield_strength == 0
     std::string regime;
     std::string outcome_summary;
+
+    std::vector<TelemetryFrame> drop_frames;
+    std::vector<TelemetryFrame> penetration_frames;
 };
 
 class ImpactSimulator

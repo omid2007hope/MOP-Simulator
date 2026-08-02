@@ -93,13 +93,28 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             
             // Altitude decrease = velocity (m/s) * dt (s) * conversion to ft
             current_altitude -= (current_velocity * dt_drop) * 3.28084;
-
+            
+            bool is_sonic_boom_frame = false;
             if (current_velocity >= cons.SPEED_OF_SOUND && !sonic_boom_triggered) {
                 sonic_boom_triggered = true;
+                is_sonic_boom_frame = true;
                 std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ " 
                           << std::fixed << std::setprecision(2) << t_drop << "s (Altitude: " 
                           << std::setprecision(0) << current_altitude 
                           << " ft | Density: " << std::setprecision(3) << current_density << " kg/m^3) <<<\n";
+            }
+
+            // Save telemetry frame every 10 steps (0.1s) or on sonic boom to keep JSON size reasonable
+            static int drop_frame_counter = 0;
+            if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame) {
+                TelemetryFrame frame;
+                frame.time = t_drop;
+                frame.altitude = current_altitude / 3.28084; // Store altitude in meters for WebGL
+                frame.depth = -frame.altitude; // Visualizer expects depth, so sky is negative depth
+                frame.velocity = current_velocity;
+                frame.mach = current_velocity / cons.SPEED_OF_SOUND;
+                frame.is_sonic_boom = is_sonic_boom_frame;
+                res.drop_frames.push_back(frame);
             }
 
             if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
@@ -246,6 +261,19 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                                   << std::setprecision(0) << g_force << " G | Temp: " 
                                   << current_temperature << " K | Layer: " << layer.material_name << "\n";
                         next_print_depth += 1.0;
+                    }
+
+                    // Add telemetry frame every 20 iterations (200 microseconds)
+                    static int pen_frame_counter = 0;
+                    if (pen_frame_counter++ % 20 == 0) {
+                        TelemetryFrame frame;
+                        frame.time = t;
+                        frame.altitude = 0.0;
+                        frame.depth = current_depth;
+                        frame.velocity = current_velocity;
+                        frame.mach = current_velocity / cons.SPEED_OF_SOUND;
+                        frame.dynamic_pressure = dynamic_pressure;
+                        res.penetration_frames.push_back(frame);
                     }
 
                     t += dt;
@@ -633,6 +661,24 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         std::stringstream data;
             for (size_t i = 0; i < results.size(); ++i) {
                 const auto& r = results[i];
+                std::stringstream dropFramesJson;
+                dropFramesJson << "[";
+                for (size_t j = 0; j < r.drop_frames.size(); ++j) {
+                    const auto& f = r.drop_frames[j];
+                    dropFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity << ",m:" << f.mach << ",sb:" << (f.is_sonic_boom ? "true" : "false") << "}";
+                    if (j + 1 < r.drop_frames.size()) dropFramesJson << ",";
+                }
+                dropFramesJson << "]";
+
+                std::stringstream penFramesJson;
+                penFramesJson << "[";
+                for (size_t j = 0; j < r.penetration_frames.size(); ++j) {
+                    const auto& f = r.penetration_frames[j];
+                    penFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity << ",m:" << f.mach << ",p:" << f.dynamic_pressure << "}";
+                    if (j + 1 < r.penetration_frames.size()) penFramesJson << ",";
+                }
+                penFramesJson << "]";
+
                 data << "            { name: \"" << escapeJSON(r.scenario_name)
                      << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
                      << ", energy: " << (r.kinetic_energy / 1e9)
@@ -649,7 +695,10 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                      << "\""
                      << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
                      << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
-                     << escapeJSON(target.name) << "\" }";
+                     << escapeJSON(target.name) << "\""
+                     << ", drop_frames: " << dropFramesJson.str()
+                     << ", pen_frames: " << penFramesJson.str()
+                     << " }";
                 if (i + 1 < results.size())
                     data << ",";
                 data << "\n";
