@@ -19,25 +19,8 @@ int main()
     std::cout << "===================================================================================================\n";
 
     // Initialize test target and projectile using defaults
-    CONCRETE_DEFAULT concreteDef;
-    Target concrete;
-    concrete.name = concreteDef.default_name;
-    concrete.layers = concreteDef.default_layers;
-
-    MOP_DEFAULT mopDef;
-    Projectile mop;
-    mop.name = mopDef.default_name;
-    mop.length = mopDef.default_length;
-    mop.diameter = mopDef.default_diameter;
-    mop.total_mass = mopDef.default_total_mass;
-    mop.explosive_mass = mopDef.default_explosive_mass;
-    mop.curvature_noseReduce = mopDef.curvature_noseReduce;
-    mop.casing_density = mopDef.default_casing_density;
-    mop.yield_strength = mopDef.default_yield_strength;
-    mop.specific_heat = mopDef.default_specific_heat;
-    mop.melting_point = mopDef.default_melting_point;
-    mop.heat_of_fusion = mopDef.default_heat_of_fusion;
-    mop.area_moment_inertia = mopDef.default_area_moment_inertia;
+    Target concrete = CONCRETE_DEFAULT;
+    Projectile mop = MOP_DEFAULT;
 
     PhysicsConstants cons;
     ImpactSimulator simulator(mop, concrete, cons);
@@ -49,7 +32,14 @@ int main()
 
     double expectedKE_sub = 0.5 * mop.total_mass * (340.0 * 340.0);
     double expectedPDyn_sub = 0.5 * concrete.layers[0].density * (340.0 * 340.0); // max pressure will be in first layer roughly
-    double expectedHydro_depth = mop.length * std::sqrt(mop.casing_density / concrete.layers[0].density);
+    double total_thickness = 0.0;
+    double weighted_density_sum = 0.0;
+    for (const auto& layer : concrete.layers) {
+        weighted_density_sum += layer.density * layer.thickness;
+        total_thickness += layer.thickness;
+    }
+    double average_density = (total_thickness > 0) ? (weighted_density_sum / total_thickness) : concrete.layers[0].density;
+    double expectedHydro_depth = mop.length * std::sqrt(mop.casing_density / average_density);
 
     assert(approxEqual(resSub.kinetic_energy, expectedKE_sub, 1.0));
     assert(approxEqual(resSub.hydro_penetration, expectedHydro_depth, 1e-3));
@@ -80,20 +70,7 @@ int main()
     // Test 3: Orbital Kinetic Strike ("Rods from God" Tungsten Rod, 3400 m/s)
     std::cout << "[Test 3] Testing Orbital Tungsten Kinetic Rod (3400 m/s, 0 GPa Yield, 0 Explosive Mass)...\n";
     
-    RODS_FROM_GOD_DEFAULT rfgDef;
-    Projectile rod;
-    rod.name = rfgDef.default_name;
-    rod.length = rfgDef.default_length;
-    rod.diameter = rfgDef.default_diameter;
-    rod.total_mass = rfgDef.default_total_mass;
-    rod.explosive_mass = rfgDef.default_explosive_mass;
-    rod.curvature_noseReduce = rfgDef.curvature_noseReduce;
-    rod.casing_density = rfgDef.default_casing_density;
-    rod.yield_strength = rfgDef.default_yield_strength;
-    rod.specific_heat = rfgDef.default_specific_heat;
-    rod.melting_point = rfgDef.default_melting_point;
-    rod.heat_of_fusion = rfgDef.default_heat_of_fusion;
-    rod.area_moment_inertia = rfgDef.default_area_moment_inertia;
+    Projectile rod = RODS_FROM_GOD_DEFAULT;
                     
     ImpactSimulator rodSim(rod, concrete, cons);
     ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 0.0, 0.0};
