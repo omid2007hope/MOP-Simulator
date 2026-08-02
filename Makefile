@@ -29,7 +29,7 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/main.cpp include/simulation.hpp include/config_loader.hpp
+build/main.o: src/main.cpp include/simulation.hpp include/config_loader.hpp include/default.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -41,7 +41,7 @@ build/config_loader.o: src/config_loader.cpp include/config_loader.hpp include/s
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/test_simulation.o: tests/test_simulation.cpp include/simulation.hpp
+build/test_simulation.o: tests/test_simulation.cpp include/simulation.hpp include/default.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
