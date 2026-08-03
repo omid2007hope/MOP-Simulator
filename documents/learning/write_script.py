@@ -1,5 +1,6 @@
-// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+import os
 
+html_content = """// Copyright (c) 2026 Omid Teimory. All Rights Reserved
 <!doctype html>
 <html lang="en" class="dark">
 <head>
@@ -160,10 +161,7 @@
         let simSpeedMultiplier = 1.0;
 
         // Telemetry Graph
-        const graphCanvas = document.getElementById('telemetry-graph');
-        const graphCtx = graphCanvas.getContext('2d');
-        graphCanvas.width = 380;
-        graphCanvas.height = 64;
+        const graphCtx = document.getElementById('telemetry-graph').getContext('2d');
         let graphData = [];
 
         function init() {
@@ -181,9 +179,8 @@
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
             renderer.physicallyCorrectLights = true;
-            // Removed encoding to prevent warnings/errors with some ThreeJS versions
-            // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            // renderer.toneMappingExposure = 1.2;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
             container.appendChild(renderer.domElement);
 
             // Post Processing Bloom
@@ -219,9 +216,7 @@
             setupEffects();
 
             window.addEventListener('resize', onWindowResize);
-            if (scenarios.length > 0) {
-                selectScenario(0, false);
-            }
+            selectScenario(0, false);
             animate(0);
         }
 
@@ -320,7 +315,7 @@
                 const steps = 5;
                 for(let i=1; i<=steps; i++) {
                     const h = (maxAlt / steps) * i;
-                    const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
+                    const sprite = createTextSprite(Math.round(h) + "ft", "#0ea5e9");
                     sprite.position.set(-20, h, -15);
                     rulerGroup.add(sprite);
                 }
@@ -393,7 +388,7 @@
         }
 
         function drawGraph() {
-            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            graphCtx.clearRect(0, 0, 300, 64);
             if (graphData.length < 2) return;
             
             graphCtx.beginPath();
@@ -401,20 +396,18 @@
             graphCtx.lineWidth = 2;
             
             const maxV = Math.max(...graphData.map(d => d.v), 1);
-            const w = graphCanvas.width;
-            const h = graphCanvas.height;
             
             for (let i = 0; i < graphData.length; i++) {
-                const x = (i / 100) * w; // Keep last 100 points
-                const y = h - ((graphData[i].v / maxV) * h);
+                const x = (i / 100) * 300; // Keep last 100 points
+                const y = 64 - ((graphData[i].v / maxV) * 64);
                 if (i === 0) graphCtx.moveTo(x, y);
                 else graphCtx.lineTo(x, y);
             }
             graphCtx.stroke();
             
             // Fill under graph
-            graphCtx.lineTo(w, h);
-            graphCtx.lineTo(0, h);
+            graphCtx.lineTo(300, 64);
+            graphCtx.lineTo(0, 64);
             graphCtx.fillStyle = "rgba(56, 189, 248, 0.2)";
             graphCtx.fill();
         }
@@ -435,7 +428,7 @@
             
             if (frame.p !== undefined) {
                 tweenNumber('hud-pressure', frame.p, p => p.toFixed(2) + ' GPa');
-                const yieldLim = currentData.yield || 2.0; // fallback
+                const yieldLim = currentData.yield;
                 const pPct = Math.min(100, (frame.p / yieldLim) * 100);
                 document.getElementById('bar-pressure').style.width = pPct + '%';
                 
@@ -509,7 +502,6 @@
         }
 
         function selectScenario(index, manualClick = true) {
-            if(!scenarios[index]) return;
             currentData = scenarios[index];
             document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
                 if (i === index) {
@@ -793,3 +785,7 @@
     </script>
 </body>
 </html>
+"""
+
+with open("scratch_html.txt", "w", encoding="utf-8") as f:
+    f.write(html_content)
