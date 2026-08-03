@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
@@ -374,7 +375,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         }
         for (size_t i = 0; i < current_layer_idx && i < target.layers.size(); ++i) {
             target.layers[i].pulverized_depth =
-                999999.0; // Fully pierced layers are completely pulverized
+                std::numeric_limits<double>::infinity(); // Fully pierced layers are completely pulverized
         }
 
     res.actual_penetration_depth = current_depth;

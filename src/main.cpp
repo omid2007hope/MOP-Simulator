@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
             std::cout << "Do you agree to these terms? (Y/N): ";
                 if (std::cin >> tos_agree) {
                     for (auto& c : tos_agree) {
-                        c = std::toupper(c);
+                        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
                     }
                     if (tos_agree == "Y" || tos_agree == "YES") {
                         safeCin();
