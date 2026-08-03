@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
     // ! Midnight Hammer Preset
     // ! ********************
 
-        else if (choice = 5) {
+        else if (choice == 5) {
             std::cout << "\n[+] Loading Operation Midnight Hammer Preset (12 days war)\n";
 
                 if (auto p = ConfigLoader::getProjectileByName(
