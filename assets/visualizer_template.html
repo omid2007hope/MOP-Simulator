@@ -1314,6 +1314,16 @@
             f0.ob !== undefined
               ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
               : undefined,
+          obliquity_deg:
+            f0.obliquity_deg !== undefined
+              ? THREE.MathUtils.lerp(f0.obliquity_deg, f1.obliquity_deg, factor)
+              : f0.ob !== undefined
+              ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
+              : undefined,
+          aoa_deg:
+            f0.aoa_deg !== undefined
+              ? THREE.MathUtils.lerp(f0.aoa_deg, f1.aoa_deg, factor)
+              : undefined,
           sb: factor < 0.5 ? f0.sb : f1.sb,
           e: factor < 0.5 ? f0.e : f1.e,
         };
@@ -1503,12 +1513,16 @@
               projectile.scale.y = currentLength / currentData.proj_length;
               projectile.position.y = -frame.y + currentLength / 2.0;
 
-              // 2. Obliquity (Trajectory Bending)
-              const oblRad = (frame.obliquity_deg || 0) * (Math.PI / 180);
-              projectile.rotation.z = oblRad;
-              // Note: Crater rotation might look odd if it rotates the entire hole from the surface,
-              // but we will apply it to show the visual curve of the penetration.
-              activeCrater.rotation.z = oblRad;
+              // 2. C++ Hydrocode Obliquity & Trajectory Bending Dynamics
+              // Read exact C++ simulation obliquity/refraction angle (obliquity_deg or ob)
+              const oblDeg = frame.obliquity_deg !== undefined ? frame.obliquity_deg : (frame.ob || 0);
+              const aoaDeg = frame.aoa_deg || 0;
+              
+              // Total orientation angle = C++ Obliquity Trajectory Bending + Angle of Attack
+              const totalAngleRad = (oblDeg + aoaDeg) * (Math.PI / 180);
+              
+              projectile.rotation.z = totalAngleRad;
+              activeCrater.rotation.z = totalAngleRad;
 
               // 3. Thermal Ablation & Friction Heat Blackbody Glow
               const tempCelsius = frame.h !== undefined ? frame.h : 20;
