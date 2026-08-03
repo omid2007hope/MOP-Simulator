@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
@@ -165,7 +165,10 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider" id="hud-depth-label">
+              <div
+                class="text-[9px] text-slate-500 uppercase tracking-wider"
+                id="hud-depth-label"
+              >
                 PENETRATION DEPTH
               </div>
               <div class="text-emerald-400 font-black text-base" id="hud-depth">
@@ -212,7 +215,10 @@
               <div class="text-[9px] text-slate-500 uppercase tracking-wider">
                 Peak Shock Pressure
               </div>
-              <div class="text-rose-300 font-bold text-sm" id="hud-shock-pressure">
+              <div
+                class="text-rose-300 font-bold text-sm"
+                id="hud-shock-pressure"
+              >
                 0.0 GPa
               </div>
             </div>
@@ -229,8 +235,7 @@
           <div
             id="telemetry-chart"
             class="mt-2 h-24 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden"
-          >
-          </div>
+          ></div>
         </div>
 
         <!-- Badges -->
@@ -323,9 +328,7 @@
     <div
       class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto"
     >
-      <div class="unskew flex gap-3 items-center">
-        {{SCENARIO_BUTTONS}}
-      </div>
+      <div class="unskew flex gap-3 items-center">{{SCENARIO_BUTTONS}}</div>
     </div>
 
     <!-- Scripts -->
@@ -342,12 +345,14 @@
 
     <!-- Tween for camera interpolation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-    
+
     <!-- ECharts for Telemetry -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 
     <script>
-      const scenarios = [/*{{SCENARIOS_DATA}}*/];
+      const scenarios = [
+        /*{{SCENARIOS_DATA}}*/
+      ];
 
       // Debug function to list all scenarios to the console
       function listAllData() {
@@ -363,6 +368,7 @@
       let currentData = scenarios[0];
       let activeCrater = null;
       let dustParticles;
+      let ambientDustParticles;
 
       let animState = "IDLE";
       let clock = new THREE.Clock();
@@ -440,7 +446,7 @@
 
         setupProjectile();
         setupEffects();
-        
+
         initECharts();
 
         window.addEventListener("resize", onWindowResize);
@@ -502,7 +508,6 @@
 
         // Ground Zero Decal removed per user request
 
-
         // Volumetric Air Box Container
         airGroup = new THREE.Group();
         scene.add(airGroup);
@@ -562,7 +567,12 @@
 
       function setupProjectile() {
         let pRadius = currentData.proj_diameter / 2.0;
-        const projGeom = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
+        const projGeom = new THREE.CylinderGeometry(
+          pRadius,
+          pRadius,
+          currentData.proj_length,
+          32,
+        );
         // Premium material - Glowing Projectile
         const projMat = new THREE.MeshPhysicalMaterial({
           color: 0x00ffff,
@@ -623,7 +633,7 @@
           opacity: 0.15,
           side: THREE.DoubleSide,
           blending: THREE.AdditiveBlending,
-          depthWrite: false
+          depthWrite: false,
         });
         machCone = new THREE.Mesh(coneGeom, coneMat);
         machCone.visible = false;
@@ -638,12 +648,12 @@
         });
         dustParticles = new THREE.InstancedMesh(dustGeom, dustMat, 1000);
         dustParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        
+
         const dummy = new THREE.Object3D();
-        for(let i=0; i<1000; i++) {
-            dummy.position.set(0, -9999, 0); // Hide initially
-            dummy.updateMatrix();
-            dustParticles.setMatrixAt(i, dummy.matrix);
+        for (let i = 0; i < 1000; i++) {
+          dummy.position.set(0, -9999, 0); // Hide initially
+          dummy.updateMatrix();
+          dustParticles.setMatrixAt(i, dummy.matrix);
         }
         dustParticles.instanceMatrix.needsUpdate = true;
         scene.add(dustParticles);
@@ -680,38 +690,40 @@
 
       function initECharts() {
         if (!echarts) return;
-        telemetryChart = echarts.init(document.getElementById('telemetry-chart'));
-        
+        telemetryChart = echarts.init(
+          document.getElementById("telemetry-chart"),
+        );
+
         const option = {
-          backgroundColor: 'transparent',
-          tooltip: { trigger: 'axis' },
+          backgroundColor: "transparent",
+          tooltip: { trigger: "axis" },
           grid: { left: 5, right: 5, top: 10, bottom: 5, containLabel: false },
           xAxis: {
-            type: 'category',
+            type: "category",
             show: false,
-            data: chartDataTime
+            data: chartDataTime,
           },
           yAxis: {
-            type: 'value',
+            type: "value",
             show: false,
             min: 0,
           },
           series: [
             {
-              name: 'Velocity',
-              type: 'line',
+              name: "Velocity",
+              type: "line",
               smooth: true,
-              symbol: 'none',
-              itemStyle: { color: '#38bdf8' },
+              symbol: "none",
+              itemStyle: { color: "#38bdf8" },
               areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                  { offset: 0, color: 'rgba(56, 189, 248, 0.5)' },
-                  { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
-                ])
+                  { offset: 0, color: "rgba(56, 189, 248, 0.5)" },
+                  { offset: 1, color: "rgba(56, 189, 248, 0.0)" },
+                ]),
               },
-              data: chartDataVel
-            }
-          ]
+              data: chartDataVel,
+            },
+          ],
         };
         telemetryChart.setOption(option);
       }
@@ -720,10 +732,9 @@
         if (!telemetryChart) return;
         telemetryChart.setOption({
           xAxis: { data: chartDataTime },
-          series: [{ data: chartDataVel }]
+          series: [{ data: chartDataVel }],
         });
       }
-
 
       function tweenNumber(elId, newVal, formatFn) {
         const el = document.getElementById(elId);
@@ -783,17 +794,17 @@
         }
 
         // Update ECharts
-        chartDataTime.push(frame.t !== undefined ? frame.t.toFixed(2) : '');
+        chartDataTime.push(frame.t !== undefined ? frame.t.toFixed(2) : "");
         chartDataVel.push(frame.v);
-        
+
         if (chartDataTime.length > 100) {
           chartDataTime.shift();
           chartDataVel.shift();
         }
-        
+
         // Throttle chart updates slightly to prevent layout thrashing on fast sims
         if (Math.random() > 0.5) {
-            updateChart();
+          updateChart();
         }
       }
 
@@ -814,7 +825,8 @@
         // Regime / outcome text straight from the C++ physics engine (previously computed but
         // never surfaced in the UI)
         document.getElementById("hud-regime-text").innerText =
-          (data.regime || "-") + (data.summary ? " \u2014 " + data.summary : "");
+          (data.regime || "-") +
+          (data.summary ? " \u2014 " + data.summary : "");
 
         // Reset phase/DIF/rod-length displays for the newly selected scenario
         document.getElementById("hud-phase").innerText = data.is_kinetic
@@ -835,7 +847,12 @@
           // Swap geometry
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
+          projectile.geometry = new THREE.CylinderGeometry(
+            pRadius,
+            pRadius,
+            currentData.proj_length,
+            32,
+          );
           projectile.material.metalness = 0.5;
           projectile.material.color.setHex(0xa855f7);
         } else if (data.fail || !data.exp_survives) {
@@ -945,8 +962,8 @@
           transparent: true,
           opacity: 0.5,
         });
-        dustParticles = new THREE.Points(dustGeo, dustMat);
-        airGroup.add(dustParticles);
+        ambientDustParticles = new THREE.Points(dustGeo, dustMat);
+        airGroup.add(ambientDustParticles);
 
         let currentY = 0;
         if (currentData.target_layers && currentData.target_layers.length > 0) {
@@ -1021,7 +1038,12 @@
         if (!currentData.is_kinetic) {
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
+          projectile.geometry = new THREE.CylinderGeometry(
+            pRadius,
+            pRadius,
+            currentData.proj_length,
+            32,
+          );
           projectile.material.metalness = 0.3;
           projectile.material.color.setHex(0x00ffff);
           projectile.material.emissive.setHex(0x00ffff);
@@ -1116,14 +1138,15 @@
         let dt = clock.getDelta();
         if (dt > 0.1) dt = 0.1; // Cap delta to prevent huge jumps
 
-        if (dustParticles && airBox) {
-          const positions = dustParticles.geometry.attributes.position.array;
+        if (ambientDustParticles && airBox) {
+          const positions =
+            ambientDustParticles.geometry.attributes.position.array;
           for (let i = 1; i < positions.length; i += 3) {
             positions[i] -= dt * 5.0; // falling dust
             if (positions[i] < 0)
               positions[i] = airBox.geometry.parameters.height;
           }
-          dustParticles.geometry.attributes.position.needsUpdate = true;
+          ambientDustParticles.geometry.attributes.position.needsUpdate = true;
         }
 
         if (animState === "PRE_DELAY") {
@@ -1135,7 +1158,10 @@
                 : "PENETRATING";
             if (animState === "DROPPING") {
               simTime = currentData.drop_frames[0].t;
-            } else if (currentData.pen_frames && currentData.pen_frames.length > 0) {
+            } else if (
+              currentData.pen_frames &&
+              currentData.pen_frames.length > 0
+            ) {
               simTime = currentData.pen_frames[0].t;
             } else {
               simTime = 0;
@@ -1165,7 +1191,7 @@
             if (frame.m > 1.0) {
               machCone.visible = true;
               machCone.position.copy(projectile.position);
-              machCone.position.y += (currentData.proj_length / 2.0) - 2.0; 
+              machCone.position.y += currentData.proj_length / 2.0 - 2.0;
             } else {
               machCone.visible = false;
             }
@@ -1189,13 +1215,15 @@
             simTime = 0;
           } else {
             const penStart = currentData.pen_frames[0].t;
-            const penEnd = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+            const penEnd =
+              currentData.pen_frames[currentData.pen_frames.length - 1].t;
             const penDuration = penEnd - penStart;
             // Force penetration animation to take at least 5.0 seconds of real time for visibility
-            const overrideTimeScale = penDuration > 0 ? (penDuration / 5.0) : 1.0;
+            const overrideTimeScale = penDuration > 0 ? penDuration / 5.0 : 1.0;
             simTime += dt * overrideTimeScale * simSpeedMultiplier;
 
-            const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+            const maxTime =
+              currentData.pen_frames[currentData.pen_frames.length - 1].t;
 
             if (simTime < maxTime) {
               const frame = getInterpolatedFrame(
@@ -1204,14 +1232,15 @@
               );
 
               // 1. WAPM Erosion (Rod Shrinking)
-              const currentLength = frame.rl !== undefined ? frame.rl : currentData.proj_length;
+              const currentLength =
+                frame.rl !== undefined ? frame.rl : currentData.proj_length;
               projectile.scale.y = currentLength / currentData.proj_length;
-              projectile.position.y = -frame.y + (currentLength / 2.0);
+              projectile.position.y = -frame.y + currentLength / 2.0;
 
               // 2. Obliquity (Trajectory Bending)
               const oblRad = (frame.obliquity_deg || 0) * (Math.PI / 180);
               projectile.rotation.z = oblRad;
-              // Note: Crater rotation might look odd if it rotates the entire hole from the surface, 
+              // Note: Crater rotation might look odd if it rotates the entire hole from the surface,
               // but we will apply it to show the visual curve of the penetration.
               activeCrater.rotation.z = oblRad;
 
@@ -1221,19 +1250,26 @@
               const hotEmissive = new THREE.Color(0xffaa00);
               // Normalize heat (assuming max heat around 1500 for melting point 1800)
               const heatFactor = Math.min((frame.h || 0) / 1500.0, 1.0);
-              projectile.material.emissive.lerpColors(baseEmissive, hotEmissive, heatFactor);
+              projectile.material.emissive.lerpColors(
+                baseEmissive,
+                hotEmissive,
+                heatFactor,
+              );
 
               // 5. Shock Stress & G-Force Tremors
               const gForce = frame.g || 0;
-              const jitter = (gForce / 15000.0); // e.g. 15000G = 1.0 magnitude jitter
+              const jitter = gForce / 15000.0; // e.g. 15000G = 1.0 magnitude jitter
               projectile.position.x = (Math.random() - 0.5) * jitter;
               projectile.position.z = (Math.random() - 0.5) * jitter;
 
-              if ((currentData.shock_damage_prob_percent || 0) > 50.0 && Math.random() > 0.8) {
-                  // Flicker the projectile to white briefly to show intense shock stress
-                  projectile.material.color.setHex(0xffffff);
+              if (
+                (currentData.shock_damage_prob_percent || 0) > 50.0 &&
+                Math.random() > 0.8
+              ) {
+                // Flicker the projectile to white briefly to show intense shock stress
+                projectile.material.color.setHex(0xffffff);
               } else {
-                  projectile.material.color.setHex(baseColorHex);
+                projectile.material.color.setHex(baseColorHex);
               }
 
               activeCrater.visible = true;
@@ -1242,22 +1278,23 @@
 
               // Volumetric Dust Emission
               if (dustParticles) {
-                  const pPos = projectile.position;
-                  for (let i = 0; i < 20; i++) { // spawn/move 20 particles per frame
-                      const idx = Math.floor(Math.random() * 1000);
-                      const dummy = new THREE.Object3D();
-                      // Emit from around the projectile head
-                      dummy.position.set(
-                          pPos.x + (Math.random() - 0.5) * 4.0,
-                          pPos.y - (Math.random() * 2.0),
-                          pPos.z + (Math.random() - 0.5) * 4.0
-                      );
-                      const scale = Math.random() * 2.0 + 0.5;
-                      dummy.scale.set(scale, scale, scale);
-                      dummy.updateMatrix();
-                      dustParticles.setMatrixAt(idx, dummy.matrix);
-                  }
-                  dustParticles.instanceMatrix.needsUpdate = true;
+                const pPos = projectile.position;
+                for (let i = 0; i < 20; i++) {
+                  // spawn/move 20 particles per frame
+                  const idx = Math.floor(Math.random() * 1000);
+                  const dummy = new THREE.Object3D();
+                  // Emit from around the projectile head
+                  dummy.position.set(
+                    pPos.x + (Math.random() - 0.5) * 4.0,
+                    pPos.y - Math.random() * 2.0,
+                    pPos.z + (Math.random() - 0.5) * 4.0,
+                  );
+                  const scale = Math.random() * 2.0 + 0.5;
+                  dummy.scale.set(scale, scale, scale);
+                  dummy.updateMatrix();
+                  dustParticles.setMatrixAt(idx, dummy.matrix);
+                }
+                dustParticles.instanceMatrix.needsUpdate = true;
               }
 
               updateHUD(frame);
@@ -1315,7 +1352,8 @@
             }
           } else if (shockwave.visible) {
             // Growth rate scaled by the physically-derived camera shake magnitude (kinetic energy)
-            const shockwaveGrowthRate = 10.0 + currentData.camera_shake_magnitude * 10.0;
+            const shockwaveGrowthRate =
+              10.0 + currentData.camera_shake_magnitude * 10.0;
             shockwave.scale.addScalar(dt * shockwaveGrowthRate);
             shockwave.material.opacity -= dt * 1.0;
             if (simTime > 1.5) {
