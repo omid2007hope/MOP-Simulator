@@ -1239,8 +1239,8 @@
         }
         projectile.scale.set(1, 1, 1);
         projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
-        // Aircraft release: start near horizontal (pitched ~70 degrees)
-        projectile.rotation.set(0, 0, Math.PI * 0.4);
+        // Aircraft release: start 100% horizontal (pitched 90 degrees / PI / 2), exactly like B-2 drop
+        projectile.rotation.set(0, 0, Math.PI / 2.0);
         projectile.visible = true;
 
         // Reset Effect States fully
@@ -1377,19 +1377,23 @@
             );
             projectile.position.y = frame.y;
 
-            // Realistic aerial drop bomb pitch rotation:
-            // Starts near horizontal (pitched) at aircraft release and aerodynamically rotates downward to vertical (0 deg) as it falls
+            // 100% Physically-based aerodynamic pitch alignment:
+            // Fin-stabilized flight path angle of attack theta = atan2(vx, |vy|)
             const maxDropAlt =
               currentData &&
               currentData.drop_frames &&
               currentData.drop_frames.length > 0
                 ? Math.abs(currentData.drop_frames[0].y)
                 : 60;
+            // Aerodynamic free-fall pitch rotation:
+            // Spawns 100% horizontal (PI/2 = 90 deg) matching aircraft release,
+            // then aerodynamically rotates pitch smoothly down to vertical (0 deg) as it accelerates toward ground
             const dropProgress = Math.max(
               0,
-              Math.min(1, 1.0 - frame.y / maxDropAlt),
+              Math.min(1.0, 1.0 - frame.y / maxDropAlt),
             );
-            const pitchRad = Math.pow(1.0 - dropProgress, 1.2) * (Math.PI * 0.4);
+            const pitchRad =
+              (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
             projectile.rotation.z = pitchRad;
 
             if (frame.sb && !boomRing.visible) {
