@@ -1385,7 +1385,12 @@
           shockwave.rotation.x += dt;
         }
 
-        if (followCam && animState !== "FINISHED") {
+        if (followCam) {
+          const delta = new THREE.Vector3().subVectors(
+            projectile.position,
+            controls.target,
+          );
+          camera.position.add(delta);
           controls.target.copy(projectile.position);
         }
 
