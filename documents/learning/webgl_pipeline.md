@@ -1,4 +1,4 @@
-# WebGL 3D Visualization Pipeline: C++ to Browser Bridge
+# 100% Physics WebGL 3D Visualization Pipeline: C++ to Browser Bridge
 
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
@@ -27,61 +27,43 @@ for (size_t j = 0; j < r.drop_frames.size(); ++j) {
     const auto& f = r.drop_frames[j];
     dropFramesJson << "{t:" << f.time << ",y:" << f.depth 
                    << ",v:" << f.velocity << ",m:" << f.mach
+                   << ",h:" << f.heat << ",g:" << f.g_force
+                   << ",rl:" << f.remaining_length
+                   << ",obliquity_deg:" << f.obliquity_deg
                    << ",sb:" << (f.is_sonic_boom ? "true" : "false") << "}";
     if (j + 1 < r.drop_frames.size()) dropFramesJson << ",";
 }
 dropFramesJson << "]";
 ```
 
-### Key Techniques:
-- `std::stringstream`: Efficient string accumulation without repeated reallocation.
-- **Ternary Operator (`? :`):** Converts C++ `bool` values (`true`/`false`) directly to JS boolean keywords (`"true"`/`"false"`).
-- `escapeJSON()`: Escapes special characters (`"`, `\`, `\n`) to prevent JSON formatting syntax errors or injection bugs.
+---
+
+## 3. 100% Physics-Based WebGL Render Subsystems
+
+### A. Planck Blackbody Thermal Radiation (`computePlanckBlackbodyColor`)
+Friction and hydrodynamic ablation heating $T$ (in Kelvin) drive Planck blackbody radiation and Wien's displacement law ($\lambda_{\max} T = 2.89777 \times 10^{-3}\text{ m}\cdot\text{K}$):
+- $< 500\text{ K}$: Base casing metal
+- $500\text{ K} - 900\text{ K}$: Incipient red-heat
+- $900\text{ K} - 1500\text{ K}$: Cherry red to bright orange
+- $1500\text{ K} - 2200\text{ K}$: Incandescent yellow-white
+- $> 2200\text{ K}$: Radiant plasma white-blue
+- Emission intensity scales with $T^4$ (Stefan-Boltzmann Law).
+
+### B. Supersonic Prandtl-Glauert Mach Shock Cones
+Mach cone half-angle obeys $\sin(\alpha) = 1/M$ for $M > 1.0$. Vapor opacity and density scale with dynamic pressure $q = \frac{1}{2} \rho v^2$ and local air density $\rho(y)$.
+
+### C. US Standard Atmosphere 1976
+Air density follows $\rho(y) = \rho_0 e^{-k \cdot y}$. Sky dust particles use inverse transform sampling to match Earth's barometric density profile.
+
+### D. School Ruler Measuring Sub-Divisions
+Depth and altitude rulers include precision sub-divisions (1m minor ticks, 5m medium ticks, and 10m major ticks + text labels) for both air and underground target layers.
+
+### E. Web Audio USA National Anthem Synthesizer
+Synthesizes "The Star-Spangled Banner" in real time using browser `AudioContext` polyphonic oscillators as the bomb drop animation begins.
 
 ---
 
-## 3. String Replacement Injection
-
-Inside `assets/visualizer_template.html`, placeholder tokens exist:
-
-```html
-<script>
-    const scenarios = [
-{{SCENARIOS_DATA}}
-    ];
-</script>
-```
-
-In C++, `replaceAll()` finds the placeholder token and replaces it with the serialized telemetry string:
-
-```cpp
-void replaceAll(std::string& str, const std::string& from, const std::string& to) {
-    if (from.empty()) return;
-    size_t start_pos = 0;
-    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length();
-    }
-}
-
-// Inject buttons and telemetry data into HTML string template
-replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
-replaceAll(html, "{{SCENARIOS_DATA}}", data.str());
-```
-
----
-
-## 4. Frontend Rendering Loop (Three.js)
-
-Once the generated HTML file opens in a browser, Three.js parses the injected `scenarios` array:
-
-1. `selectScenario(index)` sets up the target layer boxes (`THREE.BoxGeometry`).
-2. `animate()` uses `THREE.Clock` to lerp (linearly interpolate) velocity, altitude, and depth frames smoothly across render ticks.
-3. `createCraterGeometry(depth)` dynamically constructs a 3D lathe geometry cone/cylinder tunnel (`THREE.LatheGeometry`) depicting sequential bomb burrowing.
-
----
-
-## 5. Benefits for C++ Developers
+## 4. Benefits for C++ Developers
 
 - **No Third-Party Web Server Dependencies:** Users don't need `npm`, `node`, `python`, or `http-server`.
 - **Portable Output:** The resulting `.html` file is a single self-contained document that can be emailed or archived.

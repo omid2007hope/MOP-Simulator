@@ -1,50 +1,31 @@
-# MOP Simulator: Project Vision & Roadmap
+# MOP Simulator: Project Vision & Completed Milestones
 
 ## 🌟 Strategic Vision
 
-The MOP (Massive Ordnance Penetrator) Simulator is envisioned to evolve from a basic CLI calculator into a highly modular, interactive, and academically robust physics simulation suite. The ultimate goal is to bridge the gap between complex terminal ballistic mathematics and accessible, real-time 3D visualizations for educational, research, and engineering purposes.
-
-Future iterations will move away from hardcoded variables and rigid logic towards a data-driven architecture, enabling complex multi-layered target simulations, thermodynamic modeling, and seamless integration with modern web and scripting ecosystems.
+The MOP (Massive Ordnance Penetrator) Simulator has evolved from a basic CLI calculator into a highly modular, interactive, and academically robust C++23 physics simulation suite. It bridges complex terminal ballistics mathematics with an advanced, real-time 3D WebGL visualization engine for educational, research, and engineering analysis.
 
 ---
 
-## 🛠️ Current Codebase Review & Bug Tracker
+## 🛠️ Completed Technical Milestones (v3.0)
 
-During the latest comprehensive line-by-line code review, the following issues and technical debts were identified:
+### 🔬 Core Physics Engine
+- [x] **Walker-Anderson Erosion Model (WAPM)**: Hydrodynamic rod erosion $\frac{dL}{dt} = -(v - u)$ with Tate-Bernoulli interface velocity solving.
+- [x] **Walker-Wasley Hugoniot Shock Initiation**: Impedance matching shock Hugoniot jump conditions ($U_s = C_0 + S U_p$) and critical initiation energy calculation ($P^2 \tau \ge E_c$).
+- [x] **CEB-FIP Dynamic Increase Factor (DIF)**: Strain-rate dependent dynamic concrete yield strength enhancement.
+- [x] **US Standard Atmosphere 1976**: Exponential barometric density $\rho(y) = \rho_0 e^{-k \cdot y}$ and altitude-dependent speed of sound $c(y)$.
+- [x] **Thermodynamic Friction & Ablation**: Sliding friction work $F_{\text{fric}} \cdot v$ and hydrodynamic erosion work heating penetrator casing.
 
-### 🐛 Active Bugs
-
-- [x] **Hardcoded JS Physics Bug**: In `simulation.cpp` (Line 528), the generated WebGL JavaScript recalculates `hydroDepth` using a hardcoded casing density of `7800.0`. If a custom projectile is used with a different density (e.g., Tungsten at 19300.0), the HTML visualizer's parametric sliders will calculate and render the wrong depth.
-- [x] **Typo in Default Scenarios**: In `main.cpp` (Line 122), the 4th preset scenario is named "Subsonic Operational" with an altitude of `15.0` ft. Based on preceding entries (50,000, 25,000, 18,000), this is likely a typo for `15000.0` ft.
-- [x] **Interactive Input Loop Failure**: In `main.cpp`, if the user enters invalid input during the interactive prompt (e.g., a string instead of a number), `clearCinBuffer()` is called, and the program silently defaults to the previous value instead of re-prompting the user.
-- [x] **Scenario Count Constraint Mismatch**: In `main.cpp` (Line 80), the prompt limits custom impact velocities to `[1 to 5]`, but the actual validation logic on Line 82 accepts up to `10`.
-
-### 🏗️ Technical Debt & Areas of Improvement
-
-- [x] **Decouple HTML Generation**: Embedding 400+ lines of raw HTML/JS in `simulation.cpp` as a raw string literal makes UI maintenance difficult. **Action:** Move the HTML template into an external asset file (e.g., `assets/visualizer_template.html`) and load/inject data at runtime.
-- [x] **Parameterize Magic Numbers**: target compressive strength (`rt = 100.0e6`), and the speed of sound (`SPEED_OF_SOUND = 343.0`) are hardcoded. **Action:** Extract these into a `PhysicsConstants` structure or configuration file.
-- [x] **Standardize Math Constants**: Replace manual definitions of Pi (`3.14159...`) with C++ standard library equivalents (e.g., `std::numbers::pi` in C++20 or `M_PI`).
-
----
-
-## 🚀 Version 2.0 Roadmap: Modularity & Data-Driven Design
-
-_Focus: Refactoring the core architecture to support dynamic inputs, cleaner code separation, and flawless 3D WebGL synchronization._
-
-- [x] **External Asset Loading System**: Implement a file-reading utility to load the WebGL HTML/JS template dynamically, eliminating the massive string literal in the C++ source.
-- [x] **Data-Driven Configuration**: Introduce a JSON or YAML parser (e.g., `nlohmann/json`) to load external databases of:
-  - **Targets**: Soil, Granite, High-Quality Concrete, Steel Armor.
-  - **Projectiles**: GBU-57 MOP, BLU-109, Custom Tungsten Rods.
-- [x] **Web UI Physics Synchronization**: Fix the hardcoded JS physics bug by injecting the dynamic `casing_density` and `target_density` properties into the HTML payload.
-- [x] **Robust CLI Interface**: Refactor `main.cpp` interactive prompts to use robust `while` loops that enforce strict validation and re-prompt on invalid user input.
+### 🌐 Interactive 3D WebGL Visualizer Pipeline
+- [x] **100% Physics-Bound WebGL Telemetry**: Every motion, scale, rotation, and effect is tied directly to RK4 telemetry exported from `simulation.cpp`.
+- [x] **Planck Blackbody Thermal Radiation**: Color spectrum transitions ($T < 500\text{ K}$ metal $\rightarrow 800\text{ K}$ dull red $\rightarrow 1200\text{ K}$ orange $\rightarrow 1800\text{ K}$ incandescent white) with Stefan-Boltzmann $T^4$ intensity.
+- [x] **Vector Aerodynamic Drop Mechanics**: Spawns $90^\circ$ horizontal at aircraft drop altitude (matching B-2 drop photos) and rotates smoothly downward to vertical ($0^\circ$) at ground zero.
+- [x] **Prandtl-Glauert Mach Shock Cones**: Half-angle $\sin(\alpha) = 1/M$ attached in 3D matrix sync with bomb velocity vector.
+- [x] **School Ruler Measuring Sub-Divisions**: 1m minor ticks, 5m medium ticks, and 10m major ticks + text labels for both underground depth and in-air altitude.
+- [x] **Web Audio USA National Anthem Synthesizer**: Zero-dependency heroic polyphonic sound synthesizer playing during drop & penetration.
 
 ---
 
-## 🌌 Version 3.0 Roadmap: Advanced Physics & Modern Tooling
+## 🚀 Future Roadmap
 
-_Focus: Pushing the boundaries of the physics engine and introducing professional integrations._
-
-- [ ] **Multi-Layered Target Simulation**: Upgrade the physics engine to calculate penetration through complex stratifications (e.g., 10m earth -> 5m reinforced concrete -> 1m steel vault).
-- [ ] **Deformation & Thermodynamics**: Introduce advanced mechanics simulating projectile mushrooming, mass loss via hydrodynamic erosion, and heat generation during hypervelocity impacts.
-
-- [ ] **Python Bindings (pybind11)**: Create a Python API wrapper for the simulation core, empowering data scientists and engineers to run massive batch impact simulations and parameter sweeps directly from Jupyter Notebooks.
+- [ ] **Complex Stratified 3D Voxel Cratering**: Volumetric voxel excavation visualization for complex multi-layered target impacts.
+- [ ] **Python API Bindings (pybind11)**: Python C++ extensions for automated parameter sweeps and Jupyter Notebook integrations.

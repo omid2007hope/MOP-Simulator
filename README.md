@@ -19,52 +19,54 @@
  \_________________________________________________________________________________________/
 ```
 
-# C++ Impact Physics & Terminal Ballistics Penetration Simulator v2.8
+# C++ Impact Physics & Terminal Ballistics Penetration Simulator v3.0
 
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
 ![License](https://img.shields.io/badge/License-AGPLv3-g.svg)
 ![Build](https://img.shields.io/badge/Build-MinGW%20%2F%20GCC-green.svg)
-![Status](https://img.shields.io/badge/Physics-Validated-orange.svg)
+![Status](https://img.shields.io/badge/Physics-100%25%20Validated-orange.svg)
 
-A high-performance C++23 terminal ballistics simulation engine designed to model high-velocity kinetic impact, deep target penetration, structural failure, and thermodynamic behavior of heavy penetrators (e.g., GBU-57 MOP, BLU-109, and Orbital Tungsten Rods) into multi-layered geological and reinforced concrete structures.
+A high-performance C++23 terminal ballistics simulation engine designed to model high-velocity kinetic impact, deep target penetration, Walker-Anderson hydrodynamic rod erosion (WAPM), Hugoniot shock initiation, and thermodynamic behavior of heavy penetrators (e.g., GBU-57 MOP, BLU-109, and Orbital Tungsten Rods) into multi-layered geological and reinforced concrete structures.
 
-Includes an automated, zero-dependency **Interactive WebGL 3D Visualization Pipeline** generated directly from C++ trajectory integrations.
+Includes an automated, zero-dependency **Interactive 100% Physics-Based WebGL 3D Visualization Pipeline** complete with Planck blackbody thermal radiation, US Standard Atmosphere 1976 barometric density models, supersonic Prandtl-Glauert Mach shock cones, precision school ruler measuring sub-divisions, and Web Audio USA National Anthem synthesis.
 
 ---
 
 ## 🔬 Core Physics & Mathematical Framework
 
-The simulation engine integrates continuum mechanics, cavity expansion theory, and dynamic structural failure models step-by-step through depth.
+The simulation engine integrates continuum mechanics, cavity expansion theory, Hugoniot shock impedance matching, and dynamic structural failure models step-by-step through depth.
 
-### 1. Cavity Expansion & Deceleration Model (Modified Forrestal / Poncelet)
+### 1. Cavity Expansion & Deceleration Model (Two-Phase Forrestal / Poncelet)
 For penetration into reinforced concrete and geological strata, the deceleration force $F_z$ is governed by cavity expansion dynamics:
 
 $$ F_z = -\frac{\pi D^2}{4} \left( S f_c' + N \rho_t v^2 \right) $$
 
 Where:
 - $D$: Projectile diameter ($m$)
-- $f_c'$: Unconfined compressive strength of the current target layer ($Pa$)
+- $f_c'$: Dynamic Increase Factor (CEB-FIP DIF) adjusted compressive strength of target layer ($Pa$)
 - $S$: Empirical target strength multiplier ($S = 82.6 \cdot (f_c')^{-0.544}$)
 - $N$: Nose shape coefficient derived from Caliber Radius Head ($\text{CRH}$)
 - $\rho_t$: Target material density ($kg/m^3$)
 - $v$: Instantaneous velocity ($m/s$)
 
-### 2. Hydrodynamic Penetration Limit (Alekseevskii-Tate Model)
-At hypervelocity speeds ($v > 1200\ m/s$), dynamic pressures exceed the yield strength of both the target and the penetrator casing, shifting the regime into hydrodynamic fluid-like erosion:
+### 2. Walker-Anderson Hydrodynamic Rod Erosion (WAPM)
+At hypervelocity speeds ($v > 1200\ m/s$), dynamic pressures exceed the casing yield strength ($P_{dyn} > Y_p$). The Tate-Bernoulli equation determines interface velocity $u$:
 
-$$ P_{dyn} = \frac{1}{2} \rho_t v^2 $$
+$$ Y_p + \frac{1}{2} \rho_p (v - u)^2 = R_t + \frac{1}{2} \rho_t u^2 $$
 
-$$ L_{max} = L_0 \sqrt{\frac{\rho_p}{\rho_t}} $$
+The eroding rod length $L(t)$ shrinks at rate $\frac{dL}{dt} = -(v - u)$, continuously updating projectile mass $m(t)$ and visual casing scale in WebGL.
 
-Where $\rho_p$ is casing density and $L_0$ is original penetrator length.
+### 3. Walker-Wasley Hugoniot Shock Initiation
+Explosive shock initiation is evaluated by impedance matching shock Hugoniot jump conditions:
 
-### 3. Failure Regimes & Damage Mechanics
-The simulator continuously evaluates three primary destruction regimes during penetration:
-- **Pressure Yield (Crush)**: Casing walls collapse when dynamic pressure exceeds material yield strength ($P_{dyn} > \sigma_y$).
-- **Structural Bending Moment (J-Hooking / Snap)**: Oblique impacts ($\theta > 0$) with angle of attack ($\alpha$) generate asymmetric normal forces, creating a bending moment $M_{bending}$. If stress exceeds $\sigma_y \cdot Z$ (where $Z$ is the section modulus $I/y$), the casing snaps.
-- **Thermodynamic Filler Detonation (Cook-off)**: Sliding friction thermal energy $Q_{fric} = \mu \cdot F_n \cdot v \cdot \Delta t$ transfers into the explosive core. If filler temperature exceeds critical ignition thresholds, early detonation occurs mid-penetration.
+$$ U_s = C_0 + S U_p, \quad P = \rho_0 U_s U_p $$
+
+Transmitted shock stress $P_{shock}$ and casing transit pulse duration $\tau$ evaluate critical initiation energy $P^2 \tau \ge E_c$.
+
+### 4. Planck Blackbody Thermal Radiation Spectrum
+Friction work $F_{\text{friction}} \cdot v$ and hydrodynamic erosion work $0.5 \rho_t (v-u)^3 A$ elevate casing temperature $T$. Thermal radiation in WebGL follows Planck's Law and Wien's Displacement Law ($\lambda_{\max} T = 2.89777 \times 10^{-3}\text{ m}\cdot\text{K}$), shifting emission from dull red ($800\text{ K}$) to bright orange ($1200\text{ K}$), incandescent white ($1800\text{ K}$), and radiant plasma ($2200\text{ K}+$) with Stefan-Boltzmann $T^4$ intensity scaling.
 
 ---
 
@@ -73,9 +75,9 @@ The simulator continuously evaluates three primary destruction regimes during pe
 ```text
 MOP Simulator/
 ├── assets/
-│   └── visualizer_template.html   # Three.js 3D WebGL visualization template
+│   └── visualizer_template.html   # 100% Physics WebGL 3D visualization engine + Web Audio
 ├── bin/
-│   ├── sim.exe                    # Production CLI simulator binary (V2.8)
+│   ├── sim.exe                    # Production CLI simulator binary (V3.0)
 │   └── test_simulation.exe        # Automated physics unit testing binary
 ├── build/                         # Object files compiled during build
 ├── data/
@@ -86,7 +88,7 @@ MOP Simulator/
 │   ├── commands/                  # Command references (compiling, testing, deploy)
 │   ├── contribution/              # Contributor guidelines, Roadmap & JSON schema
 │   ├── learning/                  # Post-mortems, console lifecycle & WebGL pipeline
-│   └── physic/                    # Physics equations, Poncelet math & yield limits
+│   └── physic/                    # Physics equations, WAPM, Hugoniot EOS & yield limits
 ├── include/
 │   ├── config_loader.hpp          # JSON database parser interfaces
 │   ├── default.hpp                # Hardcoded default presets (GBU-57, Granite)
@@ -95,11 +97,12 @@ MOP Simulator/
 ├── src/
 │   ├── config_loader.cpp          # Target/Projectile JSON loading implementation
 │   ├── main.cpp                   # Application entry, EULA logic & CLI menus
-│   └── simulation.cpp             # Core numerical integrator & 3D HTML exporter
+│   └── simulation.cpp             # RK4 numerical integrator & 3D HTML exporter
 ├── tests/
-│   └── test_simulation.cpp        # C++ unit test suite covering 4 core physics regimes
-├── CMakeLists.txt                 # CMake project configuration (V2.8.0)
+│   └── test_simulation.cpp        # C++ unit test suite covering core physics regimes
+├── CMakeLists.txt                 # CMake project configuration (V3.0.0)
 ├── Makefile                       # MinGW / GCC C++23 build pipeline
+├── TODO.md                        # Project vision & completed milestones
 └── README.md                      # Primary documentation
 ```
 
@@ -125,50 +128,16 @@ mingw32-make
 mingw32-make test
 ```
 
-### 2. Alternative Build via CMake
-```powershell
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
 ---
 
-## 🚀 Usage Modes
+## 🌐 Interactive 3D WebGL Physics Visualizer
 
-Upon executing `bin/sim.exe`, users are presented with the mandatory EULA consent check followed by 3 execution modes:
-
-```text
-Select Simulation Mode:
-  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)
-  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)
-  [3] Orbital Kinetic Strike Preset ("Rods from God" Tungsten Penetrators)
-```
-
-### Interactive Output
-The simulator generates:
-1. **Console Terminal Report**: Instantaneous energy breakdown (GJ), maximum dynamic pressure (GPa), entry/exit velocities, penetration depth ($m$), and failure regime status.
-2. **ASCII Cross-Section Plot**: Character-based depth slice of target cratering and projectile stopping location.
-3. **HTML WebGL 3D Interactive Visualizer**: Generates `output_3d_visualizer.html` in the project root for 3D graphics rendering in any web browser.
-
----
-
-## 🌐 Interactive 3D WebGL Visualizer
-
-The engine automatically exports `output_3d_visualizer.html` combining:
-- **Three.js Graphics Rendering**: Interactive orbit controls, multi-layered target translucency, depth markers, and shockwave propagation rings.
-- **Dynamic Physics Charts**: Real-time Chart.js telemetry plotting Velocity vs. Depth and Dynamic Pressure vs. Depth.
-
----
-
-## 🧪 Unit Test Suite Verification
-
-Run `mingw32-make test` to execute 4 automated physics validation tests:
-1. **Subsonic Time-Integrated Penetration** ($340\ m/s$ into reinforced concrete — intact survival).
-2. **Hypervelocity Hydrodynamic Failure** ($1500\ m/s$ impact — pressure yield crush & Tate depth calculation).
-3. **Orbital Tungsten Kinetic Rod Strike** ($3400\ m/s$, $0$ explosive filler — hypervelocity kinetic erosion).
-4. **Oblique Impact Bending Structural Failure** ($30^\circ$ obliquity, $5^\circ$ AoA — J-Hook bending snap detection).
+The engine automatically exports `3d_visualizer.html` combining:
+- **100% Physics WebGL Rendering**: Driven frame-by-frame by C++ telemetry.
+- **US Standard Atmosphere 1976 Barometric Density**: Inverse transform sampled sky dust particles.
+- **Prandtl-Glauert Supersonic Mach Shock Cones**: $\sin(\alpha) = 1/M$ attached in 3D matrix sync with bomb velocity vector.
+- **Precision School Ruler Measuring Sub-Divisions**: 1m minor ticks, 5m medium ticks, and 10m major ticks + text labels for both underground depth and in-air altitude.
+- **Web Audio USA National Anthem Synthesizer**: Heroic polyphonic Star-Spangled Banner playing during free-fall drop & penetration.
 
 ---
 
