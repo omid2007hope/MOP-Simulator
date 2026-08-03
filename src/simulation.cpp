@@ -730,7 +730,19 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                 }
             penFramesJson << "]";
 
-            data << "            { name: \"" << escapeJSON(r.scenario_name)
+            std::stringstream targetLayersJson;
+        targetLayersJson << "[";
+        for (size_t k = 0; k < target.layers.size(); ++k) {
+            const auto& lay = target.layers[k];
+            targetLayersJson << "{name:\"" << escapeJSON(lay.material_name)
+                             << "\",thickness:" << lay.thickness
+                             << ",density:" << lay.density << "}";
+            if (k + 1 < target.layers.size())
+                targetLayersJson << ",";
+        }
+        targetLayersJson << "]";
+
+        data << "            { name: \"" << escapeJSON(r.scenario_name)
                  << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
                  << ", energy: " << (r.kinetic_energy / 1e9)
                  << ", pressure: " << (r.dynamic_pressure / 1e9)
@@ -747,6 +759,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
                  << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
                  << escapeJSON(target.name) << "\""
+                 << ", target_layers: " << targetLayersJson.str()
                  << ", drop_frames: " << dropFramesJson.str()
                  << ", pen_frames: " << penFramesJson.str() << " }";
             if (i + 1 < results.size())
