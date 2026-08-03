@@ -1156,7 +1156,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     };
 
     replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
-    replaceAll(html, "{{SCENARIOS_DATA}}", data.str());
+    replaceAll(html, "/*{{SCENARIOS_DATA}}*/", data.str());
 
     out << html;
     out.close();

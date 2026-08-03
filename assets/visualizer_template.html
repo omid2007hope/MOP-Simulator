@@ -347,7 +347,15 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 
     <script>
-      const scenarios = [{{SCENARIOS_DATA}}];
+      const scenarios = [/*{{SCENARIOS_DATA}}*/];
+
+      // Debug function to list all scenarios to the console
+      function listAllData() {
+        scenarios.forEach((data, index) => {
+          console.log(`Scenario ${index}:`, data);
+        });
+      }
+      listAllData();
 
       let scene, camera, renderer, composer, controls;
       let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
