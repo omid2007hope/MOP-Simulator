@@ -294,6 +294,11 @@ int main(int argc, char* argv[])
                     scenarios.push_back({"Custom Default Test", 50000.0, 500.0, 0.0, 0.0});
                 }
         }
+
+    // ! ********************
+    // ! Orbital Kinetic Strike Preset
+    // ! ********************
+
         else if (choice == 3) {
             std::cout << "\n[+] Loading Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten "
                          "Penetrators)...\n";
@@ -310,6 +315,10 @@ int main(int argc, char* argv[])
                          {"Deep Orbital Strike (Mach 15)", 200000.0, 5100.0, 0.0, 0.0},
                          {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0, 0.0, 0.0}};
         }
+
+    // ! ********************
+    // ! Multi-Bomb Burrowing
+    // ! ********************
 
         else if (choice == 4) {
             std::cout << "\n[+] Loading Sequential Strike Preset (Multi-Bomb Burrowing)...\n";
@@ -333,6 +342,10 @@ int main(int argc, char* argv[])
                 }
         }
 
+    // ! ********************
+    // ! Midnight Hammer Preset
+    // ! ********************
+
         else if (choice = 5) {
             std::cout << "\n[+] Loading Operation Midnight Hammer Preset (12 days war)\n";
 
@@ -351,6 +364,11 @@ int main(int argc, char* argv[])
                 {"40,000 ft Drop", 40000.0, 450.0, 0.0, 0.0},
             };
         }
+
+    // ! ********************
+    // ! GBU-57 MOP drop scenarios
+    // ! ********************
+
         else { // choice == 1 or fallback
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
 
