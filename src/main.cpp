@@ -194,6 +194,23 @@ int main(int argc, char* argv[])
             munition.area_moment_inertia =
                 getValidInput<double>("Enter Area Moment of Inertia (m^4) [e.g., 0.02]: ", true);
 
+            double modulus =
+                getValidInput<double>("Enter Elastic Modulus E (GPa) [e.g., 200]: ", true);
+            if (modulus > 0) munition.elastic_modulus = modulus * 1e9;
+
+            munition.casing_wall_thickness =
+                getValidInput<double>("Enter Casing Wall Thickness (meters) [e.g., 0.05]: ", true);
+
+            munition.hugoniot_c0 =
+                getValidInput<double>("Enter Projectile Hugoniot C0 (m/s) [e.g., 4570]: ", true);
+
+            munition.hugoniot_s =
+                getValidInput<double>("Enter Projectile Hugoniot S [e.g., 1.49]: ", true);
+
+            double ec =
+                getValidInput<double>("Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ", true);
+            if (ec > 0) munition.explosive_critical_energy = ec * 1e15;
+
             object.layers.clear();
             TargetLayer customLayer;
             customLayer.material_name = "Custom Layer";
@@ -213,6 +230,13 @@ int main(int argc, char* argv[])
             double targetStrength =
                 getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
             customLayer.compressive_strength = targetStrength * 1e6;
+
+            double tc0 = getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ", true);
+            if (tc0 > 0) customLayer.hugoniot_c0 = tc0;
+
+            double ts = getValidInput<double>("Enter Target Hugoniot S [e.g., 1.9]: ", true);
+            if (ts > 0) customLayer.hugoniot_s = ts;
+
             object.layers.push_back(customLayer);
 
             int numScenarios = 1;
