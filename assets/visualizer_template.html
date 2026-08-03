@@ -1052,13 +1052,20 @@
         airBox.position.y = effectiveAlt / 2;
         airGroup.add(airBox);
 
-        // Dust particles (falling flakes from sky)
+        // Dust particles (falling flakes with barometric altitude density gradient)
+        const maxH = effectiveAlt + 30;
+        const scaleK = 2.2 / maxH;
+        const sampleAltitude = () => {
+          const u = Math.random();
+          return -Math.log(1 - u * (1 - Math.exp(-2.2))) / scaleK;
+        };
+
         const dustGeo = new THREE.BufferGeometry();
         const dustVerts = [];
         for (let i = 0; i < 2500; i++) {
           dustVerts.push(
             (Math.random() - 0.5) * 150,
-            Math.random() * (effectiveAlt + 30),
+            sampleAltitude(),
             (Math.random() - 0.5) * 150,
           );
         }
@@ -1070,7 +1077,7 @@
           color: 0xbae6fd,
           size: 0.8,
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.6,
         });
         ambientDustParticles = new THREE.Points(dustGeo, dustMat);
         airGroup.add(ambientDustParticles);
@@ -1249,10 +1256,20 @@
         if (ambientDustParticles && airBox) {
           const positions =
             ambientDustParticles.geometry.attributes.position.array;
+          const maxH = airBox.geometry.parameters.height + 30;
+          const scaleK = 2.2 / maxH;
+
           for (let i = 1; i < positions.length; i += 3) {
-            positions[i] -= dt * 5.0; // falling dust
-            if (positions[i] < 0)
-              positions[i] = airBox.geometry.parameters.height;
+            const y = positions[i];
+            const airDensityFactor = Math.exp(-scaleK * y);
+            // Slower terminal fall velocity near ground (dense air), faster fall at high altitude (thin air)
+            const fallSpeed = 3.0 + 6.0 * (1.0 - airDensityFactor);
+
+            positions[i] -= dt * fallSpeed;
+            if (positions[i] < 0) {
+              const u = Math.random();
+              positions[i] = -Math.log(1 - u * (1 - Math.exp(-2.2))) / scaleK;
+            }
           }
           ambientDustParticles.geometry.attributes.position.needsUpdate = true;
         }
