@@ -650,13 +650,10 @@
         tweenNumber("hud-depth", Math.abs(frame.y), (y) => y.toFixed(2) + " m");
 
         if (prevFrame && frame.t > prevFrame.t && animState === "PENETRATING") {
-          let accel = (frame.v - prevFrame.v) / (frame.t - prevFrame.t);
-          let gForce = Math.abs(accel / 9.80665);
-          tweenNumber("hud-gforce", gForce, (g) => g.toFixed(0) + " G");
+          tweenNumber("hud-gforce", frame.g, (g) => g.toFixed(0) + " G");
 
-          // Thermal heat glow based on G-Force
-          const heat = Math.min(1.0, gForce / 50000.0);
-          projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+          // Thermal heat glow based on temperature ratio from C++
+          projectile.material.emissive.setRGB(frame.h * 2.0, frame.h * 0.5, 0);
         }
 
         // Update graph
@@ -683,7 +680,8 @@
 
           // Swap geometry
           projectile.geometry.dispose();
-          projectile.geometry = new THREE.CylinderGeometry(0.2, 0.2, 8.0, 32);
+          let pRadius = currentData.proj_diameter / 2.0;
+          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
           projectile.material.metalness = 1.0;
           projectile.material.color.setHex(0x334155);
         } else if (data.fail || !data.exp_survives) {
@@ -720,8 +718,8 @@
 
       function createCraterGeometry(depth) {
         const points = [];
-        const r_wide = 4.5;
-        const r_narrow = 1.0;
+        const r_wide = currentData ? currentData.crater_wide_radius : 4.5;
+        const r_narrow = currentData ? currentData.crater_narrow_radius : 1.0;
         const shallow_depth = Math.min(depth, 3.5);
 
         // Spline smoothing could go here, for now linear interpolation points
@@ -867,7 +865,8 @@
         // Reset Projectile Geometry
         if (!currentData.is_kinetic) {
           projectile.geometry.dispose();
-          projectile.geometry = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
+          let pRadius = currentData.proj_diameter / 2.0;
+          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
           projectile.material.metalness = 0.9;
           projectile.material.color.setHex(0x64748b);
         }
@@ -979,14 +978,14 @@
             animState = "PENETRATING";
             simTime = 0;
             prevFrame = null;
-            cameraShake = 0.5; // Trigger non-drifting camera shake
+            cameraShake = currentData.camera_shake_magnitude; // Physically derived camera shake
           }
         } else if (animState === "PENETRATING") {
           if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
             animState = "EXPLODING";
             simTime = 0;
           } else {
-            simTime += dt * 0.02 * simSpeedMultiplier; // Slow down ms to seconds
+            simTime += dt * currentData.time_scale_pen * simSpeedMultiplier; // Time scale from C++
             const maxTime =
               currentData.pen_frames[currentData.pen_frames.length - 1].t;
 
@@ -996,7 +995,7 @@
                 simTime,
               );
               projectile.position.y =
-                -frame.y + (currentData.is_kinetic ? 4.0 : 3.1);
+                -frame.y + (currentData.proj_length / 2.0);
 
               activeCrater.geometry.dispose();
               activeCrater.geometry = createCraterGeometry(frame.y);
@@ -1034,7 +1033,7 @@
           }
 
           if (explosionSphere.visible) {
-            const maxScale = Math.max(5, currentData.yield * 3); // Scaled down sizing
+            const maxScale = currentData.explosion_scale; // Sourced directly from C++ yield/mass logic
             explosionSphere.scale.addScalar(dt * 40); // Slower growth
             if (explosionSphere.scale.x > maxScale) {
               explosionSphere.material.opacity -= dt * 2.0;

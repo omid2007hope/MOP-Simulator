@@ -97,6 +97,8 @@ struct TelemetryFrame
     double mach = 0.0;
     double dynamic_pressure = 0.0;
     bool is_sonic_boom = false;
+    double heat = 0.0;
+    double g_force = 0.0;
 };
 
 // Simulation results for a given scenario
@@ -118,6 +120,14 @@ struct SimulationResult
     bool is_kinetic_rod = false;            // true if explosive_mass == 0 or yield_strength == 0
     std::string regime;
     std::string outcome_summary;
+
+    // Visualization Data
+    double explosive_mass = 0.0;
+    double explosion_scale = 1.0;
+    double crater_wide_radius = 4.5;
+    double crater_narrow_radius = 1.0;
+    double camera_shake_magnitude = 0.0;
+    double time_scale_pen = 0.02;
 
     std::vector<TelemetryFrame> drop_frames;
     std::vector<TelemetryFrame> penetration_frames;

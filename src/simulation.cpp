@@ -348,6 +348,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     frame.velocity = current_velocity;
                     frame.mach = current_velocity / cons.SPEED_OF_SOUND;
                     frame.dynamic_pressure = dynamic_pressure;
+                    frame.g_force = std::abs(acceleration / cons.gravity);
+                    frame.heat = std::min(1.0, current_temperature / proj.melting_point);
                     res.penetration_frames.push_back(frame);
                 }
 
@@ -443,6 +445,21 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         }
                 }
         }
+
+    // Populate Visualization Data
+    res.explosive_mass = proj.explosive_mass;
+    if (res.is_kinetic_rod) {
+        res.explosion_scale = 1.0; 
+        res.crater_wide_radius = proj.diameter * 2.0; // minimal crater
+    } else {
+        res.explosion_scale = std::max(5.0, (proj.yield_strength / 1e9) * 3.0); // original logic was based on casing yield
+        // if we want it based on explosive mass:
+        res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
+        res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
+    }
+    res.crater_narrow_radius = proj.diameter / 2.0;
+    res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9); // scale down energy
+    res.time_scale_pen = 0.02; // keeping base speed, but allowing override if wanted later
 
     return res;
 }
@@ -724,7 +741,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                 for (size_t j = 0; j < r.penetration_frames.size(); ++j) {
                     const auto& f = r.penetration_frames[j];
                     penFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
-                                  << ",m:" << f.mach << ",p:" << f.dynamic_pressure << "}";
+                                  << ",m:" << f.mach << ",p:" << f.dynamic_pressure
+                                  << ",g:" << f.g_force << ",h:" << f.heat << "}";
                     if (j + 1 < r.penetration_frames.size())
                         penFramesJson << ",";
                 }
@@ -759,6 +777,12 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
                  << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
                  << escapeJSON(target.name) << "\""
+                 << ", explosive_mass: " << r.explosive_mass
+                 << ", explosion_scale: " << r.explosion_scale
+                 << ", crater_wide_radius: " << r.crater_wide_radius
+                 << ", crater_narrow_radius: " << r.crater_narrow_radius
+                 << ", camera_shake_magnitude: " << r.camera_shake_magnitude
+                 << ", time_scale_pen: " << r.time_scale_pen
                  << ", target_layers: " << targetLayersJson.str()
                  << ", drop_frames: " << dropFramesJson.str()
                  << ", pen_frames: " << penFramesJson.str() << " }";
