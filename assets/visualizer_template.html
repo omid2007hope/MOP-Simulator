@@ -266,34 +266,7 @@
       class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto"
     >
       <div class="unskew flex gap-3 items-center">
-        <button
-          id="btn-0"
-          onclick="selectScenario(0)"
-          class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60"
-        >
-          BLU-109 (Standard Bunker)
-        </button>
-        <button
-          id="btn-1"
-          onclick="selectScenario(1)"
-          class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60"
-        >
-          Tungsten Rod (Kinetic)
-        </button>
-        <button
-          id="btn-2"
-          onclick="selectScenario(2)"
-          class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60"
-        >
-          Casing Shatter (Armor)
-        </button>
-        <button
-          id="btn-3"
-          onclick="selectScenario(3)"
-          class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60"
-        >
-          MOP (Deep Subterranean)
-        </button>
+        {{SCENARIO_BUTTONS}}
       </div>
     </div>
 
@@ -313,97 +286,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
     <script>
-      const scenarios = [
-        {
-          name: "BLU-109 vs Reinforced Concrete",
-          is_kinetic: false,
-          fail: false,
-          exp_survives: true,
-          yield: 1.5,
-          target_layers: [
-            { thickness: 8, density: 2400 }, // Concrete layer
-            { thickness: 40, density: 1500 }, // Earth/Dirt layer underneath
-          ],
-          drop_frames: [
-            { t: 0, y: 120, v: 0, m: 900 },
-            { t: 2.0, y: -0.1, v: 350, m: 900, sb: true },
-          ],
-          pen_frames: [
-            { t: 0.0, y: 0.0, v: 350, m: 900, p: 0.1 },
-            { t: 0.1, y: 2.5, v: 250, m: 900, p: 1.2 },
-            { t: 0.2, y: 4.5, v: 150, m: 900, p: 1.8 },
-            { t: 0.35, y: 6.5, v: 60, m: 900, p: 0.8 },
-            { t: 0.5, y: 7.2, v: 0, m: 900, p: 0.0 },
-          ],
-        },
-        {
-          name: "Tungsten Rod vs Deep Granite",
-          is_kinetic: true,
-          fail: false,
-          exp_survives: false,
-          yield: 3.0,
-          target_layers: [
-            { thickness: 15, density: 2700 }, // Granite
-            { thickness: 30, density: 2800 }, // Deeper rock
-          ],
-          drop_frames: [
-            { t: 0, y: 200, v: 1000, m: 100 },
-            { t: 1.0, y: -0.1, v: 1800, m: 100, sb: true },
-          ],
-          pen_frames: [
-            { t: 0.0, y: 0.0, v: 1800, m: 100, p: 0.5 },
-            { t: 0.05, y: 6.0, v: 900, m: 80, p: 4.5 },
-            { t: 0.1, y: 13.0, v: 300, m: 60, p: 1.5 },
-            { t: 0.15, y: 17.5, v: 50, m: 50, p: 0.5 },
-            { t: 0.2, y: 18.2, v: 0, m: 45, p: 0.0 },
-          ],
-        },
-        {
-          name: "Civilian Steel vs Armor",
-          is_kinetic: false,
-          fail: true,
-          exp_survives: false,
-          yield: 0.5,
-          target_layers: [
-            { thickness: 5, density: 7800 }, // Armor plate
-            { thickness: 20, density: 2000 }, // Backing material
-          ],
-          drop_frames: [
-            { t: 0, y: 80, v: 200, m: 500 },
-            { t: 0.8, y: -0.1, v: 400, m: 500, sb: true },
-          ],
-          pen_frames: [
-            { t: 0.0, y: 0.0, v: 400, m: 500, p: 0.1 },
-            { t: 0.02, y: 0.2, v: 50, m: 500, p: 6.0 }, // Massive pressure spike causing failure
-            { t: 0.03, y: 0.3, v: 0, m: 500, p: 0.0 },
-          ],
-        },
-        {
-          name: "MOP (Massive Ordnance Penetrator)",
-          is_kinetic: false,
-          fail: false,
-          exp_survives: true,
-          yield: 2.8,
-          target_layers: [
-            { thickness: 8, density: 1800 }, // Surface soil
-            { thickness: 12, density: 2600 }, // Primary reinforced concrete cap
-            { thickness: 15, density: 1800 }, // Interstitial earth
-            { thickness: 8, density: 2600 }, // Inner bunker vault roof
-          ],
-          drop_frames: [
-            { t: 0, y: 250, v: 0, m: 14000 },
-            { t: 2.5, y: -0.1, v: 450, m: 14000, sb: true },
-          ],
-          pen_frames: [
-            { t: 0.0, y: 0.0, v: 450, m: 14000, p: 0.1 },
-            { t: 0.1, y: 7.0, v: 420, m: 14000, p: 0.6 }, // Pushing through soil
-            { t: 0.3, y: 17.0, v: 280, m: 14000, p: 2.2 }, // Punching through first concrete cap
-            { t: 0.5, y: 28.0, v: 250, m: 14000, p: 0.5 }, // Moving through middle dirt
-            { t: 0.7, y: 35.0, v: 80, m: 14000, p: 2.5 }, // Breaking final bunker roof
-            { t: 0.85, y: 38.5, v: 0, m: 14000, p: 0.0 },
-          ],
-        },
-      ];
+      const scenarios = {{SCENARIOS_DATA}};
 
       let scene, camera, renderer, composer, controls;
       let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
@@ -619,7 +502,8 @@
       }
 
       function setupProjectile() {
-        const projGeom = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
+        let pRadius = currentData.proj_diameter / 2.0;
+        const projGeom = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
         // Premium material
         const projMat = new THREE.MeshPhysicalMaterial({
           color: 0x64748b,
@@ -766,12 +650,10 @@
 
         if (prevFrame && frame.t > prevFrame.t && animState === "PENETRATING") {
           let accel = (frame.v - prevFrame.v) / (frame.t - prevFrame.t);
-          let gForce = Math.abs(accel / 9.80665);
-          tweenNumber("hud-gforce", gForce, (g) => g.toFixed(0) + " G");
+          tweenNumber("hud-gforce", frame.g, (g) => g.toFixed(0) + " G");
 
-          // Thermal heat glow based on G-Force
-          const heat = Math.min(1.0, gForce / 50000.0);
-          projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+          // Thermal heat glow based on temperature ratio from C++
+          projectile.material.emissive.setRGB(frame.h * 2.0, frame.h * 0.5, 0);
         }
 
         // Update graph
@@ -798,7 +680,8 @@
 
           // Swap geometry
           projectile.geometry.dispose();
-          projectile.geometry = new THREE.CylinderGeometry(0.2, 0.2, 8.0, 32);
+          let pRadius = currentData.proj_diameter / 2.0;
+          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
           projectile.material.metalness = 1.0;
           projectile.material.color.setHex(0x334155);
         } else if (data.fail || !data.exp_survives) {
@@ -835,8 +718,8 @@
 
       function createCraterGeometry(depth) {
         const points = [];
-        const r_wide = 4.5;
-        const r_narrow = 1.0;
+        const r_wide = currentData ? currentData.crater_wide_radius : 4.5;
+        const r_narrow = currentData ? currentData.crater_narrow_radius : 1.0;
         const shallow_depth = Math.min(depth, 3.5);
 
         // Spline smoothing could go here, for now linear interpolation points
@@ -982,7 +865,8 @@
         // Reset Projectile Geometry
         if (!currentData.is_kinetic) {
           projectile.geometry.dispose();
-          projectile.geometry = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
+          let pRadius = currentData.proj_diameter / 2.0;
+          projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
           projectile.material.metalness = 0.9;
           projectile.material.color.setHex(0x64748b);
         }
@@ -1094,14 +978,14 @@
             animState = "PENETRATING";
             simTime = 0;
             prevFrame = null;
-            cameraShake = 0.5; // Trigger non-drifting camera shake
+            cameraShake = currentData.camera_shake_magnitude; // Physically derived camera shake
           }
         } else if (animState === "PENETRATING") {
           if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
             animState = "EXPLODING";
             simTime = 0;
           } else {
-            simTime += dt * 0.02 * simSpeedMultiplier; // Slow down ms to seconds
+            simTime += dt * currentData.time_scale_pen * simSpeedMultiplier; // Time scale from C++
             const maxTime =
               currentData.pen_frames[currentData.pen_frames.length - 1].t;
 
@@ -1111,7 +995,7 @@
                 simTime,
               );
               projectile.position.y =
-                -frame.y + (currentData.is_kinetic ? 4.0 : 3.1);
+                -frame.y + (currentData.proj_length / 2.0);
 
               activeCrater.geometry.dispose();
               activeCrater.geometry = createCraterGeometry(frame.y);
@@ -1149,7 +1033,7 @@
           }
 
           if (explosionSphere.visible) {
-            const maxScale = Math.max(5, currentData.yield * 3); // Scaled down sizing
+            const maxScale = currentData.explosion_scale; // Sourced directly from C++ yield/mass logic
             explosionSphere.scale.addScalar(dt * 40); // Slower growth
             if (explosionSphere.scale.x > maxScale) {
               explosionSphere.material.opacity -= dt * 2.0;
