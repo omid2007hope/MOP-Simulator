@@ -42,12 +42,12 @@ struct AirLayers
 struct TargetLayer
 {
     std::string material_name;
-    double thickness = 1.0;              // meters
-    double density = 2500.0;             // kg/m^3
+    double thickness = 1.0;               // meters
+    double density = 2500.0;              // kg/m^3
     double compressive_strength = 60.0e6; // Pascals
-    double rebar_volume_fraction = 0.0;  // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
-    double rebar_yield_strength = 0.0;   // Pascals
-    double pulverized_depth = 0.0;       // meters (depth of crater from previous strikes)
+    double rebar_volume_fraction = 0.0;   // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
+    double rebar_yield_strength = 0.0;    // Pascals
+    double pulverized_depth = 0.0;        // meters (depth of crater from previous strikes)
 };
 
 // Target material specification
@@ -88,7 +88,8 @@ struct ImpactScenario
     double angle_of_attack = 0.0; // Degrees
 };
 
-struct TelemetryFrame {
+struct TelemetryFrame
+{
     double time = 0.0;
     double altitude = 0.0;
     double depth = 0.0;

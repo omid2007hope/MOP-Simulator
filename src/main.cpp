@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -24,21 +25,21 @@ template <typename T>
 T getValidInput(const std::string& prompt, bool allowZero = false)
 {
     T valueEntry;
-        while (true) {
-            std::cout << prompt;
-                if (std::cin >> valueEntry &&
-                    (valueEntry > 0 || (allowZero && valueEntry == 0))) {
-                    safeCin();
-                    return valueEntry;
-                }
-                if (std::cin.eof()) {
-                    std::cerr
-                        << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
-                    exit(1);
-                }
-            safeCin();
-            std::cout << "Invalid Entry, please try again!\n";
+    while (true) {
+        std::cout << prompt;
+        if (std::cin >> valueEntry) {
+            if (valueEntry > 0 || (allowZero && valueEntry == 0)) {
+                safeCin();
+                return valueEntry;
+            }
+        } else if (std::cin.eof()) {
+            std::cerr << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
+            exit(1);
         }
+        
+        safeCin();
+        std::cout << "Invalid Entry, please try again!\n";
+    }
 }
 
 int main(int argc, char* argv[])
@@ -49,13 +50,13 @@ int main(int argc, char* argv[])
         if (argc > 0) {
             std::error_code ec;
             std::filesystem::path current = std::filesystem::absolute(argv[0], ec).parent_path();
-            while (!current.empty() && current != current.root_path()) {
-                if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
-                    basePath = current.string();
-                    break;
+                while (!current.empty() && current != current.root_path()) {
+                        if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
+                            basePath = current.string();
+                            break;
+                        }
+                    current = current.parent_path();
                 }
-                current = current.parent_path();
-            }
         }
 
     // Load databases
@@ -81,33 +82,44 @@ int main(int argc, char* argv[])
                  "VISUALIZATION)                \n";
     std::cout << "================================================================================="
                  "==================\n\n";
-                 
+
     std::cout << "[!] END-USER LICENSE AGREEMENT (EULA) & TERMS OF SERVICE [!]\n";
-    std::cout << "WARNING: This software is a high-fidelity, advanced physics and penetration simulator.\n";
-    std::cout << "Usage of this application is strictly restricted to recreational, educational, and hobbyist purposes.\n";
-    std::cout << "Due to the extreme accuracy and sensitive nature of the simulated models, any unauthorized, commercial, or malicious application may result in severe legal consequences.\n\n";
-    std::cout << "DISCLAIMER OF WARRANTY: This software is provided \"AS IS\", without warranty of any kind, express or implied.\n";
-    std::cout << "LIMITATION OF LIABILITY: In no event shall the author(s) be liable for any claim, damages, or other liability\n";
-    std::cout << "arising from, out of, or in connection with the software or the use or other dealings in the software.\n";
-    std::cout << "By proceeding, you acknowledge that this tool is not certified for real-world engineering, defense analysis, or physical destructive testing.\n\n";
-    
+    std::cout << "WARNING: This software is a high-fidelity, advanced physics and penetration "
+                 "simulator.\n";
+    std::cout << "Usage of this application is strictly restricted to recreational, educational, "
+                 "and hobbyist purposes.\n";
+    std::cout << "Due to the extreme accuracy and sensitive nature of the simulated models, any "
+                 "unauthorized, commercial, or malicious application may result in severe legal "
+                 "consequences.\n\n";
+    std::cout << "DISCLAIMER OF WARRANTY: This software is provided \"AS IS\", without warranty of "
+                 "any kind, express or implied.\n";
+    std::cout << "LIMITATION OF LIABILITY: In no event shall the author(s) be liable for any "
+                 "claim, damages, or other liability\n";
+    std::cout << "arising from, out of, or in connection with the software or the use or other "
+                 "dealings in the software.\n";
+    std::cout << "By proceeding, you acknowledge that this tool is not certified for real-world "
+                 "engineering, defense analysis, or physical destructive testing.\n\n";
+
     std::string tos_agree;
     while (true) {
         std::cout << "Do you agree to these terms? (Y/N): ";
         if (std::cin >> tos_agree) {
-            if (tos_agree == "Y" || tos_agree == "y" || tos_agree == "YES" || tos_agree == "yes" || tos_agree == "Yes") {
+            for (auto &c : tos_agree) c = std::toupper(c);
+            if (tos_agree == "Y" || tos_agree == "YES") {
                 safeCin();
                 std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
                 break;
-            } else if (tos_agree == "N" || tos_agree == "n" || tos_agree == "NO" || tos_agree == "no" || tos_agree == "No") {
+            }
+            else if (tos_agree == "N" || tos_agree == "NO") {
                 safeCin();
                 std::cout << "\nAccess Denied. You must agree to the Terms of Service to use this simulator.\n";
                 std::cout << "\nPress Enter to exit...";
                 std::cin.get();
                 return 1;
             }
+        } else if (std::cin.eof()) {
+            return 1;
         }
-        if (std::cin.eof()) return 1;
         safeCin();
         std::cout << "Invalid Entry. Please type Y or N.\n";
     }
@@ -179,19 +191,21 @@ int main(int argc, char* argv[])
             object.layers.clear();
             TargetLayer customLayer;
             customLayer.material_name = "Custom Layer";
-            customLayer.thickness = getValidInput<double>("Enter Target Layer Thickness (meters): ", false);
-            
-            customLayer.rebar_volume_fraction =
-                getValidInput<double>("Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
-            
-            double rebarYield = 
+            customLayer.thickness =
+                getValidInput<double>("Enter Target Layer Thickness (meters): ", false);
+
+            customLayer.rebar_volume_fraction = getValidInput<double>(
+                "Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
+
+            double rebarYield =
                 getValidInput<double>("Enter Target Rebar Yield Strength (MPa, e.g., 400): ", true);
             customLayer.rebar_yield_strength = rebarYield * 1e6;
-            
+
             customLayer.density =
                 getValidInput<double>("Enter Target Concrete Density rho_t (kg/m^3): ", false);
 
-            double targetStrength = getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
+            double targetStrength =
+                getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
             customLayer.compressive_strength = targetStrength * 1e6;
             object.layers.push_back(customLayer);
 
@@ -202,10 +216,11 @@ int main(int argc, char* argv[])
                             safeCin();
                             break;
                         }
-                    if (std::cin.eof()) {
-                        std::cerr << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
-                        exit(1);
-                    }
+                        if (std::cin.eof()) {
+                            std::cerr << "\n[!] EOF encountered. Exiting safely to prevent "
+                                         "infinite loop.\n";
+                            exit(1);
+                        }
                     safeCin();
                     std::cout << "Invalid Entry, please try again!\n";
                 }
@@ -217,13 +232,15 @@ int main(int argc, char* argv[])
                               << " (feet) [e.g., 50000, 20000, 15]: ";
 
                     double dropAltitude_ft = getValidInput<double>(prompt_ss.str(), true);
-                    
+
                     std::stringstream vel_ss;
-                    vel_ss << "  -> Enter Initial Velocity #" << (i + 1) << " (m/s) [0 for atmospheric drop from rest]: ";
+                    vel_ss << "  -> Enter Initial Velocity #" << (i + 1)
+                           << " (m/s) [0 for atmospheric drop from rest]: ";
                     double initial_velocity = getValidInput<double>(vel_ss.str(), true);
-                    
+
                     std::stringstream obliq_ss;
-                    obliq_ss << "  -> Enter Obliquity Angle #" << (i + 1) << " (Degrees, 0 for perpendicular): ";
+                    obliq_ss << "  -> Enter Obliquity Angle #" << (i + 1)
+                             << " (Degrees, 0 for perpendicular): ";
                     double obliquity = getValidInput<double>(obliq_ss.str(), true);
 
                     std::stringstream aoa_ss;
@@ -232,9 +249,9 @@ int main(int argc, char* argv[])
 
                     std::stringstream name_ss;
 
-                    name_ss << "Custom Test #" << (i + 1) << " (" << dropAltitude_ft
-                            << " ft drop)";
-                    scenarios.push_back({name_ss.str(), dropAltitude_ft, initial_velocity, obliquity, aoa});
+                    name_ss << "Custom Test #" << (i + 1) << " (" << dropAltitude_ft << " ft drop)";
+                    scenarios.push_back(
+                        {name_ss.str(), dropAltitude_ft, initial_velocity, obliquity, aoa});
                 }
 
                 if (scenarios.empty()) {
@@ -261,22 +278,23 @@ int main(int argc, char* argv[])
         else if (choice == 4) {
             std::cout << "\n[+] Loading Sequential Strike Preset (Multi-Bomb Burrowing)...\n";
             int numDrops = 1;
-            while (true) {
-                std::cout << "Enter number of sequential drops (1 to 10): ";
-                if (std::cin >> numDrops && numDrops >= 1 && numDrops <= 10) {
+                while (true) {
+                    std::cout << "Enter number of sequential drops (1 to 10): ";
+                        if (std::cin >> numDrops && numDrops >= 1 && numDrops <= 10) {
+                            safeCin();
+                            break;
+                        }
+                    if (std::cin.eof())
+                        exit(1);
                     safeCin();
-                    break;
+                    std::cout << "Invalid Entry, please try again!\n";
                 }
-                if (std::cin.eof()) exit(1);
-                safeCin();
-                std::cout << "Invalid Entry, please try again!\n";
-            }
-            
-            for (int i = 0; i < numDrops; ++i) {
-                std::stringstream name_ss;
-                name_ss << "Sequential Drop #" << (i + 1);
-                scenarios.push_back({name_ss.str(), 40000.0, 300.0, 0.0, 0.0});
-            }
+
+                for (int i = 0; i < numDrops; ++i) {
+                    std::stringstream name_ss;
+                    name_ss << "Sequential Drop #" << (i + 1);
+                    scenarios.push_back({name_ss.str(), 40000.0, 300.0, 0.0, 0.0});
+                }
         }
         else { // choice == 1 or fallback
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
@@ -285,33 +303,42 @@ int main(int argc, char* argv[])
                 {"50,000 ft Drop", 50000.0, 500.0, 0.0, 0.0},
                 {"45,000 ft Drop", 45000.0, 400.0, 0.0, 0.0},
                 {"Subsonic Operational", 40000.0, 300.0, 0.0, 0.0},
-                {"Ricochet Test (70 deg)", 10000.0, 100.0, 10.0, 60.0}, // AoA 10, Obliquity 60 (total 70)
-                {"Deflection Test (25 deg)", 30000.0, 250.0, 5.0, 20.0}, // AoA 5, Obliquity 20 (total 25)
+                {"Ricochet Test (70 deg)",
+                 10000.0,
+                 100.0,
+                 10.0,
+                 60.0}, // AoA 10, Obliquity 60 (total 70)
+                {"Deflection Test (25 deg)",
+                 30000.0,
+                 250.0,
+                 5.0,
+                 20.0}, // AoA 5, Obliquity 20 (total 25)
             };
         }
 
     // Run simulations
     PhysicsConstants cons;
     std::vector<SimulationResult> results;
-    
-    if (choice == 4) {
-        // Sequential strike uses the same simulator instance to maintain target state
-        ImpactSimulator simulator(munition, object, cons);
-        for (const auto& sc : scenarios) {
-            results.push_back(simulator.simulate(sc));
-        }
-        simulator.printReport(results);
-        simulator.generateHtml3DVisualizer(results, basePath);
-    } else {
-        // Independent tests get fresh targets
-        ImpactSimulator reporter(munition, object, cons);
-        for (const auto& sc : scenarios) {
+
+        if (choice == 4) {
+            // Sequential strike uses the same simulator instance to maintain target state
             ImpactSimulator simulator(munition, object, cons);
-            results.push_back(simulator.simulate(sc));
+                for (const auto& sc : scenarios) {
+                    results.push_back(simulator.simulate(sc));
+                }
+            simulator.printReport(results);
+            simulator.generateHtml3DVisualizer(results, basePath);
         }
-        reporter.printReport(results);
-        reporter.generateHtml3DVisualizer(results, basePath);
-    }
+        else {
+            // Independent tests get fresh targets
+            ImpactSimulator reporter(munition, object, cons);
+                for (const auto& sc : scenarios) {
+                    ImpactSimulator simulator(munition, object, cons);
+                    results.push_back(simulator.simulate(sc));
+                }
+            reporter.printReport(results);
+            reporter.generateHtml3DVisualizer(results, basePath);
+        }
 
     std::cout << "\nPress Enter to exit...";
     std::cin.get();
