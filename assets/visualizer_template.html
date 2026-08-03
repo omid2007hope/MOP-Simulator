@@ -623,6 +623,121 @@
         }
       }
 
+      // USA National Anthem (The Star-Spangled Banner) Web Audio Synthesizer
+      let audioCtx = null;
+      let anthemNodes = [];
+
+      function playAnthem() {
+        stopAnthem();
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+
+          // Star-Spangled Banner Anthem Notes (Frequency in Hz, Duration in Seconds)
+          const notes = [
+            { f: 392.00, d: 0.35 }, // G4 (Oh)
+            { f: 329.63, d: 0.35 }, // E4 (say)
+            { f: 261.63, d: 0.60 }, // C4 (can)
+            { f: 329.63, d: 0.60 }, // E4 (you)
+            { f: 392.00, d: 0.60 }, // G4 (see)
+            { f: 523.25, d: 1.10 }, // C5 (by)
+
+            { f: 659.25, d: 0.70 }, // E5 (the)
+            { f: 587.33, d: 0.35 }, // D5 (dawn's)
+            { f: 523.25, d: 0.60 }, // C5 (ear-)
+            { f: 329.63, d: 0.60 }, // E4 (ly)
+            { f: 370.00, d: 0.60 }, // F#4 (light)
+            { f: 392.00, d: 1.10 }, // G4 (what)
+
+            { f: 392.00, d: 0.35 }, // G4 (so)
+            { f: 392.00, d: 0.35 }, // G4 (proud-)
+            { f: 659.25, d: 0.70 }, // E5 (ly)
+            { f: 587.33, d: 0.35 }, // D5 (we)
+            { f: 523.25, d: 0.60 }, // C5 (hailed)
+            { f: 493.88, d: 0.60 }, // B4 (at)
+            { f: 440.00, d: 0.60 }, // A4 (the)
+            { f: 493.88, d: 0.60 }, // B4 (twilight's)
+            { f: 523.25, d: 1.20 }, // C5 (last)
+
+            { f: 523.25, d: 0.35 }, // C5 (gleaming?)
+            { f: 523.25, d: 0.35 }, // C5 (Whose)
+            { f: 659.25, d: 0.60 }, // E5 (broad)
+            { f: 698.46, d: 0.60 }, // F5 (stripes)
+            { f: 783.99, d: 1.00 }, // G5 (and)
+            { f: 783.99, d: 0.60 }, // G5 (bright)
+            { f: 659.25, d: 0.35 }, // E5 (stars)
+            { f: 587.33, d: 0.60 }, // D5 (through)
+            { f: 523.25, d: 0.60 }, // C5 (the)
+            { f: 587.33, d: 1.20 }, // D5 (perilous)
+
+            { f: 659.25, d: 0.60 }, // E5 (fight)
+            { f: 659.25, d: 0.35 }, // E5 (O'er)
+            { f: 587.33, d: 0.35 }, // D5 (the)
+            { f: 523.25, d: 0.60 }, // C5 (ramparts)
+            { f: 493.88, d: 0.60 }, // B4 (we)
+            { f: 440.00, d: 0.60 }, // A4 (watched)
+            { f: 493.88, d: 0.60 }, // B4 (were)
+            { f: 523.25, d: 1.40 }, // C5 (so)
+
+            { f: 523.25, d: 0.35 }, // C5 (gal-)
+            { f: 523.25, d: 0.35 }, // C5 (lant-)
+            { f: 392.00, d: 0.60 }, // G4 (ly)
+            { f: 329.63, d: 0.60 }, // E4 (stream-)
+            { f: 392.00, d: 0.60 }, // G4 (ing?)
+            { f: 523.25, d: 1.40 }  // C5 (!!!)
+          ];
+
+          let currentTime = audioCtx.currentTime + 0.05;
+          const masterGain = audioCtx.createGain();
+          masterGain.gain.setValueAtTime(0.18, currentTime);
+          masterGain.connect(audioCtx.destination);
+          anthemNodes.push(masterGain);
+
+          notes.forEach((n) => {
+            const osc = audioCtx.createOscillator();
+            const noteGain = audioCtx.createGain();
+
+            // Sawtooth + Brass timbre
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(n.f, currentTime);
+
+            noteGain.gain.setValueAtTime(0.001, currentTime);
+            noteGain.gain.linearRampToValueAtTime(0.20, currentTime + 0.04);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, currentTime + n.d * 0.95);
+
+            osc.connect(noteGain);
+            noteGain.connect(masterGain);
+
+            osc.start(currentTime);
+            osc.stop(currentTime + n.d);
+
+            anthemNodes.push(osc);
+            anthemNodes.push(noteGain);
+
+            currentTime += n.d;
+          });
+        } catch (e) {
+          console.log("AudioContext initialized on user gesture:", e);
+        }
+      }
+
+      function stopAnthem() {
+        anthemNodes.forEach((node) => {
+          try {
+            if (node.stop) node.stop();
+            if (node.disconnect) node.disconnect();
+          } catch (e) {}
+        });
+        anthemNodes = [];
+        if (audioCtx && audioCtx.state !== 'closed') {
+          try {
+            audioCtx.close();
+          } catch (e) {}
+        }
+      }
+
       function computePlanckBlackbodyColor(tempKelvin, baseColorHex) {
         // Converts Temperature (Kelvin) to Planck blackbody radiation RGB emission
         // < 500 K: Base metal finish
@@ -1182,6 +1297,7 @@
       function selectScenario(index, manualClick = true) {
         if (!scenarios[index]) return;
         TWEEN.removeAll(); // Clear running UI/Camera animations
+        stopAnthem(); // Stop any running national anthem sound
 
         currentData = scenarios[index];
         document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
@@ -1462,6 +1578,10 @@
               currentData.drop_frames && currentData.drop_frames.length > 0
                 ? "DROPPING"
                 : "PENETRATING";
+            
+            // Play USA National Anthem as bomb drop animation begins!
+            playAnthem();
+
             if (animState === "DROPPING") {
               simTime = currentData.drop_frames[0].t;
             } else if (
@@ -1744,6 +1864,7 @@
               explosionSphere.visible = false;
               animState = "DONE";
               simTime = 0;
+              stopAnthem(); // Stop anthem when animation completes
             }
           } else if (shockwave.visible) {
             // Growth rate scaled by the physically-derived camera shake magnitude (kinetic energy)
@@ -1755,11 +1876,13 @@
               shockwave.visible = false;
               animState = "DONE";
               simTime = 0;
+              stopAnthem(); // Stop anthem when animation completes
             }
           } else {
             if (simTime > 1.0) {
               animState = "DONE";
               simTime = 0;
+              stopAnthem(); // Stop anthem when animation completes
             }
           }
         } else if (animState === "DONE") {
