@@ -32,16 +32,17 @@ RK4 samples acceleration at **4 different points** across the time step (start, 
 
 ## 3. RK4 Code Breakdown in `simulation.cpp`
 
-Look at [`src/simulation.cpp`](file:///h:/Code/MyOwn/Main/Best/MOP%20Simulator/src/simulation.cpp#L101-L126) for the free-fall atmospheric drop phase:
+Look at [`src/simulation.cpp`](file:///h:/Code/MyOwn/Main/Best/MOP%20Simulator/src/simulation.cpp) for the free-fall atmospheric drop phase:
 
 ```cpp
 auto calc_accel = [&](double alt_m, double vel) {
-    double density = findAirDensityByAltitude(alt_m * 3.28084);
-    double mach = vel / cons.SPEED_OF_SOUND;
+    AtmosphereState atm = standardAtmosphere(alt_m); // US Standard Atmosphere 1976
+    double mach = vel / atm.speed_of_sound_ms;       // altitude-dependent speed of sound
     double cd = getMachDependentDrag(mach, dragCoefficient);
-    double f = 0.5 * density * vel * vel * cd * area;
+    double f = 0.5 * atm.density_kgm3 * vel * vel * cd * area;
     return cons.gravity - (f / proj.total_mass); // Net Acceleration
 };
+
 
 // 1. First slope (at beginning of step)
 double k1_v = calc_accel(y_m, current_velocity);

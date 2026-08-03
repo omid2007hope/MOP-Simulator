@@ -1,0 +1,285 @@
+===================================================================================================
+                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.8 (WITH 3D VISUALIZATION)                
+===================================================================================================
+
+[!] END-USER LICENSE AGREEMENT (EULA) & TERMS OF SERVICE [!]
+WARNING: This software is a high-fidelity, advanced physics and penetration simulator.
+Usage of this application is strictly restricted to recreational, educational, and hobbyist purposes.
+Due to the extreme accuracy and sensitive nature of the simulated models, any unauthorized, commercial, or malicious application may result in severe legal consequences.
+
+DISCLAIMER OF WARRANTY: This software is provided "AS IS", without warranty of any kind, express or implied.
+LIMITATION OF LIABILITY: In no event shall the author(s) be liable for any claim, damages, or other liability
+arising from, out of, or in connection with the software or the use or other dealings in the software.
+By proceeding, you acknowledge that this tool is not certified for real-world engineering, defense analysis, or physical destructive testing.
+
+Do you agree to these terms? (Y/N): 
+Terms accepted. Proceeding to simulator...
+
+Select Simulation Mode:
+  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)
+  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)
+  [3] Orbital Kinetic Strike Preset ("Rods from God" Tungsten Penetrators)
+  [4] Sequential Strike (Multi-Bomb Burrowing Tactic)
+---------------------------------------------------------------------------------------------------
+Enter choice [1, 2, 3, or 4]: Scenario: 1 Confirmed!
+[+] Loading standard GBU-57 MOP drop scenarios...
+
+--- Simulating Atmospheric Drop from 50000 ft ---
+  >>> [SONIC BOOM] Mach 1 exceeded at T+ 0.00s (Altitude: 49984 ft | Density: 0.188 kg/m^3) <<<
+  [Drop T+ 3.0s] Alt: 44988 ft | Vel: 528.7 m/s | Accel: 0.98 G | Density: 0.238 kg/m^3
+  [Drop T+ 5.8s] Alt: 39990 ft | Vel: 555.6 m/s | Accel: 0.97 G | Density: 0.303 kg/m^3
+  [Drop T+ 8.4s] Alt: 34992 ft | Vel: 581.1 m/s | Accel: 0.97 G | Density: 0.380 kg/m^3
+  [Drop T+ 11.0s] Alt: 29990 ft | Vel: 605.3 m/s | Accel: 0.95 G | Density: 0.459 kg/m^3
+  [Drop T+ 13.5s] Alt: 24991 ft | Vel: 628.3 m/s | Accel: 0.94 G | Density: 0.550 kg/m^3
+  [Drop T+ 15.9s] Alt: 20000 ft | Vel: 650.1 m/s | Accel: 0.93 G | Density: 0.653 kg/m^3
+  [Drop T+ 18.2s] Alt: 14994 ft | Vel: 670.9 m/s | Accel: 0.91 G | Density: 0.771 kg/m^3
+  [Drop T+ 20.4s] Alt: 9990 ft | Vel: 690.6 m/s | Accel: 0.89 G | Density: 0.905 kg/m^3
+  [Drop T+ 22.6s] Alt: 4984 ft | Vel: 709.3 m/s | Accel: 0.86 G | Density: 1.056 kg/m^3
+  [Impact T+ 24.73s] Alt: 0 ft | Impact Velocity: 726.9 m/s
+--------------------------------------------------------
+
+--- Ground Penetration Commenced ---
+  [LAYER BREACH] Entering layer: Soil Overburden
+  [Penetration T+ 1.38 ms] Depth: 1.0 m | Vel: 716.0 m/s | Decel: -1572 G | Temp: 302 K | Layer: Soil Overburden
+  [Penetration T+ 2.80 ms] Depth: 2.0 m | Vel: 684.9 m/s | Decel: -2492 G | Temp: 306 K | Layer: Soil Overburden
+  [LAYER BREACH] Pierced into layer: Heavily Reinforced Concrete
+  [Penetration T+ 4.28 ms] Depth: 3.0 m | Vel: 665.9 m/s | Decel: -2582 G | Temp: 309 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 5.84 ms] Depth: 4.0 m | Vel: 610.0 m/s | Decel: -4045 G | Temp: 317 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 7.57 ms] Depth: 5.0 m | Vel: 542.4 m/s | Decel: -3934 G | Temp: 325 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 9.56 ms] Depth: 6.0 m | Vel: 466.8 m/s | Decel: -3808 G | Temp: 334 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 11.92 ms] Depth: 7.0 m | Vel: 380.4 m/s | Decel: -3655 G | Temp: 342 K | Layer: Heavily Reinforced Concrete
+  [LAYER BREACH] Pierced into layer: Solid Granite Rock
+  [Penetration T+ 14.64 ms] Depth: 8.0 m | Vel: 340.9 m/s | Decel: -2861 G | Temp: 345 K | Layer: Solid Granite Rock
+  [Penetration T+ 18.29 ms] Depth: 9.0 m | Vel: 198.6 m/s | Decel: -4187 G | Temp: 353 K | Layer: Solid Granite Rock
+  [FULL STOP at T+ 23.89 ms] Projectile came to rest at Depth: 9.52 m inside layer: Solid Granite Rock
+------------------------------------
+
+
+--- Simulating Atmospheric Drop from 45000.00 ft ---
+  >>> [SONIC BOOM] Mach 1 exceeded at T+ 0.00s (Altitude: 44987 ft | Density: 0.238 kg/m^3) <<<
+  [Drop T+ 3.6s] Alt: 39999 ft | Vel: 435.3 m/s | Accel: 0.98 G | Density: 0.303 kg/m^3
+  [Drop T+ 7.0s] Alt: 34991 ft | Vel: 467.7 m/s | Accel: 0.98 G | Density: 0.380 kg/m^3
+  [Drop T+ 10.2s] Alt: 29986 ft | Vel: 497.8 m/s | Accel: 0.97 G | Density: 0.459 kg/m^3
+  [Drop T+ 13.1s] Alt: 24998 ft | Vel: 525.9 m/s | Accel: 0.96 G | Density: 0.549 kg/m^3
+  [Drop T+ 16.0s] Alt: 19993 ft | Vel: 552.2 m/s | Accel: 0.94 G | Density: 0.653 kg/m^3
+  [Drop T+ 18.7s] Alt: 14991 ft | Vel: 577.0 m/s | Accel: 0.93 G | Density: 0.771 kg/m^3
+  [Drop T+ 21.3s] Alt: 9988 ft | Vel: 600.4 m/s | Accel: 0.91 G | Density: 0.905 kg/m^3
+  [Drop T+ 23.8s] Alt: 4993 ft | Vel: 622.3 m/s | Accel: 0.89 G | Density: 1.056 kg/m^3
+  [Impact T+ 26.18s] Alt: 0 ft | Impact Velocity: 643.0 m/s
+--------------------------------------------------------
+
+--- Ground Penetration Commenced ---
+  [LAYER BREACH] Entering layer: Soil Overburden
+  [Penetration T+ 1.56 ms] Depth: 1.0 m | Vel: 631.1 m/s | Decel: -1521 G | Temp: 302 K | Layer: Soil Overburden
+  [Penetration T+ 3.19 ms] Depth: 2.0 m | Vel: 596.6 m/s | Decel: -2408 G | Temp: 306 K | Layer: Soil Overburden
+  [LAYER BREACH] Pierced into layer: Heavily Reinforced Concrete
+  [Penetration T+ 4.88 ms] Depth: 3.0 m | Vel: 575.6 m/s | Decel: -2483 G | Temp: 309 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 6.71 ms] Depth: 4.0 m | Vel: 512.5 m/s | Decel: -3885 G | Temp: 316 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 8.83 ms] Depth: 5.0 m | Vel: 433.2 m/s | Decel: -3749 G | Temp: 325 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 11.41 ms] Depth: 6.0 m | Vel: 340.4 m/s | Decel: -3579 G | Temp: 332 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 15.00 ms] Depth: 7.0 m | Vel: 218.9 m/s | Decel: -3314 G | Temp: 340 K | Layer: Heavily Reinforced Concrete
+  [LAYER BREACH] Pierced into layer: Solid Granite Rock
+  [Penetration T+ 20.12 ms] Depth: 8.0 m | Vel: 150.0 m/s | Decel: -2500 G | Temp: 343 K | Layer: Solid Granite Rock
+  [FULL STOP at T+ 25.62 ms] Projectile came to rest at Depth: 8.41 m inside layer: Solid Granite Rock
+------------------------------------
+
+
+--- Simulating Atmospheric Drop from 40000.00 ft ---
+  >>> [SONIC BOOM] Mach 1 exceeded at T+ 0.00s (Altitude: 39990 ft | Density: 0.303 kg/m^3) <<<
+  [Drop T+ 4.7s] Alt: 35000 ft | Vel: 345.7 m/s | Accel: 0.98 G | Density: 0.380 kg/m^3
+  [Drop T+ 8.9s] Alt: 29995 ft | Vel: 385.9 m/s | Accel: 0.98 G | Density: 0.459 kg/m^3
+  [Drop T+ 12.6s] Alt: 24999 ft | Vel: 421.9 m/s | Accel: 0.97 G | Density: 0.549 kg/m^3
+  [Drop T+ 16.1s] Alt: 19994 ft | Vel: 454.8 m/s | Accel: 0.96 G | Density: 0.653 kg/m^3
+  [Drop T+ 19.4s] Alt: 14998 ft | Vel: 485.1 m/s | Accel: 0.94 G | Density: 0.771 kg/m^3
+  [Drop T+ 22.4s] Alt: 9987 ft | Vel: 513.2 m/s | Accel: 0.93 G | Density: 0.905 kg/m^3
+  [Drop T+ 25.3s] Alt: 4997 ft | Vel: 539.3 m/s | Accel: 0.91 G | Density: 1.056 kg/m^3
+  [Impact T+ 28.10s] Alt: 0 ft | Impact Velocity: 563.7 m/s
+--------------------------------------------------------
+
+--- Ground Penetration Commenced ---
+  [LAYER BREACH] Entering layer: Soil Overburden
+  [Penetration T+ 1.78 ms] Depth: 1.0 m | Vel: 550.6 m/s | Decel: -1471 G | Temp: 302 K | Layer: Soil Overburden
+  [Penetration T+ 3.66 ms] Depth: 2.0 m | Vel: 512.1 m/s | Decel: -2327 G | Temp: 306 K | Layer: Soil Overburden
+  [LAYER BREACH] Pierced into layer: Heavily Reinforced Concrete
+  [Penetration T+ 5.64 ms] Depth: 3.0 m | Vel: 488.4 m/s | Decel: -2393 G | Temp: 309 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 7.84 ms] Depth: 4.0 m | Vel: 415.5 m/s | Decel: -3718 G | Temp: 316 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 10.57 ms] Depth: 5.0 m | Vel: 318.4 m/s | Decel: -3536 G | Temp: 324 K | Layer: Heavily Reinforced Concrete
+  [Penetration T+ 14.55 ms] Depth: 6.0 m | Vel: 186.1 m/s | Decel: -3227 G | Temp: 331 K | Layer: Heavily Reinforced Concrete
+  [FULL STOP at T+ 21.35 ms] Projectile came to rest at Depth: 6.59 m inside layer: Heavily Reinforced Concrete
+------------------------------------
+
+
+--- Simulating Atmospheric Drop from 10000.00 ft ---
+  [Drop T+ 10.2s] Alt: 4995 ft | Vel: 199.6 m/s | Accel: 1.00 G | Density: 1.056 kg/m^3
+  [Impact T+ 16.76s] Alt: 0 ft | Impact Velocity: 263.8 m/s
+--------------------------------------------------------
+
+--- Ground Penetration Commenced ---
+  [LAYER BREACH] Entering layer: Soil Overburden
+
+--- Simulating Atmospheric Drop from 30000.0 ft ---
+  [Drop T+ 5.5s] Alt: 24994 ft | Vel: 303.8 m/s | Accel: 0.99 G | Density: 0.549 kg/m^3
+  >>> [SONIC BOOM] Mach 1 exceeded at T+ 6.21s (Altitude: 24278 ft | Density: 0.563 kg/m^3) <<<
+  [Drop T+ 10.2s] Alt: 19995 ft | Vel: 348.7 m/s | Accel: 0.97 G | Density: 0.653 kg/m^3
+  [Drop T+ 14.3s] Alt: 14992 ft | Vel: 387.9 m/s | Accel: 0.96 G | Density: 0.771 kg/m^3
+  [Drop T+ 18.1s] Alt: 9989 ft | Vel: 423.2 m/s | Accel: 0.95 G | Density: 0.905 kg/m^3
+  [Drop T+ 21.5s] Alt: 4989 ft | Vel: 455.1 m/s | Accel: 0.93 G | Density: 1.056 kg/m^3
+  [Impact T+ 24.79s] Alt: 0 ft | Impact Velocity: 484.4 m/s
+--------------------------------------------------------
+
+--- Ground Penetration Commenced ---
+  [LAYER BREACH] Entering layer: Soil Overburden
+------------------------------------
+
+
+===================================================================================================
+                      PROJECTILE IMPACT & PENETRATION SIMULATION REPORT                            
+===================================================================================================
+Projectile : GBU-57 Massive Ordnance Penetrator (MOP)
+  - Length         : 6.2 m (20.3 ft)
+  - Total Mass     : 13600.0 kg
+  - Explosive Mass : 2400.0 kg (CONVENTIONAL CHARGE)
+  - Casing Density : 7800.0 kg/m^3
+  - Yield Strength : 2.0 GPa
+Target     : High-Quality Hardened Concrete (Layers: 3)
+---------------------------------------------------------------------------------------------------
+Alekseevskii-Tate Hydrodynamic Limit (Avg Target Density): P = L * sqrt(rho_p / rho_t) = 10.54 m (34.59 ft)
+===================================================================================================
+
+Scenario                Velocity     Mach     Dyn.Press   Depth (m)   Shock Dmg  Regime                        Outcome             
+----------------------------------------------------------------------------------------------------------------------------------
+50,000 ft Drop         726.9 m/s   2.1x     0.62 GPa      9.5 m        24%  Rigid Penetration (Crater+Tunnel)Intact              
+45,000 ft Drop         643.0 m/s   1.9x     0.47 GPa      8.4 m        17%  Rigid Penetration (Crater+Tunnel)Intact              
+Subsonic Operational   563.7 m/s   1.7x     0.35 GPa      6.6 m        12%  Rigid Penetration (Crater+Tunnel)Intact              
+Ricochet Test (70 deg)   263.8 m/s   0.8x     0.00 GPa      0.0 m         0%  Ricochet                      Projectile deflected off target surface.
+Deflection Test (25 deg)   484.4 m/s   1.4x     0.18 GPa      0.0 m       100%  Structural Failure (J-Hook/Snap)Bending moments exceeded casing yield strength.
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+===================================================================================================
+                 ASCII 3D CROSS-SECTION VISUALIZATION: [50,000 ft Drop]
+===================================================================================================
+  Velocity: 726.9 m/s (Mach 2.1) | Dyn. Press: 0.62 GPa | Casing Yield: 2.00 GPa
+  Actual Penetration Depth: 9.52 m (31.24 ft) | Shock Failure Chance: 24.0% | Explosive Survived: YES
+---------------------------------------------------------------------------------------------------
+
+        AIR / SURFACE           |  PROJECTILE APPROACH (Subsonic Mach 2.1)
+                                |       ||=======||    (Hardened Steel Casing)
+                                |       ||   *   ||    (Sensitive High Explosive)
+                                |       ||=======||    
+    ============================+=======||=======||============================ [Target Surface]
+                                |       ||       ||                           |
+     [ RIGID PENETRATION ]      |       ||       ||   P_dyn = 0.62 GPa           |
+     (Casing intact & payload   |       ||   *   ||   (Shock Damage: 24.0%)      |
+      survives impact shock)    |       ||=======||                               |
+                                |       ||   v   ||   Rigid Depth: 9.5 m          |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\.~.~.~./.~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]
+    .   Concrete Target         |         \     /                             |
+    .   (Density: 1500.0 kg/m^3) |          \___/  <-- Reaches 9.5 meters    |
+    .                           |              *      (31.2 feet underground) |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Deep Underground Fuze Trigger]
+===================================================================================================
+
+
+===================================================================================================
+                 ASCII 3D CROSS-SECTION VISUALIZATION: [45,000 ft Drop]
+===================================================================================================
+  Velocity: 643.0 m/s (Mach 1.9) | Dyn. Press: 0.47 GPa | Casing Yield: 2.00 GPa
+  Actual Penetration Depth: 8.41 m (27.60 ft) | Shock Failure Chance: 17.4% | Explosive Survived: YES
+---------------------------------------------------------------------------------------------------
+
+        AIR / SURFACE           |  PROJECTILE APPROACH (Subsonic Mach 1.9)
+                                |       ||=======||    (Hardened Steel Casing)
+                                |       ||   *   ||    (Sensitive High Explosive)
+                                |       ||=======||    
+    ============================+=======||=======||============================ [Target Surface]
+                                |       ||       ||                           |
+     [ RIGID PENETRATION ]      |       ||       ||   P_dyn = 0.47 GPa           |
+     (Casing intact & payload   |       ||   *   ||   (Shock Damage: 17.4%)      |
+      survives impact shock)    |       ||=======||                               |
+                                |       ||   v   ||   Rigid Depth: 8.4 m          |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\.~.~.~./.~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]
+    .   Concrete Target         |         \     /                             |
+    .   (Density: 1500.0 kg/m^3) |          \___/  <-- Reaches 8.4 meters    |
+    .                           |              *      (27.6 feet underground) |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Deep Underground Fuze Trigger]
+===================================================================================================
+
+
+===================================================================================================
+                 ASCII 3D CROSS-SECTION VISUALIZATION: [Subsonic Operational]
+===================================================================================================
+  Velocity: 563.7 m/s (Mach 1.7) | Dyn. Press: 0.35 GPa | Casing Yield: 2.00 GPa
+  Actual Penetration Depth: 6.59 m (21.63 ft) | Shock Failure Chance: 12.3% | Explosive Survived: YES
+---------------------------------------------------------------------------------------------------
+
+        AIR / SURFACE           |  PROJECTILE APPROACH (Subsonic Mach 1.7)
+                                |       ||=======||    (Hardened Steel Casing)
+                                |       ||   *   ||    (Sensitive High Explosive)
+                                |       ||=======||    
+    ============================+=======||=======||============================ [Target Surface]
+                                |       ||       ||                           |
+     [ RIGID PENETRATION ]      |       ||       ||   P_dyn = 0.35 GPa           |
+     (Casing intact & payload   |       ||   *   ||   (Shock Damage: 12.3%)      |
+      survives impact shock)    |       ||=======||                               |
+                                |       ||   v   ||   Rigid Depth: 6.6 m          |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\.~.~.~./.~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]
+    .   Concrete Target         |         \     /                             |
+    .   (Density: 1500.0 kg/m^3) |          \___/  <-- Reaches 6.6 meters    |
+    .                           |              *      (21.6 feet underground) |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Deep Underground Fuze Trigger]
+===================================================================================================
+
+
+===================================================================================================
+                 ASCII 3D CROSS-SECTION VISUALIZATION: [Ricochet Test (70 deg)]
+===================================================================================================
+  Velocity: 263.8 m/s (Mach 0.8) | Dyn. Press: 0.00 GPa | Casing Yield: 2.00 GPa
+  Actual Penetration Depth: 0.00 m (0.00 ft) | Shock Failure Chance: 0.0% | Explosive Survived: YES
+---------------------------------------------------------------------------------------------------
+
+        AIR / SURFACE           |  PROJECTILE APPROACH (Mach 0.8)
+                                |       ||=======||    (Hardened Steel Casing)
+                                |       ||   *   ||    (Sensitive High Explosive)
+                                |       ||=======||    
+    ============================+=======++=======++============================ [Target Surface]
+     *    *   *  *  *  *  *  *  |   << IMPACT SHOCK / FAILURE ZONE >>         |
+    *  [SURFACE DETONATION!] * |   (P_dyn = 0.0 GPa, Shock Damage = 0%)     |
+     *    *   *  *  *  *  *  *  |                                             |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Erosion / Crater Zone]
+    .   Concrete Target         |   Casing/Payload damaged upon impact.       |
+    .   (Density: 1500 kg/m^3) |   Max Penetration Depth:                    |
+    .                           |   D = 0.00 m (0.00 ft)                         |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Depth Limit: 0.00m]
+    .                           |   (Payload fails to reach deep tunnels)     |
+===================================================================================================
+
+
+===================================================================================================
+                 ASCII 3D CROSS-SECTION VISUALIZATION: [Deflection Test (25 deg)]
+===================================================================================================
+  Velocity: 484.4 m/s (Mach 1.4) | Dyn. Press: 0.18 GPa | Casing Yield: 2.00 GPa
+  Actual Penetration Depth: 0.00 m (0.00 ft) | Shock Failure Chance: 100.0% | Explosive Survived: NO (SHOCK/CRUSH)
+---------------------------------------------------------------------------------------------------
+
+        AIR / SURFACE           |  PROJECTILE APPROACH (Mach 1.4)
+                                |       ||=======||    (Hardened Steel Casing)
+                                |       ||   *   ||    (Sensitive High Explosive)
+                                |       ||=======||    
+    ============================+=======++=======++============================ [Target Surface]
+     *    *   *  *  *  *  *  *  |   << IMPACT SHOCK / FAILURE ZONE >>         |
+    *  [SURFACE DETONATION!] * |   (P_dyn = 0.2 GPa, Shock Damage = 100%)     |
+     *    *   *  *  *  *  *  *  |                                             |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Erosion / Crater Zone]
+    .   Concrete Target         |   Casing/Payload damaged upon impact.       |
+    .   (Density: 1500 kg/m^3) |   Max Penetration Depth:                    |
+    .                           |   D = 0.00 m (0.00 ft)                         |
+    .~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~ [Depth Limit: 0.00m]
+    .                           |   (Payload fails to reach deep tunnels)     |
+===================================================================================================
+
+
+[+] Successfully generated 3D WebGL Interactive Visualizer: H:\Code\MyOwn\Main\Best\MOP Simulator/3d_visualizer.html
+    -> Open H:\Code\MyOwn\Main\Best\MOP Simulator/3d_visualizer.html in your web browser to view the 3D simulation scene!
+
+Press Enter to exit...

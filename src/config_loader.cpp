@@ -91,7 +91,7 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
                     p.casing_wall_thickness = item.value("casing_wall_thickness", 0.05);
                     p.hugoniot_c0 = item.value("hugoniot_c0", 4570.0);
                     p.hugoniot_s = item.value("hugoniot_s", 1.49);
-                    p.explosive_critical_energy = item.value("explosive_critical_energy", 15.0e12);
+                    p.explosive_critical_energy = item.value("explosive_critical_energy", 3.0e15);
                     projectiles.push_back(p);
                 }
         } catch (const std::exception& e) {

@@ -165,11 +165,63 @@
               </div>
             </div>
             <div class="text-right">
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider" id="hud-depth-label">
                 Actual Depth
               </div>
               <div class="text-emerald-400 font-black text-base" id="hud-depth">
                 0.00 m
+              </div>
+            </div>
+          </div>
+
+          <!-- Penetration Phase / CEB-FIP DIF / WAPM Rod Length -->
+          <div
+            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
+          >
+            <div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Phase
+              </div>
+              <div class="text-cyan-300 font-bold text-sm" id="hud-phase">
+                RIGID
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Strain-Rate DIF
+              </div>
+              <div class="text-amber-300 font-bold text-sm" id="hud-dif">
+                1.00x
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Rod Length
+              </div>
+              <div class="text-emerald-300 font-bold text-sm" id="hud-length">
+                0.00 m
+              </div>
+            </div>
+          </div>
+
+          <!-- Walker-Wasley Shock Initiation -->
+          <div
+            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
+          >
+            <div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Peak Shock Pressure
+              </div>
+              <div class="text-rose-300 font-bold text-sm" id="hud-shock-pressure">
+                0.0 GPa
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Walker-Wasley P&sup2;&tau;
+              </div>
+              <div class="text-rose-300 font-bold text-sm" id="hud-shock-ratio">
+                0%
               </div>
             </div>
           </div>
@@ -195,6 +247,12 @@
           <div
             id="hud-exp-badge"
             class="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all"
+          >
+            -
+          </div>
+          <div
+            id="hud-regime-text"
+            class="text-[10px] text-slate-400 text-center leading-tight px-1"
           >
             -
           </div>
@@ -303,6 +361,7 @@
       let simSpeedMultiplier = 1.0;
       let explosionTriggered = false;
       let cameraShake = 0;
+      let boomRingGrowthRate = 15.0; // physics-derived from Mach number at the boom instant
 
       // Telemetry Graph
       const graphCanvas = document.getElementById("telemetry-graph");
@@ -646,13 +705,30 @@
         }
 
         tweenNumber("hud-depth", Math.abs(frame.y), (y) => y.toFixed(2) + " m");
+        document.getElementById("hud-depth-label").innerText =
+          animState === "DROPPING" ? "Altitude" : "Actual Depth";
 
-        if (prevFrame && frame.t > prevFrame.t && animState === "PENETRATING") {
-          let accel = (frame.v - prevFrame.v) / (frame.t - prevFrame.t);
-          tweenNumber("hud-gforce", frame.g, (g) => g.toFixed(0) + " G");
+        if (animState === "PENETRATING") {
+          tweenNumber("hud-gforce", frame.g ?? 0, (g) => g.toFixed(0) + " G");
 
           // Thermal heat glow based on temperature ratio from C++
-          projectile.material.emissive.setRGB(frame.h * 2.0, frame.h * 0.5, 0);
+          const heat = frame.h ?? 0;
+          projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+        }
+
+        // CEB-FIP DIF / WAPM erosion phase telemetry (penetration-phase only)
+        if (frame.dif !== undefined) {
+          tweenNumber("hud-dif", frame.dif, (d) => d.toFixed(2) + "x");
+        }
+        if (frame.rl !== undefined) {
+          tweenNumber("hud-length", frame.rl, (l) => l.toFixed(2) + " m");
+        }
+        if (frame.e !== undefined) {
+          const phaseEl = document.getElementById("hud-phase");
+          phaseEl.innerText = frame.e ? "ERODING (WAPM)" : "RIGID";
+          phaseEl.className = frame.e
+            ? "text-purple-300 font-bold text-sm"
+            : "text-cyan-300 font-bold text-sm";
         }
 
         // Update graph
@@ -668,6 +744,25 @@
 
         // Reset yield mark
         document.getElementById("bar-yield-mark").style.left = "100%"; // Assuming bar max is yield * 1.2
+
+        // Walker-Wasley shock initiation telemetry (peak values, static per scenario)
+        document.getElementById("hud-shock-pressure").innerText =
+          (data.shock_pressure_gpa_peak || 0).toFixed(2) + " GPa";
+        document.getElementById("hud-shock-ratio").innerText =
+          Math.min(100, data.shock_prob || 0).toFixed(0) + "%";
+
+        // Regime / outcome text straight from the C++ physics engine (previously computed but
+        // never surfaced in the UI)
+        document.getElementById("hud-regime-text").innerText =
+          (data.regime || "-") + (data.summary ? " \u2014 " + data.summary : "");
+
+        // Reset phase/DIF/rod-length displays for the newly selected scenario
+        document.getElementById("hud-phase").innerText = data.is_kinetic
+          ? "KINETIC APPROACH"
+          : "RIGID";
+        document.getElementById("hud-dif").innerText = "1.00x";
+        document.getElementById("hud-length").innerText =
+          (data.proj_length || 0).toFixed(2) + " m";
 
         if (data.is_kinetic) {
           regimeBadge.innerText = "HYPERVELOCITY KINETIC ROD";
@@ -922,7 +1017,28 @@
             f0.p !== undefined
               ? THREE.MathUtils.lerp(f0.p, f1.p, factor)
               : undefined,
+          g:
+            f0.g !== undefined
+              ? THREE.MathUtils.lerp(f0.g, f1.g, factor)
+              : undefined,
+          h:
+            f0.h !== undefined
+              ? THREE.MathUtils.lerp(f0.h, f1.h, factor)
+              : undefined,
+          dif:
+            f0.dif !== undefined
+              ? THREE.MathUtils.lerp(f0.dif, f1.dif, factor)
+              : undefined,
+          rl:
+            f0.rl !== undefined
+              ? THREE.MathUtils.lerp(f0.rl, f1.rl, factor)
+              : undefined,
+          ob:
+            f0.ob !== undefined
+              ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
+              : undefined,
           sb: factor < 0.5 ? f0.sb : f1.sb,
+          e: factor < 0.5 ? f0.e : f1.e,
         };
       }
 
@@ -969,6 +1085,8 @@
               boomRing.position.copy(projectile.position);
               boomRing.scale.set(1, 1, 1);
               boomRing.material.opacity = 1.0;
+              // Faster/more energetic booms for higher Mach numbers (physics-derived rate)
+              boomRingGrowthRate = 8.0 + Math.min(30.0, frame.m) * 1.2;
             }
             updateHUD(frame);
             prevFrame = frame;
@@ -1032,7 +1150,10 @@
 
           if (explosionSphere.visible) {
             const maxScale = currentData.explosion_scale; // Sourced directly from C++ yield/mass logic
-            explosionSphere.scale.addScalar(dt * 40); // Slower growth
+            // Growth rate scaled by the target size itself, so larger explosions (more explosive
+            // mass) don't take proportionally longer to reach full scale than smaller ones.
+            const explosionGrowthRate = Math.max(4.0, maxScale * 1.25);
+            explosionSphere.scale.addScalar(dt * explosionGrowthRate);
             if (explosionSphere.scale.x > maxScale) {
               explosionSphere.material.opacity -= dt * 2.0;
             }
@@ -1042,7 +1163,9 @@
               simTime = 0;
             }
           } else if (shockwave.visible) {
-            shockwave.scale.addScalar(dt * 18); // Scaled down
+            // Growth rate scaled by the physically-derived camera shake magnitude (kinetic energy)
+            const shockwaveGrowthRate = 10.0 + currentData.camera_shake_magnitude * 10.0;
+            shockwave.scale.addScalar(dt * shockwaveGrowthRate);
             shockwave.material.opacity -= dt * 1.0;
             if (simTime > 1.5) {
               shockwave.visible = false;
@@ -1068,7 +1191,7 @@
         }
 
         if (boomRing.visible) {
-          boomRing.scale.addScalar(dt * 15); // Scaled down
+          boomRing.scale.addScalar(dt * boomRingGrowthRate);
           boomRing.material.opacity -= dt * 1.5;
           if (boomRing.material.opacity <= 0) boomRing.visible = false;
         }

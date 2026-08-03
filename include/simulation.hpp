@@ -10,12 +10,9 @@
 struct PhysicsConstants
 {
     const double gravity = 9.81;
-    const double SPEED_OF_SOUND = 343.0;
     const double PI = std::numbers::pi;
 
     // Engine behavior constants
-    const double shockDamageMultiplier = 85.0;
-    const double shockDamageExponent = 1.5;
     const double frictionFactor = 0.1;
 
     // US Standard Atmosphere 1976 constants (atmosphere/drag/speed-of-sound model)
@@ -25,23 +22,13 @@ struct PhysicsConstants
     const double earthRadius = 6356766.0;        // m (geopotential reference radius, 45 deg lat)
 };
 
-struct AltitudeDensityPoint
+// Atmospheric state at a given geometric altitude (US Standard Atmosphere 1976)
+struct AtmosphereState
 {
-    double altitude_ft = 0.0; // Altitude in feet
-    double density = 1.225;   // Air density in kg/m^3
-};
-
-struct AirLayers
-{
-    std::vector<AltitudeDensityPoint> eachLayer = {{0.0, 1.2250},
-                                                   {10000.0, 0.9041},
-                                                   {20000.0, 0.6531},
-                                                   {30000.0, 0.4581},
-                                                   {40000.0, 0.3119},
-                                                   {50000.0, 0.2031},
-                                                   {60000.0, 0.1268},
-                                                   {70000.0, 0.0765},
-                                                   {80000.0, 0.0457}};
+    double temperature_K = 288.15;
+    double pressure_Pa = 101325.0;
+    double density_kgm3 = 1.225;
+    double speed_of_sound_ms = 340.3;
 };
 
 // Target layer specification
@@ -92,7 +79,7 @@ struct Projectile
     double casing_wall_thickness = 0.05;        // meters (shock transit path into explosive fill)
     double hugoniot_c0 = 4570.0;                // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
     double hugoniot_s = 1.49;                   // dimensionless (Hugoniot slope)
-    double explosive_critical_energy = 15.0e12; // Pa^2*s (Walker-Wasley Ec, ~15 GPa^2*us, Comp-B-like)
+    double explosive_critical_energy = 3.0e15; // Pa^2*s (Walker-Wasley Ec, Comp-B-like)
 };
 
 // Scenario input definition
@@ -116,6 +103,12 @@ struct TelemetryFrame
     bool is_sonic_boom = false;
     double heat = 0.0;
     double g_force = 0.0;
+
+    // Penetration-phase physics telemetry (Phase 3/4 two-phase Forrestal + WAPM)
+    bool is_eroding = false;        // true once the Walker-Anderson erosion regime is active
+    double dif = 1.0;               // CEB-FIP Dynamic Increase Factor at this instant
+    double remaining_length = 0.0;  // meters (rigid/eroding rod length at this instant)
+    double obliquity_deg = 0.0;     // degrees (instantaneous obliquity, for trajectory bending)
 };
 
 // Simulation results for a given scenario
@@ -134,9 +127,20 @@ struct SimulationResult
     double actual_penetration_depth = 0.0;  // meters (Selected depth based on regime)
     double shock_damage_prob_percent = 0.0; // 0% to 100% chance of explosive failure from shock
     bool explosive_charge_survives = true;  // true if charge holds intact without shock damage
-    bool is_kinetic_rod = false;            // true if explosive_mass == 0 or yield_strength == 0
+    bool is_kinetic_rod = false;            // true if explosive_mass == 0
     std::string regime;
     std::string outcome_summary;
+
+    // Two-phase penetration & Walker-Anderson erosion (WAPM) telemetry
+    bool erosion_occurred = false;         // true if hydrodynamic pressure ever exceeded casing yield
+    double final_rod_length = 0.0;         // meters (remaining rigid length after erosion)
+    double erosion_length_lost = 0.0;      // meters (proj.length - final_rod_length)
+    double dynamic_increase_factor = 1.0;  // last-evaluated CEB-FIP DIF on the target strength
+    double bar_wave_speed = 0.0;           // m/s (WAPM elastic bar wave speed, sqrt(E/rho_p))
+
+    // Walker-Wasley shock initiation telemetry (Hugoniot impedance matching)
+    double shock_pressure_gpa_peak = 0.0;  // GPa (peak transmitted shock pressure at any interface)
+    double shock_pulse_duration_us = 0.0;  // microseconds (shock transit time through casing wall)
 
     // Visualization Data
     double explosive_mass = 0.0;
@@ -158,6 +162,11 @@ private:
     PhysicsConstants cons;
 
     double getMachDependentDrag(double mach, double baseCd) const;
+    AtmosphereState standardAtmosphere(double altitude_m) const;
+    static double computeDIF(double strain_rate_per_s, double fc_static_pa);
+    double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt) const;
+    double solveHugoniotInterfaceVelocity(double v, double rho_t, double C0_t, double S_t,
+                                          double rho_p, double C0_p, double S_p) const;
 
 public:
     ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);

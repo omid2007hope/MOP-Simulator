@@ -57,7 +57,7 @@ Targets with no `layers` array are treated as legacy single-layer semi-infinite 
   "casing_wall_thickness": 0.1,
   "hugoniot_c0": 4570.0,
   "hugoniot_s": 1.49,
-  "explosive_critical_energy": 15.0e12
+  "explosive_critical_energy": 3.0e15
 }
 ```
 
@@ -79,6 +79,6 @@ Targets with no `layers` array are treated as legacy single-layer semi-infinite 
 | `casing_wall_thickness` | m | 0.05 | Shock transit path length from impact face to explosive fill (Walker-Wasley pulse duration estimate) |
 | `hugoniot_c0` | m/s | 4570.0 | Casing Hugoniot bulk sound speed (Us = C0 + S*Up) |
 | `hugoniot_s` | - | 1.49 | Casing Hugoniot slope coefficient |
-| `explosive_critical_energy` | Pa^2*s | 15.0e12 | Walker-Wasley critical shock initiation energy Ec (P^2*tau >= Ec triggers detonation). Representative Comp-B-like default (~15 GPa^2*us), not explosive-certificate precision |
+| `explosive_critical_energy` | Pa^2*s | 3.0e15 | Walker-Wasley critical shock initiation energy Ec (P^2*tau >= Ec triggers detonation). Representative Comp-B-like default (calibrated so a few-hundred-m/s impact carries moderate risk, not a certainty), not explosive-certificate precision |
 
 Note: `hugoniot_c0`/`hugoniot_s`/`explosive_critical_energy` are unused for kinetic rods (`explosive_mass == 0.0`).

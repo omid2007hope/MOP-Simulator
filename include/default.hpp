@@ -24,7 +24,7 @@ inline const Projectile MOP_DEFAULT = {
     .casing_wall_thickness = 0.1,
     .hugoniot_c0 = 4570.0,
     .hugoniot_s = 1.49,
-    .explosive_critical_energy = 15.0e12};
+    .explosive_critical_energy = 3.0e15};
 
 inline const Target CONCRETE_DEFAULT = {
     .name = "High-Quality Hardened Concrete Structure",
@@ -70,6 +70,6 @@ inline const Projectile RODS_FROM_GOD_DEFAULT = {
     .casing_wall_thickness = 0.15,
     .hugoniot_c0 = 4030.0,
     .hugoniot_s = 1.24,
-    .explosive_critical_energy = 15.0e12};
+    .explosive_critical_energy = 3.0e15};
 
 #endif // DEFAULT_HPP
