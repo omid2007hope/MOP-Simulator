@@ -25,21 +25,23 @@ template <typename T>
 T getValidInput(const std::string& prompt, bool allowZero = false)
 {
     T valueEntry;
-    while (true) {
-        std::cout << prompt;
-        if (std::cin >> valueEntry) {
-            if (valueEntry > 0 || (allowZero && valueEntry == 0)) {
-                safeCin();
-                return valueEntry;
-            }
-        } else if (std::cin.eof()) {
-            std::cerr << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
-            exit(1);
+        while (true) {
+            std::cout << prompt;
+                if (std::cin >> valueEntry) {
+                        if (valueEntry > 0 || (allowZero && valueEntry == 0)) {
+                            safeCin();
+                            return valueEntry;
+                        }
+                }
+                else if (std::cin.eof()) {
+                    std::cerr
+                        << "\n[!] EOF encountered. Exiting safely to prevent infinite loop.\n";
+                    exit(1);
+                }
+
+            safeCin();
+            std::cout << "Invalid Entry, please try again!\n";
         }
-        
-        safeCin();
-        std::cout << "Invalid Entry, please try again!\n";
-    }
 }
 
 int main(int argc, char* argv[])
@@ -101,28 +103,32 @@ int main(int argc, char* argv[])
                  "engineering, defense analysis, or physical destructive testing.\n\n";
 
     std::string tos_agree;
-    while (true) {
-        std::cout << "Do you agree to these terms? (Y/N): ";
-        if (std::cin >> tos_agree) {
-            for (auto &c : tos_agree) c = std::toupper(c);
-            if (tos_agree == "Y" || tos_agree == "YES") {
-                safeCin();
-                std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
-                break;
-            }
-            else if (tos_agree == "N" || tos_agree == "NO") {
-                safeCin();
-                std::cout << "\nAccess Denied. You must agree to the Terms of Service to use this simulator.\n";
-                std::cout << "\nPress Enter to exit...";
-                std::cin.get();
-                return 1;
-            }
-        } else if (std::cin.eof()) {
-            return 1;
+        while (true) {
+            std::cout << "Do you agree to these terms? (Y/N): ";
+                if (std::cin >> tos_agree) {
+                    for (auto& c : tos_agree) {
+                        c = std::toupper(c);
+                    }
+                    if (tos_agree == "Y" || tos_agree == "YES") {
+                        safeCin();
+                        std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
+                        break;
+                    }
+                        else if (tos_agree == "N" || tos_agree == "NO") {
+                            safeCin();
+                            std::cout << "\nAccess Denied. You must agree to the Terms of Service "
+                                         "to use this simulator.\n";
+                            std::cout << "\nPress Enter to exit...";
+                            std::cin.get();
+                            return 1;
+                        }
+                }
+                else if (std::cin.eof()) {
+                    return 1;
+                }
+            safeCin();
+            std::cout << "Invalid Entry. Please type Y or N.\n";
         }
-        safeCin();
-        std::cout << "Invalid Entry. Please type Y or N.\n";
-    }
 
     std::cout << "Select Simulation Mode:\n";
     std::cout << "  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)\n";

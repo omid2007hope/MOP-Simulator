@@ -73,7 +73,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
     AirLayers eachAirLayer;
-    AltitudeDensityPoint airLayerData;
 
     double dropAltitude = scenario.altitude_ft;
     double current_altitude = dropAltitude;
@@ -731,18 +730,18 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
             penFramesJson << "]";
 
             std::stringstream targetLayersJson;
-        targetLayersJson << "[";
-        for (size_t k = 0; k < target.layers.size(); ++k) {
-            const auto& lay = target.layers[k];
-            targetLayersJson << "{name:\"" << escapeJSON(lay.material_name)
-                             << "\",thickness:" << lay.thickness
-                             << ",density:" << lay.density << "}";
-            if (k + 1 < target.layers.size())
-                targetLayersJson << ",";
-        }
-        targetLayersJson << "]";
+            targetLayersJson << "[";
+                for (size_t k = 0; k < target.layers.size(); ++k) {
+                    const auto& lay = target.layers[k];
+                    targetLayersJson << "{name:\"" << escapeJSON(lay.material_name)
+                                     << "\",thickness:" << lay.thickness
+                                     << ",density:" << lay.density << "}";
+                    if (k + 1 < target.layers.size())
+                        targetLayersJson << ",";
+                }
+            targetLayersJson << "]";
 
-        data << "            { name: \"" << escapeJSON(r.scenario_name)
+            data << "            { name: \"" << escapeJSON(r.scenario_name)
                  << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
                  << ", energy: " << (r.kinetic_energy / 1e9)
                  << ", pressure: " << (r.dynamic_pressure / 1e9)

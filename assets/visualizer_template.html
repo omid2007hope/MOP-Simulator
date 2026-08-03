@@ -501,22 +501,27 @@
                           prevFrame = null;
                       }
                   } else if (animState === 'PENETRATING') {
-                      simTime += dt * 0.05; // Penetration happens in ms, slow down playback
-                      const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
-
-                      if (simTime < maxTime) {
-                          const frame = getInterpolatedFrame(currentData.pen_frames, simTime);
-                          projectile.position.y = -frame.y + 3.1;
-                          
-                          // Update two-stage cavity lathe geometry
-                          activeCrater.geometry.dispose();
-                          activeCrater.geometry = createCraterGeometry(frame.y);
-
-                          updateHUD(frame);
-                          prevFrame = frame;
-                      } else {
+                      if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
                           animState = 'EXPLODING';
                           simTime = 0;
+                      } else {
+                          simTime += dt * 0.05; // Penetration happens in ms, slow down playback
+                          const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+
+                          if (simTime < maxTime) {
+                              const frame = getInterpolatedFrame(currentData.pen_frames, simTime);
+                              projectile.position.y = -frame.y + 3.1;
+                              
+                              // Update two-stage cavity lathe geometry
+                              activeCrater.geometry.dispose();
+                              activeCrater.geometry = createCraterGeometry(frame.y);
+
+                              updateHUD(frame);
+                              prevFrame = frame;
+                          } else {
+                              animState = 'EXPLODING';
+                              simTime = 0;
+                          }
                       }
                   } else if (animState === 'EXPLODING') {
                       simTime += dt;
@@ -550,12 +555,23 @@
                           if (explosionSphere.material.opacity <= 0) {
                               explosionSphere.visible = false;
                               animState = 'DONE';
+                              simTime = 0;
                           }
                       } else if (shockwave.visible) {
                           shockwave.scale.addScalar(dt * 15);
-                          if (simTime > 1.5) animState = 'DONE';
+                          if (simTime > 1.5) { animState = 'DONE'; simTime = 0; }
                       } else {
-                          if (simTime > 1.0) animState = 'DONE';
+                          if (simTime > 1.0) { animState = 'DONE'; simTime = 0; }
+                      }
+                  } else if (animState === 'DONE') {
+                      simTime += dt;
+                      if (simTime > 2.0) {
+                          let currentIndex = scenarios.indexOf(currentData);
+                          if (currentIndex !== -1 && currentIndex + 1 < scenarios.length) {
+                              selectScenario(currentIndex + 1, false);
+                          } else {
+                              animState = 'FINISHED';
+                          }
                       }
                   }
 
