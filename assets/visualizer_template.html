@@ -565,6 +565,46 @@
         }
       }
 
+      function computePlanckBlackbodyColor(tempKelvin, baseColorHex) {
+        // Converts Temperature (Kelvin) to Planck blackbody radiation RGB emission
+        // < 500 K: Base metal finish
+        // 500 K - 900 K: Incipient red heat (0x7f1d1d to 0xd97706)
+        // 900 K - 1500 K: Cherry red to bright orange (0xf97316)
+        // 1500 K - 2200 K: Incandescent yellow-white (0xfffbeb)
+        // > 2200 K: Radiant plasma white-blue (0xe0f2fe)
+        const baseColor = new THREE.Color(baseColorHex);
+        const radColor = new THREE.Color();
+
+        if (tempKelvin < 500) {
+          radColor.copy(baseColor);
+        } else if (tempKelvin < 900) {
+          const t = (tempKelvin - 500) / 400;
+          radColor.lerpColors(baseColor, new THREE.Color(0xd97706), t);
+        } else if (tempKelvin < 1500) {
+          const t = (tempKelvin - 900) / 600;
+          radColor.lerpColors(
+            new THREE.Color(0xd97706),
+            new THREE.Color(0xf97316),
+            t,
+          );
+        } else if (tempKelvin < 2200) {
+          const t = (tempKelvin - 1500) / 700;
+          radColor.lerpColors(
+            new THREE.Color(0xf97316),
+            new THREE.Color(0xfffbeb),
+            t,
+          );
+        } else {
+          const t = Math.min(1.0, (tempKelvin - 2200) / 1000);
+          radColor.lerpColors(
+            new THREE.Color(0xfffbeb),
+            new THREE.Color(0xe0f2fe),
+            t,
+          );
+        }
+        return radColor;
+      }
+
       function mergeGeometriesSimple(geometries) {
         let totalVerts = 0;
         const nonIndexed = geometries.map((g) =>
@@ -1524,29 +1564,18 @@
               projectile.rotation.z = totalAngleRad;
               activeCrater.rotation.z = totalAngleRad;
 
-              // 3. Thermal Ablation & Friction Heat Blackbody Glow
-              const tempCelsius = frame.h !== undefined ? frame.h : 20;
-              // Blackbody color transition based on friction temperature:
-              // <400C: Normal Metal -> 600C: Dull Red -> 1000C: Bright Orange -> 1500C: Incandescent White/Yellow
+              // 3. Thermal Ablation & Friction Heat Planck Blackbody Radiation
+              const tempVal = frame.h !== undefined ? frame.h : 20;
+              // If temperature is reported in Celsius, convert to Kelvin
+              const tempKelvin = tempVal < 200 ? tempVal + 273.15 : tempVal;
               const baseColorHex = currentData.is_kinetic ? 0xa855f7 : 0x00ffff;
-              const baseColor = new THREE.Color(baseColorHex);
-              let thermoColor = new THREE.Color(baseColorHex);
-
-              if (tempCelsius < 400) {
-                thermoColor.copy(baseColor);
-              } else if (tempCelsius < 800) {
-                const t = (tempCelsius - 400) / 400;
-                thermoColor.lerpColors(baseColor, new THREE.Color(0xd97706), t); // Dull Red / Amber
-              } else if (tempCelsius < 1300) {
-                const t = (tempCelsius - 800) / 500;
-                thermoColor.lerpColors(new THREE.Color(0xd97706), new THREE.Color(0xf97316), t); // Bright Orange
-              } else {
-                const t = Math.min(1.0, (tempCelsius - 1300) / 500);
-                thermoColor.lerpColors(new THREE.Color(0xf97316), new THREE.Color(0xfffbeb), t); // Incandescent Yellow/White
-              }
-
+              
+              const thermoColor = computePlanckBlackbodyColor(tempKelvin, baseColorHex);
               projectile.material.emissive.copy(thermoColor);
-              projectile.material.emissiveIntensity = 2.0 + Math.min(15.0, tempCelsius / 100.0);
+
+              // Stefan-Boltzmann Law emissive radiation intensity (scaling with T^4)
+              const tempNorm = Math.max(0, (tempKelvin - 300) / 1500);
+              projectile.material.emissiveIntensity = 2.0 + Math.pow(tempNorm, 3.0) * 18.0;
 
               // 5. Shock Stress & G-Force Tremors
               const gForce = frame.g || 0;
