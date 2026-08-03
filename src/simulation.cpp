@@ -386,6 +386,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     }
     res.previous_strike_depth = initial_shaft_depth;
     if (initial_shaft_depth > 0) {
+        current_depth = initial_shaft_depth;
         std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
                   << initial_shaft_depth << " m\n";
     }
@@ -399,13 +400,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         }
 
     size_t current_layer_idx = 0;
-    size_t last_layer_idx = 0;
-    double next_print_depth = 1.0;
+    while (current_layer_idx < layer_bottom_depths.size() &&
+           current_depth >= layer_bottom_depths[current_layer_idx]) {
+        current_layer_idx++;
+    }
+    size_t last_layer_idx = current_layer_idx;
+    double next_print_depth = std::floor(current_depth) + 1.0;
     int pen_frame_counter = 0;
 
-        if (!target.layers.empty()) {
+        if (current_layer_idx < target.layers.size()) {
             std::cout << "--- Ground Penetration Commenced ---\n";
-            std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[0].material_name
+            std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[current_layer_idx].material_name
                       << "\n";
         }
 
@@ -1062,8 +1067,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     // Generate scenario buttons
     std::stringstream buttons;
         for (size_t i = 0; i < results.size(); ++i) {
-            buttons << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-" << i
-                    << "\" class=\"px-4 py-1.5 rounded-full text-xs font-semibold "
+            buttons << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-scenario-" << i
+                    << "\" class=\"scenario-btn px-4 py-1.5 rounded-full text-xs font-semibold "
                        "whitespace-nowrap "
                        "transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 "
                        "hover:text-slate-950 border border-slate-700/60\">"
@@ -1119,6 +1124,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", pressure: " << (r.dynamic_pressure / 1e9)
                  << ", yield: " << (proj.yield_strength / 1e9)
                  << ", depth: " << r.actual_penetration_depth
+                 << ", prev_strike_depth: " << r.previous_strike_depth
                  << ", rigid_depth: " << r.rigid_penetration
                  << ", hydro_depth: " << r.hydro_penetration
                  << ", fail: " << (r.casing_failure ? "true" : "false")

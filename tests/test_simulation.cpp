@@ -97,8 +97,10 @@ int main()
 
     // Test 5: Oblique Impact
     std::cout << "[Test 5] Testing Oblique Impact (Obliquity 30 deg, AoA 5 deg, 400 m/s)...\n";
+    Target concreteOblique = CONCRETE_DEFAULT;
+    ImpactSimulator obliqueSim(mop, concreteOblique, cons);
     ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 30.0, 5.0};
-    SimulationResult resOblique = simulator.simulate(obliqueScenario);
+    SimulationResult resOblique = obliqueSim.simulate(obliqueScenario);
     
     assert(resOblique.actual_penetration_depth > 5.0 && resOblique.actual_penetration_depth < 6.0); // 5.31m
     
