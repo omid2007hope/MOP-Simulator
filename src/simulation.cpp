@@ -377,9 +377,18 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     // Update result with final impact velocity (Mach referenced to sea-level speed of sound;
     // Mach number is not a standard concept once inside a solid target)
-    res.velocity = current_velocity;
-    const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
-    res.mach_number = current_velocity / groundSpeedOfSound;
+    // Multi-bomb salvo cumulative shaft tracking: calculate initial breached shaft entry depth
+    double initial_shaft_depth = 0.0;
+    for (const auto& layer : target.layers) {
+        if (layer.pulverized_depth > 0) {
+            initial_shaft_depth += std::min(layer.thickness, layer.pulverized_depth);
+        }
+    }
+    res.previous_strike_depth = initial_shaft_depth;
+    if (initial_shaft_depth > 0) {
+        std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
+                  << initial_shaft_depth << " m\n";
+    }
 
     // Convert target layers to fullDepth depths
     std::vector<double> layer_bottom_depths;
@@ -433,6 +442,9 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             if (!target.layers.empty()) {
                 evaluateShockEvent(current_velocity, target.layers[0]);
             }
+
+        const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
+        res.mach_number = current_velocity / groundSpeedOfSound;
 
         // Time Integration Loop (RK4) - two-phase Forrestal cratering/tunneling with CEB-FIP
         // strain-rate strengthening in the rigid regime, transitioning to the Walker-Anderson
@@ -707,14 +719,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     std::cout << "------------------------------------\n\n";
 
         // Update the pulverized depth for sequential strikes
-        if (current_layer_idx < target.layers.size()) {
-            target.layers[current_layer_idx].pulverized_depth =
-                std::max(target.layers[current_layer_idx].pulverized_depth, current_depth);
-        }
-        for (size_t i = 0; i < current_layer_idx && i < target.layers.size(); ++i) {
-            target.layers[i].pulverized_depth =
-                std::numeric_limits<double>::infinity(); // Fully pierced layers are completely pulverized
-        }
+        target.pulverizeDepth(current_depth);
+        res.cumulative_breach_depth = current_depth;
 
     res.actual_penetration_depth = current_depth;
     res.dynamic_pressure = max_dynamic_pressure;
@@ -1137,6 +1143,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                  << ", bar_wave_speed: " << r.bar_wave_speed
                  << ", shock_pressure_gpa_peak: " << r.shock_pressure_gpa_peak
                  << ", shock_pulse_duration_us: " << r.shock_pulse_duration_us
+                 << ", previous_strike_depth: " << r.previous_strike_depth
+                 << ", cumulative_breach_depth: " << r.cumulative_breach_depth
                  << ", target_layers: " << targetLayersJson.str()
                  << ", drop_frames: " << dropFramesJson.str()
                  << ", pen_frames: " << penFramesJson.str() << " }";

@@ -52,6 +52,16 @@ struct Target
 {
     std::string name;
     std::vector<TargetLayer> layers;
+
+    void pulverizeDepth(double breachDepth) {
+        double currentDepthAcc = 0.0;
+        for (auto& layer : layers) {
+            if (breachDepth > currentDepthAcc) {
+                layer.pulverized_depth = std::max(layer.pulverized_depth, breachDepth - currentDepthAcc);
+            }
+            currentDepthAcc += layer.thickness;
+        }
+    }
 };
 
 // Projectile specification (e.g., GBU-57 MOP parameters)
@@ -141,6 +151,10 @@ struct SimulationResult
     // Walker-Wasley shock initiation telemetry (Hugoniot impedance matching)
     double shock_pressure_gpa_peak = 0.0;  // GPa (peak transmitted shock pressure at any interface)
     double shock_pulse_duration_us = 0.0;  // microseconds (shock transit time through casing wall)
+
+    // Multi-bomb salvo & Operation Midnight Hammer sequential shaft telemetry
+    double previous_strike_depth = 0.0;     // meters (breached shaft entry depth from prior bombs)
+    double cumulative_breach_depth = 0.0;   // meters (total accumulated shaft depth after this bomb)
 
     // Visualization Data
     double explosive_mass = 0.0;

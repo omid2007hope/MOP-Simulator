@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
     // ! ********************
 
         else if (choice == 5) {
-            std::cout << "\n[+] Loading Operation Midnight Hammer Preset (12 days war)\n";
+            std::cout << "\n[+] Loading Operation Midnight Hammer Preset (Fordow Subterranean Shaft Strike)\n";
 
                 if (auto p = ConfigLoader::getProjectileByName(
                         projectilesDb, "Operation Midnight Hammer (12 days war)")) {
@@ -359,12 +359,36 @@ int main(int argc, char* argv[])
 
             object = Midnight_Hammer_Target;
 
-            scenarios = {
-                {"Default Hammer", 50000.0, 420.0, 0.0, 0.0},
-                {"50,000 ft Drop", 50000.0, 610.0, 10.0, 0.0},
-                {"45,000 ft Drop", 45000.0, 520.0, 5.0, 0.0},
-                {"40,000 ft Drop", 40000.0, 450.0, 0.0, 0.0},
-            };
+            int numBombs = 2;
+            std::cout << "Select Operation Midnight Hammer Salvo Configuration:\n";
+            std::cout << "  [1] 2-Bomb Lead Strike (Initial Overburden Shaft Breaker + Follow-on Strike)\n";
+            std::cout << "  [2] 4-Bomb Shaft Sequence (Fordow Centrifuge Vault Destruction)\n";
+            std::cout << "  [3] 6-Bomb Maximum Salvo Strike (Maximum Subterranean Overpressure Wave)\n";
+            int hammerChoice = 1;
+            while (true) {
+                std::cout << "Selection (1-3): ";
+                if (std::cin >> hammerChoice && hammerChoice >= 1 && hammerChoice <= 3) {
+                    safeCin();
+                    break;
+                }
+                if (std::cin.eof()) exit(1);
+                safeCin();
+                std::cout << "Invalid selection! Enter 1, 2, or 3.\n";
+            }
+
+            if (hammerChoice == 1) numBombs = 2;
+            else if (hammerChoice == 2) numBombs = 4;
+            else numBombs = 6;
+
+            for (int i = 0; i < numBombs; ++i) {
+                std::stringstream name_ss;
+                if (i == 0) {
+                    name_ss << "Bomb #1 (Shaft Breaker)";
+                } else {
+                    name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
+                }
+                scenarios.push_back({name_ss.str(), 50000.0, 610.0, 0.0, 0.0});
+            }
         }
 
     // ! ********************
@@ -385,8 +409,8 @@ int main(int argc, char* argv[])
     PhysicsConstants cons;
     std::vector<SimulationResult> results;
 
-        if (choice == 4) {
-            // Sequential strike uses the same simulator instance to maintain target state
+        if (choice == 4 || choice == 5) {
+            // Sequential multi-bomb strikes use a persistent simulator instance to maintain cumulative shaft crater depth
             ImpactSimulator simulator(munition, object, cons);
                 for (const auto& sc : scenarios) {
                     results.push_back(simulator.simulate(sc));
