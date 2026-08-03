@@ -348,7 +348,7 @@
 
       let scene, camera, renderer, composer, controls;
       let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
-      let projectile, shockwave, explosionSphere, boomRing, airBox;
+      let projectile, shockwave, explosionSphere, boomRing, machCone, airBox;
       let currentData = scenarios[0];
       let activeCrater = null;
       let dustParticles;
@@ -604,6 +604,20 @@
         boomRing.rotation.x = Math.PI / 2;
         boomRing.visible = false;
         scene.add(boomRing);
+
+        const coneGeom = new THREE.ConeGeometry(3.0, 10.0, 32);
+        const coneMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        machCone = new THREE.Mesh(coneGeom, coneMat);
+        machCone.visible = false;
+        machCone.rotation.x = Math.PI; // point down
+        scene.add(machCone);
       }
 
       function toggleFollowCam() {
@@ -701,9 +715,7 @@
         if (animState === "PENETRATING") {
           tweenNumber("hud-gforce", frame.g ?? 0, (g) => g.toFixed(0) + " G");
 
-          // Thermal heat glow based on temperature ratio from C++ (disabled to keep bright glow)
-          const heat = frame.h ?? 0;
-          // projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+          // Thermal heat glow mapping is handled in the main render loop for the 3D mesh
         }
 
         // CEB-FIP DIF / WAPM erosion phase telemetry (penetration-phase only)
@@ -1090,10 +1102,20 @@
               // Faster/more energetic booms for higher Mach numbers (physics-derived rate)
               boomRingGrowthRate = 8.0 + Math.min(30.0, frame.m) * 1.2;
             }
+
+            if (frame.m > 1.0) {
+              machCone.visible = true;
+              machCone.position.copy(projectile.position);
+              machCone.position.y += (currentData.proj_length / 2.0) - 2.0; 
+            } else {
+              machCone.visible = false;
+            }
+
             updateHUD(frame);
             prevFrame = frame;
           } else {
             animState = "PENETRATING";
+            machCone.visible = false;
             if (currentData.pen_frames && currentData.pen_frames.length > 0) {
               simTime = currentData.pen_frames[0].t;
             } else {
@@ -1121,8 +1143,39 @@
                 currentData.pen_frames,
                 simTime,
               );
-              projectile.position.y =
-                frame.y + (currentData.proj_length / 2.0);
+
+              // 1. WAPM Erosion (Rod Shrinking)
+              const currentLength = frame.rl !== undefined ? frame.rl : currentData.proj_length;
+              projectile.scale.y = currentLength / currentData.proj_length;
+              projectile.position.y = -frame.y + (currentLength / 2.0);
+
+              // 2. Obliquity (Trajectory Bending)
+              const oblRad = (frame.obliquity_deg || 0) * (Math.PI / 180);
+              projectile.rotation.z = oblRad;
+              // Note: Crater rotation might look odd if it rotates the entire hole from the surface, 
+              // but we will apply it to show the visual curve of the penetration.
+              activeCrater.rotation.z = oblRad;
+
+              // 3. Thermal Ablation Glow
+              const baseColorHex = currentData.is_kinetic ? 0xa855f7 : 0x00ffff;
+              const baseEmissive = new THREE.Color(baseColorHex);
+              const hotEmissive = new THREE.Color(0xffaa00);
+              // Normalize heat (assuming max heat around 1500 for melting point 1800)
+              const heatFactor = Math.min((frame.h || 0) / 1500.0, 1.0);
+              projectile.material.emissive.lerpColors(baseEmissive, hotEmissive, heatFactor);
+
+              // 5. Shock Stress & G-Force Tremors
+              const gForce = frame.g || 0;
+              const jitter = (gForce / 15000.0); // e.g. 15000G = 1.0 magnitude jitter
+              projectile.position.x = (Math.random() - 0.5) * jitter;
+              projectile.position.z = (Math.random() - 0.5) * jitter;
+
+              if ((currentData.shock_damage_prob_percent || 0) > 50.0 && Math.random() > 0.8) {
+                  // Flicker the projectile to white briefly to show intense shock stress
+                  projectile.material.color.setHex(0xffffff);
+              } else {
+                  projectile.material.color.setHex(baseColorHex);
+              }
 
               activeCrater.visible = true;
               activeCrater.geometry.dispose();
