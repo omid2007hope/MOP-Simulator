@@ -477,27 +477,26 @@
         }
 
         // Air altitude ruler
-        if (maxAlt > 0) {
-          const airLine = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([
-              new THREE.Vector3(-15, 0, -15),
-              new THREE.Vector3(-15, maxAlt, -15),
-            ]),
-            new THREE.LineBasicMaterial({
-              color: 0x0ea5e9,
-              transparent: true,
-              opacity: 0.5,
-            }),
-          );
-          rulerGroup.add(airLine);
+        let altLimit = maxAlt > 0 ? maxAlt : 50;
+        const airLine = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-15, 0, -15),
+            new THREE.Vector3(-15, altLimit, -15),
+          ]),
+          new THREE.LineBasicMaterial({
+            color: 0x0ea5e9,
+            transparent: true,
+            opacity: 0.5,
+          }),
+        );
+        rulerGroup.add(airLine);
 
-          const steps = 5;
-          for (let i = 1; i <= steps; i++) {
-            const h = (maxAlt / steps) * i;
-            const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
-            sprite.position.set(-20, h, -15);
-            rulerGroup.add(sprite);
-          }
+        const steps = 5;
+        for (let i = 1; i <= steps; i++) {
+          const h = (altLimit / steps) * i;
+          const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
+          sprite.position.set(-20, h, -15);
+          rulerGroup.add(sprite);
         }
       }
 
@@ -747,7 +746,7 @@
 
         let maxAlt = 0;
         if (currentData.drop_frames && currentData.drop_frames.length > 0) {
-          maxAlt = currentData.drop_frames[0].y;
+          maxAlt = Math.abs(currentData.drop_frames[0].y);
         }
 
         // Always clear and rebuild, properly disposing of memory
@@ -755,45 +754,44 @@
         clearGroup(cratersGroup);
         clearGroup(airGroup);
 
-        // Build Air Volume if altitude exists
-        if (maxAlt > 0) {
-          const airGeo = new THREE.BoxGeometry(100, maxAlt, 100);
-          const airMat = new THREE.MeshPhysicalMaterial({
-            color: 0x0284c7,
-            transparent: true,
-            opacity: 0.05,
-            transmission: 0.9,
-            roughness: 0.1,
-            depthWrite: false,
-            side: THREE.DoubleSide,
-          });
-          airBox = new THREE.Mesh(airGeo, airMat);
-          airBox.position.y = maxAlt / 2;
-          airGroup.add(airBox);
+        // Build Air Volume and Dust Particles
+        let effectiveAlt = maxAlt > 0 ? maxAlt : 60;
+        const airGeo = new THREE.BoxGeometry(100, effectiveAlt, 100);
+        const airMat = new THREE.MeshPhysicalMaterial({
+          color: 0x0284c7,
+          transparent: true,
+          opacity: 0.05,
+          transmission: 0.9,
+          roughness: 0.1,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        airBox = new THREE.Mesh(airGeo, airMat);
+        airBox.position.y = effectiveAlt / 2;
+        airGroup.add(airBox);
 
-          // Dust particles
-          const dustGeo = new THREE.BufferGeometry();
-          const dustVerts = [];
-          for (let i = 0; i < 2000; i++) {
-            dustVerts.push(
-              (Math.random() - 0.5) * 100,
-              Math.random() * maxAlt,
-              (Math.random() - 0.5) * 100,
-            );
-          }
-          dustGeo.setAttribute(
-            "position",
-            new THREE.Float32BufferAttribute(dustVerts, 3),
+        // Dust particles (falling flakes from sky)
+        const dustGeo = new THREE.BufferGeometry();
+        const dustVerts = [];
+        for (let i = 0; i < 2500; i++) {
+          dustVerts.push(
+            (Math.random() - 0.5) * 150,
+            Math.random() * (effectiveAlt + 30),
+            (Math.random() - 0.5) * 150,
           );
-          const dustMat = new THREE.PointsMaterial({
-            color: 0xbae6fd,
-            size: 0.5,
-            transparent: true,
-            opacity: 0.4,
-          });
-          dustParticles = new THREE.Points(dustGeo, dustMat);
-          airGroup.add(dustParticles);
         }
+        dustGeo.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(dustVerts, 3),
+        );
+        const dustMat = new THREE.PointsMaterial({
+          color: 0xbae6fd,
+          size: 0.8,
+          transparent: true,
+          opacity: 0.5,
+        });
+        dustParticles = new THREE.Points(dustGeo, dustMat);
+        airGroup.add(dustParticles);
 
         let currentY = 0;
         if (currentData.target_layers && currentData.target_layers.length > 0) {

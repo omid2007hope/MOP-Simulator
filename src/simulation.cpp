@@ -728,7 +728,7 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
             dropFramesJson << "[";
                 for (size_t j = 0; j < r.drop_frames.size(); ++j) {
                     const auto& f = r.drop_frames[j];
-                    dropFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
+                    dropFramesJson << "{t:" << f.time << ",y:" << f.altitude << ",v:" << f.velocity
                                    << ",m:" << f.mach
                                    << ",sb:" << (f.is_sonic_boom ? "true" : "false") << "}";
                     if (j + 1 < r.drop_frames.size())
