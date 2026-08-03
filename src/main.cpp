@@ -65,6 +65,8 @@ int main(int argc, char* argv[])
     auto targetsDb = ConfigLoader::loadTargets(basePath + "/data/targets.json");
     auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
 
+    AtmosphereState atmosphere;
+
     // Default target
     Target object = CONCRETE_DEFAULT;
         if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
@@ -356,6 +358,9 @@ int main(int argc, char* argv[])
                 else {
                     munition = Midnight_Hammer_projectile;
                 }
+
+            object = Midnight_Hammer_Target;
+            atmosphere = Midnight_Hammer_Atmosphere;
 
             scenarios = {
                 {"Default Hammer", 50000.0, 420.0, 0.0, 0.0},
