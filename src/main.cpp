@@ -65,8 +65,6 @@ int main(int argc, char* argv[])
     auto targetsDb = ConfigLoader::loadTargets(basePath + "/data/targets.json");
     auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
 
-    AtmosphereState atmosphere;
-
     // Default target
     Target object = CONCRETE_DEFAULT;
         if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
@@ -360,7 +358,6 @@ int main(int argc, char* argv[])
                 }
 
             object = Midnight_Hammer_Target;
-            atmosphere = Midnight_Hammer_Atmosphere;
 
             scenarios = {
                 {"Default Hammer", 50000.0, 420.0, 0.0, 0.0},
@@ -397,16 +394,7 @@ int main(int argc, char* argv[])
             simulator.printReport(results);
             simulator.generateHtml3DVisualizer(results, basePath);
         }
-        if (choice == 5) {
-            // Independent tests get fresh targets
-            ImpactSimulator reporter(munition, object, atmosphere, cons);
-                for (const auto& sc : scenarios) {
-                    ImpactSimulator simulator(munition, atmosphere, object, cons);
-                    results.push_back(simulator.simulate(sc));
-                }
-            reporter.printReport(results);
-            reporter.generateHtml3DVisualizer(results, basePath);
-        }
+
         else {
             // Independent tests get fresh targets
             ImpactSimulator reporter(munition, object, cons);
