@@ -565,14 +565,126 @@
         }
       }
 
+      function mergeGeometriesSimple(geometries) {
+        let totalVerts = 0;
+        const nonIndexed = geometries.map((g) =>
+          g.index ? g.toNonIndexed() : g,
+        );
+        nonIndexed.forEach((g) => {
+          totalVerts += g.attributes.position.count;
+        });
+
+        const positions = new Float32Array(totalVerts * 3);
+        const normals = new Float32Array(totalVerts * 3);
+        const uvs = new Float32Array(totalVerts * 2);
+
+        let offsetPos = 0;
+        let offsetUv = 0;
+
+        nonIndexed.forEach((g) => {
+          const p = g.attributes.position.array;
+          positions.set(p, offsetPos);
+
+          if (g.attributes.normal) {
+            normals.set(g.attributes.normal.array, offsetPos);
+          }
+          if (g.attributes.uv) {
+            uvs.set(g.attributes.uv.array, offsetUv);
+          }
+
+          offsetPos += p.length;
+          if (g.attributes.uv) offsetUv += g.attributes.uv.array.length;
+        });
+
+        const merged = new THREE.BufferGeometry();
+        merged.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3),
+        );
+        merged.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
+        merged.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+        merged.computeVertexNormals();
+        return merged;
+      }
+
+      function createGBU57Geometry(pRadius, pLength) {
+        const points = [];
+        const noseLen = pLength * 0.25;
+        const bodyLen = pLength * 0.55;
+        const tailLen = pLength * 0.2;
+
+        const halfLen = pLength / 2;
+        const yNose = -halfLen;
+        const yBodyStart = yNose + noseLen;
+        const yBodyEnd = yBodyStart + bodyLen;
+        const yTailEnd = halfLen;
+
+        // 1. Ogive nose curve (pointing down along -Y)
+        points.push(new THREE.Vector2(0, yNose));
+        const noseSteps = 12;
+        for (let i = 1; i <= noseSteps; i++) {
+          const t = i / noseSteps;
+          const r = pRadius * Math.sin(t * Math.PI * 0.5);
+          const y = yNose + t * noseLen;
+          points.push(new THREE.Vector2(r, y));
+        }
+
+        // 2. Main cylinder body with structural reinforcement ring
+        points.push(new THREE.Vector2(pRadius, yBodyStart));
+        points.push(new THREE.Vector2(pRadius, yBodyEnd * 0.5));
+        points.push(new THREE.Vector2(pRadius * 1.03, yBodyEnd * 0.52));
+        points.push(new THREE.Vector2(pRadius * 1.03, yBodyEnd * 0.55));
+        points.push(new THREE.Vector2(pRadius, yBodyEnd * 0.57));
+        points.push(new THREE.Vector2(pRadius, yBodyEnd));
+
+        // 3. Boat-tail tapered tail cone
+        points.push(new THREE.Vector2(pRadius * 0.7, yTailEnd - tailLen * 0.2));
+        points.push(new THREE.Vector2(pRadius * 0.5, yTailEnd));
+        points.push(new THREE.Vector2(0, yTailEnd));
+
+        const bodyGeom = new THREE.LatheGeometry(points, 32);
+        const geometries = [bodyGeom];
+
+        // 4. Tail Fins (4 Grid/Planar Fins at 90-degree intervals)
+        const finW = pRadius * 1.8;
+        const finH = tailLen * 0.8;
+        const finT = pRadius * 0.12;
+
+        for (let a = 0; a < 4; a++) {
+          const angle = (a * Math.PI) / 2;
+          const finGeom = new THREE.BoxGeometry(finT, finH, finW);
+          const posX = Math.cos(angle) * (pRadius * 0.5 + finW / 2);
+          const posZ = Math.sin(angle) * (pRadius * 0.5 + finW / 2);
+          const posY = yBodyEnd + finH * 0.3;
+
+          finGeom.rotateY(-angle);
+          finGeom.translate(posX, posY, posZ);
+          geometries.push(finGeom);
+        }
+
+        // 5. Longitudinal Body Strakes (4 guiding ribs around mid body)
+        const strakeT = pRadius * 0.12;
+        const strakeH = bodyLen * 0.5;
+        const strakeW = pRadius * 0.25;
+
+        for (let a = 0; a < 4; a++) {
+          const angle = (a * Math.PI) / 2 + Math.PI / 4;
+          const strakeGeom = new THREE.BoxGeometry(strakeT, strakeH, strakeW);
+          const posX = Math.cos(angle) * (pRadius + strakeT / 2);
+          const posZ = Math.sin(angle) * (pRadius + strakeT / 2);
+          const posY = yBodyStart + bodyLen * 0.4;
+
+          strakeGeom.rotateY(-angle);
+          strakeGeom.translate(posX, posY, posZ);
+          geometries.push(strakeGeom);
+        }
+
+        return mergeGeometriesSimple(geometries);
+      }
+
       function setupProjectile() {
         let pRadius = currentData.proj_diameter / 2.0;
-        const projGeom = new THREE.CylinderGeometry(
-          pRadius,
-          pRadius,
-          currentData.proj_length,
-          32,
-        );
+        const projGeom = createGBU57Geometry(pRadius, currentData.proj_length);
         // Premium material - Glowing Projectile
         const projMat = new THREE.MeshPhysicalMaterial({
           color: 0x00ffff,
@@ -847,11 +959,9 @@
           // Swap geometry
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = new THREE.CylinderGeometry(
-            pRadius,
+          projectile.geometry = createGBU57Geometry(
             pRadius,
             currentData.proj_length,
-            32,
           );
           projectile.material.metalness = 0.5;
           projectile.material.color.setHex(0xa855f7);
@@ -1038,11 +1148,9 @@
         if (!currentData.is_kinetic) {
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = new THREE.CylinderGeometry(
-            pRadius,
+          projectile.geometry = createGBU57Geometry(
             pRadius,
             currentData.proj_length,
-            32,
           );
           projectile.material.metalness = 0.3;
           projectile.material.color.setHex(0x00ffff);
