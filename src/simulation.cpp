@@ -13,6 +13,21 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 {
 }
 
+double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
+{
+    double cd = baseCd;
+    if (mach > 0.8 && mach <= 1.0) {
+        double t = (mach - 0.8) / 0.2;
+        cd = baseCd + t * (baseCd * 5.0); // Peaks at 6x base drag
+    } else if (mach > 1.0 && mach <= 1.5) {
+        double t = (mach - 1.0) / 0.5;
+        cd = (baseCd * 6.0) - t * (baseCd * 3.0);
+    } else if (mach > 1.5) {
+        cd = baseCd * 3.0;
+    }
+    return cd;
+}
+
 SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 {
     SimulationResult res;
@@ -81,8 +96,11 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         while (current_altitude > 0.0) {
             double current_density = findAirDensityByAltitude(current_altitude);
             
+            double current_mach = current_velocity / cons.SPEED_OF_SOUND;
+            double dynamic_cd = getMachDependentDrag(current_mach, dragCoefficient);
+            
             // Drag force: F_d = 0.5 * rho * v^2 * Cd * A
-            double drag_force = 0.5 * current_density * std::pow(current_velocity, 2) * dragCoefficient * area;
+            double drag_force = 0.5 * current_density * std::pow(current_velocity, 2) * dynamic_cd * area;
             
             // Net acceleration: a = g - F_d / m
             double acceleration = cons.gravity - (drag_force / proj.total_mass);
@@ -187,14 +205,24 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             max_dynamic_pressure = dynamic_pressure;
         }
 
-        // Deceleration force (incorporating rebar)
-        // Work-energy based deceleration force
+        // Dynamic Spherical Cavity Expansion (Forrestal)
         double effective_strength =
             layer.compressive_strength +
             (layer.rebar_yield_strength * layer.rebar_volume_fraction);
-        double deceleration_force =
-            (area * effective_strength) +
-            (dragCoefficient * layer.density * area * squaredVelocity);
+            
+        double layer_density = layer.density;
+        
+        // If in pulverized crater zone, vastly reduce resistance
+        if (current_depth < layer.pulverized_depth) {
+            effective_strength = 5.0e6; // 5 MPa for pulverized rubble
+            layer_density = layer.density * 0.7; // 30% void fraction
+        }
+            
+        double fc_mpa = effective_strength / 1e6;
+        double S = 82.6 * std::pow(fc_mpa, -0.544);
+        double N_star = dragCoefficient; 
+        
+        double deceleration_force = area * (S * effective_strength + N_star * layer_density * squaredVelocity);
 
         // Obliquity/Bending structural failure check
         if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
@@ -289,6 +317,14 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                           << " m inside layer: " << final_layer << "\n";
             }
             std::cout << "------------------------------------\n\n";
+            
+            // Update the pulverized depth for sequential strikes
+            if (current_layer_idx < target.layers.size()) {
+                target.layers[current_layer_idx].pulverized_depth = std::max(target.layers[current_layer_idx].pulverized_depth, current_depth);
+            }
+            for (size_t i = 0; i < current_layer_idx && i < target.layers.size(); ++i) {
+                target.layers[i].pulverized_depth = 999999.0; // Fully pierced layers are completely pulverized
+            }
 
             res.actual_penetration_depth = current_depth;
             res.dynamic_pressure = max_dynamic_pressure;

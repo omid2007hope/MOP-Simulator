@@ -116,12 +116,13 @@ int main(int argc, char* argv[])
     std::cout << "  [1] Run Standard GBU-57 MOP Presets (Mach 1.0 to Mach 10.4)\n";
     std::cout << "  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)\n";
     std::cout << "  [3] Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten Penetrators)\n";
+    std::cout << "  [4] Sequential Strike (Multi-Bomb Burrowing Tactic)\n";
     std::cout << "---------------------------------------------------------------------------------"
                  "------------------\n";
 
         while (true) {
-            std::cout << "Enter choice [1, 2, or 3]: ";
-                if (std::cin >> choice && (choice == 1 || choice == 2 || choice == 3)) {
+            std::cout << "Enter choice [1, 2, 3, or 4]: ";
+                if (std::cin >> choice && (choice >= 1 && choice <= 4)) {
                     std::cout << "Scenario: " << choice << " Confirmed!";
                     safeCin();
                     break;
@@ -257,6 +258,26 @@ int main(int argc, char* argv[])
                          {"Hypervelocity Terminal (Mach 22)", 300000.0, 7500.0, 0.0, 0.0}};
         }
 
+        else if (choice == 4) {
+            std::cout << "\n[+] Loading Sequential Strike Preset (Multi-Bomb Burrowing)...\n";
+            int numDrops = 1;
+            while (true) {
+                std::cout << "Enter number of sequential drops (1 to 10): ";
+                if (std::cin >> numDrops && numDrops >= 1 && numDrops <= 10) {
+                    safeCin();
+                    break;
+                }
+                if (std::cin.eof()) exit(1);
+                safeCin();
+                std::cout << "Invalid Entry, please try again!\n";
+            }
+            
+            for (int i = 0; i < numDrops; ++i) {
+                std::stringstream name_ss;
+                name_ss << "Sequential Drop #" << (i + 1);
+                scenarios.push_back({name_ss.str(), 40000.0, 300.0, 0.0, 0.0});
+            }
+        }
         else { // choice == 1 or fallback
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
 
@@ -267,21 +288,28 @@ int main(int argc, char* argv[])
             };
         }
 
-    // Initialize Simulator
-    PhysicsConstants cons;
-    ImpactSimulator simulator(munition, object, cons);
-
     // Run simulations
+    PhysicsConstants cons;
     std::vector<SimulationResult> results;
+    
+    if (choice == 4) {
+        // Sequential strike uses the same simulator instance to maintain target state
+        ImpactSimulator simulator(munition, object, cons);
         for (const auto& sc : scenarios) {
             results.push_back(simulator.simulate(sc));
         }
-
-    // Print report and ASCII 3D cross-sections
-    simulator.printReport(results);
-
-    // Generate 3D HTML WebGL visualizer
-    simulator.generateHtml3DVisualizer(results, basePath);
+        simulator.printReport(results);
+        simulator.generateHtml3DVisualizer(results, basePath);
+    } else {
+        // Independent tests get fresh targets
+        ImpactSimulator reporter(munition, object, cons);
+        for (const auto& sc : scenarios) {
+            ImpactSimulator simulator(munition, object, cons);
+            results.push_back(simulator.simulate(sc));
+        }
+        reporter.printReport(results);
+        reporter.generateHtml3DVisualizer(results, basePath);
+    }
 
     std::cout << "\nPress Enter to exit...";
     std::cin.get();

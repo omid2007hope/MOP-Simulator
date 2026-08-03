@@ -47,6 +47,7 @@ struct TargetLayer
     double compressive_strength = 60.0e6; // Pascals
     double rebar_volume_fraction = 0.0;  // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
     double rebar_yield_strength = 0.0;   // Pascals
+    double pulverized_depth = 0.0;       // meters (depth of crater from previous strikes)
 };
 
 // Target material specification
@@ -127,6 +128,8 @@ private:
     Projectile proj;
     Target target;
     PhysicsConstants cons;
+
+    double getMachDependentDrag(double mach, double baseCd) const;
 
 public:
     ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
