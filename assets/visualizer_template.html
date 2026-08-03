@@ -166,7 +166,7 @@
             </div>
             <div class="text-right">
               <div class="text-[9px] text-slate-500 uppercase tracking-wider" id="hud-depth-label">
-                Actual Depth
+                PENETRATION DEPTH
               </div>
               <div class="text-emerald-400 font-black text-base" id="hud-depth">
                 0.00 m
@@ -489,18 +489,8 @@
         gridHelper.position.y = 0.1;
         scene.add(gridHelper);
 
-        // Ground Zero Decal
-        const ringGeo = new THREE.RingGeometry(0.5, 3.0, 32);
-        const ringMat = new THREE.MeshBasicMaterial({
-          color: 0xef4444,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.8,
-        });
-        const groundTarget = new THREE.Mesh(ringGeo, ringMat);
-        groundTarget.rotation.x = Math.PI / 2;
-        groundTarget.position.y = 0.2;
-        scene.add(groundTarget);
+        // Ground Zero Decal removed per user request
+
 
         // Volumetric Air Box Container
         airGroup = new THREE.Group();
@@ -562,15 +552,15 @@
       function setupProjectile() {
         let pRadius = currentData.proj_diameter / 2.0;
         const projGeom = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
-        // Premium material
+        // Premium material - Glowing Projectile
         const projMat = new THREE.MeshPhysicalMaterial({
-          color: 0x64748b,
-          metalness: 0.9,
+          color: 0x00ffff,
+          metalness: 0.3,
           roughness: 0.2,
           clearcoat: 0.8,
           clearcoatRoughness: 0.1,
-          emissive: 0x000000,
-          emissiveIntensity: 5.0,
+          emissive: 0x00ffff,
+          emissiveIntensity: 10.0,
         });
         projectile = new THREE.Mesh(projGeom, projMat);
         projectile.castShadow = true;
@@ -706,14 +696,14 @@
 
         tweenNumber("hud-depth", Math.abs(frame.y), (y) => y.toFixed(2) + " m");
         document.getElementById("hud-depth-label").innerText =
-          animState === "DROPPING" ? "Altitude" : "Actual Depth";
+          animState === "DROPPING" ? "ALTITUDE" : "PENETRATION DEPTH";
 
         if (animState === "PENETRATING") {
           tweenNumber("hud-gforce", frame.g ?? 0, (g) => g.toFixed(0) + " G");
 
-          // Thermal heat glow based on temperature ratio from C++
+          // Thermal heat glow based on temperature ratio from C++ (disabled to keep bright glow)
           const heat = frame.h ?? 0;
-          projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+          // projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
         }
 
         // CEB-FIP DIF / WAPM erosion phase telemetry (penetration-phase only)
@@ -776,8 +766,8 @@
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
           projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
-          projectile.material.metalness = 1.0;
-          projectile.material.color.setHex(0x334155);
+          projectile.material.metalness = 0.5;
+          projectile.material.color.setHex(0xa855f7);
         } else if (data.fail || !data.exp_survives) {
           regimeBadge.innerText = data.fail ? "CASING SHATTER" : "FUZE FAILURE";
           regimeBadge.className =
@@ -943,16 +933,17 @@
         graphData = [];
         drawGraph();
 
-        // Give the crater a wide, emissive glow so it stands out inside the dark target blocks
+        // Red glowing hole/tunnel as requested by user
         const craterMat = new THREE.MeshStandardMaterial({
-          color: 0x22d3ee,
-          emissive: 0x0891b2,
-          emissiveIntensity: 1.5,
-          roughness: 0.2,
-          metalness: 0.8,
+          color: 0xef4444,
+          emissive: 0xb91c1c,
+          emissiveIntensity: 2.5,
+          roughness: 0.4,
+          metalness: 0.2,
           side: THREE.DoubleSide,
         });
         activeCrater = new THREE.Mesh(createCraterGeometry(0.1), craterMat);
+        activeCrater.visible = false;
         cratersGroup.add(activeCrater);
 
         // Reset Projectile Geometry
@@ -960,12 +951,17 @@
           projectile.geometry.dispose();
           let pRadius = currentData.proj_diameter / 2.0;
           projectile.geometry = new THREE.CylinderGeometry(pRadius, pRadius, currentData.proj_length, 32);
-          projectile.material.metalness = 0.9;
-          projectile.material.color.setHex(0x64748b);
+          projectile.material.metalness = 0.3;
+          projectile.material.color.setHex(0x00ffff);
+          projectile.material.emissive.setHex(0x00ffff);
+          projectile.material.emissiveIntensity = 10.0;
+        } else {
+          projectile.material.emissive.setHex(0x9333ea); // Purple glow for kinetic
+          projectile.material.emissiveIntensity = 10.0;
         }
         projectile.scale.set(1, 1, 1);
         projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
-        projectile.material.emissive.setHex(0x000000);
+        projectile.visible = true;
 
         // Reset Effect States fully
         shockwave.visible = false;
@@ -1066,7 +1062,13 @@
               currentData.drop_frames && currentData.drop_frames.length > 0
                 ? "DROPPING"
                 : "PENETRATING";
-            simTime = 0;
+            if (animState === "DROPPING") {
+              simTime = currentData.drop_frames[0].t;
+            } else if (currentData.pen_frames && currentData.pen_frames.length > 0) {
+              simTime = currentData.pen_frames[0].t;
+            } else {
+              simTime = 0;
+            }
           }
         } else if (animState === "DROPPING") {
           simTime += dt * simSpeedMultiplier;
@@ -1092,7 +1094,11 @@
             prevFrame = frame;
           } else {
             animState = "PENETRATING";
-            simTime = 0;
+            if (currentData.pen_frames && currentData.pen_frames.length > 0) {
+              simTime = currentData.pen_frames[0].t;
+            } else {
+              simTime = 0;
+            }
             prevFrame = null;
             cameraShake = currentData.camera_shake_magnitude; // Physically derived camera shake
           }
@@ -1101,9 +1107,14 @@
             animState = "EXPLODING";
             simTime = 0;
           } else {
-            simTime += dt * currentData.time_scale_pen * simSpeedMultiplier; // Time scale from C++
-            const maxTime =
-              currentData.pen_frames[currentData.pen_frames.length - 1].t;
+            const penStart = currentData.pen_frames[0].t;
+            const penEnd = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+            const penDuration = penEnd - penStart;
+            // Force penetration animation to take at least 5.0 seconds of real time for visibility
+            const overrideTimeScale = penDuration > 0 ? (penDuration / 5.0) : 1.0;
+            simTime += dt * overrideTimeScale * simSpeedMultiplier;
+
+            const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
 
             if (simTime < maxTime) {
               const frame = getInterpolatedFrame(
@@ -1111,17 +1122,24 @@
                 simTime,
               );
               projectile.position.y =
-                -frame.y + (currentData.proj_length / 2.0);
+                frame.y + (currentData.proj_length / 2.0);
 
+              activeCrater.visible = true;
               activeCrater.geometry.dispose();
-              activeCrater.geometry = createCraterGeometry(frame.y);
+              activeCrater.geometry = createCraterGeometry(Math.abs(frame.y));
 
               updateHUD(frame);
               prevFrame = frame;
             } else {
-              animState = "EXPLODING";
+              animState = "PRE_EXPLOSION";
               simTime = 0;
             }
+          }
+        } else if (animState === "PRE_EXPLOSION") {
+          simTime += dt;
+          if (simTime > 1.0) {
+            animState = "EXPLODING";
+            simTime = 0;
           }
         } else if (animState === "EXPLODING") {
           simTime += dt;
@@ -1145,6 +1163,7 @@
             } else {
               explosionSphere.visible = true;
               explosionSphere.position.copy(projectile.position);
+              projectile.visible = false;
             }
           }
 
@@ -1181,12 +1200,7 @@
         } else if (animState === "DONE") {
           simTime += dt;
           if (simTime > 2.0) {
-            let currentIndex = scenarios.indexOf(currentData);
-            if (currentIndex !== -1 && currentIndex + 1 < scenarios.length) {
-              selectScenario(currentIndex + 1);
-            } else {
-              animState = "FINISHED";
-            }
+            animState = "FINISHED";
           }
         }
 
