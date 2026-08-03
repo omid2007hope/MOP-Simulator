@@ -627,12 +627,25 @@
       let audioCtx = null;
       let anthemNodes = [];
 
+      // Resume audio context on first user interaction if suspended
+      ['click', 'keydown', 'pointerdown'].forEach((evt) => {
+        window.addEventListener(
+          evt,
+          () => {
+            if (audioCtx && audioCtx.state === 'suspended') {
+              audioCtx.resume().catch(() => {});
+            }
+          },
+          { passive: true },
+        );
+      });
+
       function playAnthem() {
         stopAnthem();
         try {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
           if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+            audioCtx.resume().catch(() => {});
           }
 
           // Star-Spangled Banner Anthem Notes (Frequency in Hz, Duration in Seconds)
@@ -1683,7 +1696,11 @@
             machCone.visible = false;
 
             // Trigger ground impact shockwave sphere (driven 100% by kinetic energy = 1/2 * m * v^2)
-            const impactVelocity = frame.v || 300.0;
+            const lastDropFrame =
+              currentData.drop_frames && currentData.drop_frames.length > 0
+                ? currentData.drop_frames[currentData.drop_frames.length - 1]
+                : prevFrame;
+            const impactVelocity = (lastDropFrame && lastDropFrame.v) || 300.0;
             const impactMass = currentData.proj_mass || 13600.0;
             const kineticEnergyJoules = 0.5 * impactMass * impactVelocity * impactVelocity;
             // Energy scale factor for sphere radius and expansion rate
