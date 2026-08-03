@@ -1239,9 +1239,12 @@
         }
         projectile.scale.set(1, 1, 1);
         projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
+        // Aircraft release: start near horizontal (pitched ~70 degrees)
+        projectile.rotation.set(0, 0, Math.PI * 0.4);
         projectile.visible = true;
 
         // Reset Effect States fully
+        machCone.visible = false;
         shockwave.visible = false;
         shockwave.scale.set(1, 1, 1);
         shockwave.material.opacity = 0.6;
@@ -1374,6 +1377,21 @@
             );
             projectile.position.y = frame.y;
 
+            // Realistic aerial drop bomb pitch rotation:
+            // Starts near horizontal (pitched) at aircraft release and aerodynamically rotates downward to vertical (0 deg) as it falls
+            const maxDropAlt =
+              currentData &&
+              currentData.drop_frames &&
+              currentData.drop_frames.length > 0
+                ? Math.abs(currentData.drop_frames[0].y)
+                : 60;
+            const dropProgress = Math.max(
+              0,
+              Math.min(1, 1.0 - frame.y / maxDropAlt),
+            );
+            const pitchRad = Math.pow(1.0 - dropProgress, 1.2) * (Math.PI * 0.4);
+            projectile.rotation.z = pitchRad;
+
             if (frame.sb && !boomRing.visible) {
               boomRing.visible = true;
               boomRing.position.copy(projectile.position);
@@ -1383,12 +1401,38 @@
               boomRingGrowthRate = 8.0 + Math.min(30.0, frame.m) * 1.2;
             }
 
+            // 100% Physically-based Mach Cone Generation: Velocity + Aerodynamic Friction + Air Density
             if (frame.m > 1.0) {
               machCone.visible = true;
-              machCone.position.copy(projectile.position);
-              // Shift shockwave origin up slightly (+7.8) so the ogive nose tip remains visible out in front
+
+              // Local atmospheric air density ratio (highest at ground level y=0, decaying exponentially with altitude)
+              const scaleK = 2.2 / (maxDropAlt + 30);
+              const airDensityFactor = Math.exp(-scaleK * Math.max(0, frame.y));
+
+              // Velocity/Mach expansion factor (0 at Mach 1.0, max at Mach 1.7+)
+              const velMachFactor = Math.min(1.0, (frame.m - 1.0) / 0.7);
+
+              // Combined Physical Intensity: Dynamic Pressure & Air Friction (q = 1/2 * rho * v^2)
+              const machIntensity =
+                velMachFactor * (0.35 + 0.65 * airDensityFactor);
+
+              if (machCone.children && machCone.children.length >= 3) {
+                machCone.children[0].material.opacity = 0.35 * machIntensity;
+                machCone.children[1].material.opacity = 0.08 * machIntensity;
+                machCone.children[2].material.opacity = 0.30 * machIntensity;
+              }
+
+              // Match projectile pitch rotation angle
+              machCone.rotation.z = projectile.rotation.z;
+
+              // Rotate offset vector around Z axis so Mach cone stays attached to nose tip as bomb rotates
+              const offsetLen = currentData.proj_length / 2.0 - 1.8;
+              machCone.position.x =
+                projectile.position.x -
+                Math.sin(projectile.rotation.z) * offsetLen;
               machCone.position.y =
-                projectile.position.y - currentData.proj_length / 2.0 + 7.8;
+                projectile.position.y +
+                Math.cos(projectile.rotation.z) * offsetLen;
 
               // Dynamically scale Mach cone angle (sin(alpha) = 1/M): higher Mach = narrower cone
               const machAngleFactor = Math.max(
