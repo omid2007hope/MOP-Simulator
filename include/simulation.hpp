@@ -17,6 +17,12 @@ struct PhysicsConstants
     const double shockDamageMultiplier = 85.0;
     const double shockDamageExponent = 1.5;
     const double frictionFactor = 0.1;
+
+    // US Standard Atmosphere 1976 constants (atmosphere/drag/speed-of-sound model)
+    const double universalGasConstant = 8.31432; // J/(mol*K)
+    const double molarMassAir = 0.0289644;       // kg/mol
+    const double adiabaticIndexAir = 1.4;        // dimensionless (gamma)
+    const double earthRadius = 6356766.0;        // m (geopotential reference radius, 45 deg lat)
 };
 
 struct AltitudeDensityPoint
@@ -48,6 +54,10 @@ struct TargetLayer
     double rebar_volume_fraction = 0.0;   // 0.0 to 1.0 (e.g. 0.02 for heavily reinforced)
     double rebar_yield_strength = 0.0;    // Pascals
     double pulverized_depth = 0.0;        // meters (depth of crater from previous strikes)
+
+    // Hugoniot EOS for shock impedance matching (Walker-Wasley shock initiation)
+    double hugoniot_c0 = 3200.0; // m/s (bulk sound speed, Us = C0 + S*Up)
+    double hugoniot_s = 1.9;     // dimensionless (Hugoniot slope)
 };
 
 // Target material specification
@@ -76,6 +86,13 @@ struct Projectile
 
     // Structural properties
     double area_moment_inertia = 0.02; // m^4 (for bending moment calculations)
+
+    // Walker-Anderson erosion & Walker-Wasley shock initiation properties
+    double elastic_modulus = 200.0e9;           // Pascals (Young's modulus; bar wave speed c = sqrt(E/rho_p))
+    double casing_wall_thickness = 0.05;        // meters (shock transit path into explosive fill)
+    double hugoniot_c0 = 4570.0;                // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
+    double hugoniot_s = 1.49;                   // dimensionless (Hugoniot slope)
+    double explosive_critical_energy = 15.0e12; // Pa^2*s (Walker-Wasley Ec, ~15 GPa^2*us, Comp-B-like)
 };
 
 // Scenario input definition

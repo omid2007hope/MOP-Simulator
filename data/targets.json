@@ -3,12 +3,14 @@
         "name": "Soil",
         "layers": [
             {
-                "material_name": "Soil Overburden",
-                "thickness": 50.0,
-                "density": 1600.0,
-                "compressive_strength": 5.0e6,
-                "rebar_volume_fraction": 0.0,
-                "rebar_yield_strength": 0.0
+              "material_name": "Soil Overburden",
+              "thickness": 50.0,
+              "density": 1600.0,
+              "compressive_strength": 5.0e6,
+              "rebar_volume_fraction": 0.0,
+              "rebar_yield_strength": 0.0,
+              "hugoniot_c0": 1500.0,
+              "hugoniot_s": 1.5
             }
         ]
     },
@@ -16,12 +18,14 @@
         "name": "Granite",
         "layers": [
             {
-                "material_name": "Solid Granite Rock",
-                "thickness": 50.0,
-                "density": 2700.0,
-                "compressive_strength": 130.0e6,
-                "rebar_volume_fraction": 0.0,
-                "rebar_yield_strength": 0.0
+              "material_name": "Solid Granite Rock",
+              "thickness": 50.0,
+              "density": 2700.0,
+              "compressive_strength": 130.0e6,
+              "rebar_volume_fraction": 0.0,
+              "rebar_yield_strength": 0.0,
+              "hugoniot_c0": 3680.0,
+              "hugoniot_s": 1.35
             }
         ]
     },
@@ -29,28 +33,34 @@
         "name": "High-Quality Hardened Concrete",
         "layers": [
             {
-                "material_name": "Soil Overburden",
-                "thickness": 2.0,
-                "density": 1500.0,
-                "compressive_strength": 10.0e6,
-                "rebar_volume_fraction": 0.0,
-                "rebar_yield_strength": 0.0
+              "material_name": "Soil Overburden",
+              "thickness": 2.0,
+              "density": 1500.0,
+              "compressive_strength": 10.0e6,
+              "rebar_volume_fraction": 0.0,
+              "rebar_yield_strength": 0.0,
+              "hugoniot_c0": 1500.0,
+              "hugoniot_s": 1.5
             },
             {
-                "material_name": "Heavily Reinforced Concrete",
-                "thickness": 5.0,
-                "density": 2650.0,
-                "compressive_strength": 60.0e6,
-                "rebar_volume_fraction": 0.02,
-                "rebar_yield_strength": 400.0e6
+              "material_name": "Heavily Reinforced Concrete",
+              "thickness": 5.0,
+              "density": 2650.0,
+              "compressive_strength": 60.0e6,
+              "rebar_volume_fraction": 0.02,
+              "rebar_yield_strength": 400.0e6,
+              "hugoniot_c0": 3200.0,
+              "hugoniot_s": 1.9
             },
             {
-                "material_name": "Solid Granite Rock",
-                "thickness": 50.0,
-                "density": 2750.0,
-                "compressive_strength": 130.0e6,
-                "rebar_volume_fraction": 0.0,
-                "rebar_yield_strength": 0.0
+              "material_name": "Solid Granite Rock",
+              "thickness": 50.0,
+              "density": 2750.0,
+              "compressive_strength": 130.0e6,
+              "rebar_volume_fraction": 0.0,
+              "rebar_yield_strength": 0.0,
+              "hugoniot_c0": 3680.0,
+              "hugoniot_s": 1.35
             }
         ]
     },
@@ -58,12 +68,14 @@
         "name": "Steel Armor",
         "layers": [
             {
-                "material_name": "Steel Armor Plate",
-                "thickness": 2.0,
-                "density": 7850.0,
-                "compressive_strength": 1000.0e6,
-                "rebar_volume_fraction": 0.0,
-                "rebar_yield_strength": 0.0
+              "material_name": "Steel Armor Plate",
+              "thickness": 2.0,
+              "density": 7850.0,
+              "compressive_strength": 1000.0e6,
+              "rebar_volume_fraction": 0.0,
+              "rebar_yield_strength": 0.0,
+              "hugoniot_c0": 4570.0,
+              "hugoniot_s": 1.49
             }
         ]
     }

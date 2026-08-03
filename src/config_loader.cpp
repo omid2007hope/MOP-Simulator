@@ -35,6 +35,8 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath)
                                         l.value("rebar_volume_fraction", 0.0);
                                     layer.rebar_yield_strength =
                                         l.value("rebar_yield_strength", 0.0);
+                                    layer.hugoniot_c0 = l.value("hugoniot_c0", 3200.0);
+                                    layer.hugoniot_s = l.value("hugoniot_s", 1.9);
                                     t.layers.push_back(layer);
                                 }
                         }
@@ -46,6 +48,8 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath)
                             layer.compressive_strength = item.value("compressive_strength", 60.0e6);
                             layer.rebar_volume_fraction = 0.0;
                             layer.rebar_yield_strength = 0.0;
+                            layer.hugoniot_c0 = item.value("hugoniot_c0", 3200.0);
+                            layer.hugoniot_s = item.value("hugoniot_s", 1.9);
                             t.layers.push_back(layer);
                         }
                     targets.push_back(t);
@@ -83,6 +87,11 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
                     p.melting_point = item.value("melting_point", 1800.0);
                     p.heat_of_fusion = item.value("heat_of_fusion", 272000.0);
                     p.area_moment_inertia = item.value("area_moment_inertia", 0.02);
+                    p.elastic_modulus = item.value("elastic_modulus", 200.0e9);
+                    p.casing_wall_thickness = item.value("casing_wall_thickness", 0.05);
+                    p.hugoniot_c0 = item.value("hugoniot_c0", 4570.0);
+                    p.hugoniot_s = item.value("hugoniot_s", 1.49);
+                    p.explosive_critical_energy = item.value("explosive_critical_energy", 15.0e12);
                     projectiles.push_back(p);
                 }
         } catch (const std::exception& e) {

@@ -397,7 +397,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
 
     // Shock Damage
-    res.is_kinetic_rod = (proj.explosive_mass == 0.0 || proj.yield_strength == 0.0);
+    res.is_kinetic_rod = (proj.explosive_mass == 0.0);
 
         if (res.is_kinetic_rod) {
                 if (res.casing_failure) {
