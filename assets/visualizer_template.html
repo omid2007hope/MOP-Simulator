@@ -1453,6 +1453,20 @@
           } else {
             animState = "PENETRATING";
             machCone.visible = false;
+
+            // Trigger ground impact shockwave sphere (driven 100% by kinetic energy = 1/2 * m * v^2)
+            const impactVelocity = frame.v || 300.0;
+            const impactMass = currentData.proj_mass || 13600.0;
+            const kineticEnergyJoules = 0.5 * impactMass * impactVelocity * impactVelocity;
+            // Energy scale factor for sphere radius and expansion rate
+            const keScale = Math.max(1.0, Math.pow(kineticEnergyJoules / 1e8, 0.333));
+
+            shockwave.visible = true;
+            shockwave.position.set(projectile.position.x, 0, projectile.position.z);
+            shockwave.scale.set(0.5, 0.5, 0.5);
+            shockwave.material.color.setHex(0xef4444);
+            shockwave.material.opacity = 0.85;
+
             if (currentData.pen_frames && currentData.pen_frames.length > 0) {
               simTime = currentData.pen_frames[0].t;
             } else {
@@ -1496,17 +1510,29 @@
               // but we will apply it to show the visual curve of the penetration.
               activeCrater.rotation.z = oblRad;
 
-              // 3. Thermal Ablation Glow
+              // 3. Thermal Ablation & Friction Heat Blackbody Glow
+              const tempCelsius = frame.h !== undefined ? frame.h : 20;
+              // Blackbody color transition based on friction temperature:
+              // <400C: Normal Metal -> 600C: Dull Red -> 1000C: Bright Orange -> 1500C: Incandescent White/Yellow
               const baseColorHex = currentData.is_kinetic ? 0xa855f7 : 0x00ffff;
-              const baseEmissive = new THREE.Color(baseColorHex);
-              const hotEmissive = new THREE.Color(0xffaa00);
-              // Normalize heat (assuming max heat around 1500 for melting point 1800)
-              const heatFactor = Math.min((frame.h || 0) / 1500.0, 1.0);
-              projectile.material.emissive.lerpColors(
-                baseEmissive,
-                hotEmissive,
-                heatFactor,
-              );
+              const baseColor = new THREE.Color(baseColorHex);
+              let thermoColor = new THREE.Color(baseColorHex);
+
+              if (tempCelsius < 400) {
+                thermoColor.copy(baseColor);
+              } else if (tempCelsius < 800) {
+                const t = (tempCelsius - 400) / 400;
+                thermoColor.lerpColors(baseColor, new THREE.Color(0xd97706), t); // Dull Red / Amber
+              } else if (tempCelsius < 1300) {
+                const t = (tempCelsius - 800) / 500;
+                thermoColor.lerpColors(new THREE.Color(0xd97706), new THREE.Color(0xf97316), t); // Bright Orange
+              } else {
+                const t = Math.min(1.0, (tempCelsius - 1300) / 500);
+                thermoColor.lerpColors(new THREE.Color(0xf97316), new THREE.Color(0xfffbeb), t); // Incandescent Yellow/White
+              }
+
+              projectile.material.emissive.copy(thermoColor);
+              projectile.material.emissiveIntensity = 2.0 + Math.min(15.0, tempCelsius / 100.0);
 
               // 5. Shock Stress & G-Force Tremors
               const gForce = frame.g || 0;
@@ -1572,9 +1598,6 @@
               projectile.material.emissive.setHex(0x581c87);
               activeCrater.material.color.setHex(0xa855f7);
               activeCrater.material.emissive.setHex(0x7e22ce);
-              shockwave.visible = true;
-              shockwave.material.color.setHex(0xa855f7);
-              shockwave.position.copy(projectile.position);
             } else if (currentData.fail || !currentData.exp_survives) {
               projectile.scale.set(1.8, 0.4, 1.8);
               projectile.material.color.setHex(0xf87171);
@@ -1585,6 +1608,25 @@
               explosionSphere.visible = true;
               explosionSphere.position.copy(projectile.position);
               projectile.visible = false;
+
+              // Detonation Temperature & Explosive Type Color Calibration:
+              // PBXN-109 / Tritonal (~3000 K): Intense Fiery Orange/Yellow (0xff7700)
+              // AFX-757 / High-Temp Aluminized (~4000 K+): White-Hot Blinding Incandescence (0xfffbeb)
+              const expMass = currentData.exp_mass || 2400.0;
+              const detTempK = currentData.detonation_temp_k || 3400.0;
+
+              let expColor = new THREE.Color(0xf97316);
+              if (detTempK > 3800) {
+                expColor.setHex(0xfffbeb); // White hot high-temp aluminized payload
+              } else if (detTempK > 3200) {
+                expColor.setHex(0xfb923c); // Bright orange/yellow detonation flame
+              } else {
+                expColor.setHex(0xd97706); // Deep amber/red standard HE flame
+              }
+
+              explosionSphere.material.color.copy(expColor);
+              explosionSphere.material.emissive.copy(expColor);
+              explosionSphere.material.emissiveIntensity = 5.0;
             }
           }
 
