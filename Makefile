@@ -19,7 +19,7 @@ else
     RM_CLEAN = if exist build rmdir /Q /S build & if exist bin rmdir /Q /S bin & if exist 3d_visualizer.html del /Q /F 3d_visualizer.html
 endif
 
-TARGET = bin/sim$(EXE)
+TARGET = bin/mop_sim$(EXE)
 TEST_TARGET = bin/test_simulation$(EXE)
 
 OBJS = build/main.o build/simulation.o build/config_loader.o
