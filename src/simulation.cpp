@@ -310,8 +310,18 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         calc_accel(y_m + dt_drop * k3_y, current_velocity + dt_drop * k3_v);
                     double k4_y = -(current_velocity + dt_drop * k3_v);
 
+                    double prev_y_m = y_m;
+                    double prev_vel = current_velocity;
+
                     current_velocity += (dt_drop / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
                     y_m += (dt_drop / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
+
+                    if (y_m < 0.0) {
+                        double fraction = prev_y_m / (prev_y_m - y_m);
+                        current_velocity = prev_vel + fraction * (current_velocity - prev_vel);
+                        y_m = 0.0;
+                        t_drop = t_drop - dt_drop + fraction * dt_drop;
+                    }
 
                     current_altitude = y_m * 3.28084;
                     AtmosphereState current_atm = standardAtmosphere(y_m);
@@ -518,7 +528,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
             // RK4 state derivative: (velocity, depth, obliquity, temperature, rigid/eroding length)
             auto derivative = [&](double v, double z, double theta, [[maybe_unused]] double T,
-                                  double L) -> PenDeriv {
+                                  double L, double m) -> PenDeriv {
                 PenDeriv d;
                 double vSq = v * v;
                 double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
@@ -531,7 +541,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         lateral_force =
                             (0.5 * baseDensity * vSq * area) * std::sin(theta + angleOfAttack_radians);
                     }
-                double safeMass = (current_mass > 0.001) ? current_mass : 0.001;
+                double safeMass = std::max(0.001, m);
                 double gravity_component = cons.gravity * std::cos(theta);
 
                     if (!erosion_active) {
@@ -579,22 +589,29 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 return d;
             };
 
+            auto get_mass = [&](double L_eval) {
+                return erosion_active ? (proj.total_mass / proj.length) * std::max(0.0, L_eval) : current_mass;
+            };
+
             PenDeriv k1 = derivative(current_velocity, current_depth, obliquity_radians,
-                                    current_temperature, current_length);
+                                    current_temperature, current_length, get_mass(current_length));
             PenDeriv k2 = derivative(current_velocity + 0.5 * dt * k1.dv,
                                     current_depth + 0.5 * dt * k1.dz,
                                     obliquity_radians + 0.5 * dt * k1.dtheta,
                                     current_temperature + 0.5 * dt * k1.dT,
-                                    current_length + 0.5 * dt * k1.dL);
+                                    current_length + 0.5 * dt * k1.dL,
+                                    get_mass(current_length + 0.5 * dt * k1.dL));
             PenDeriv k3 = derivative(current_velocity + 0.5 * dt * k2.dv,
                                     current_depth + 0.5 * dt * k2.dz,
                                     obliquity_radians + 0.5 * dt * k2.dtheta,
                                     current_temperature + 0.5 * dt * k2.dT,
-                                    current_length + 0.5 * dt * k2.dL);
+                                    current_length + 0.5 * dt * k2.dL,
+                                    get_mass(current_length + 0.5 * dt * k2.dL));
             PenDeriv k4 = derivative(current_velocity + dt * k3.dv, current_depth + dt * k3.dz,
                                     obliquity_radians + dt * k3.dtheta,
                                     current_temperature + dt * k3.dT,
-                                    current_length + dt * k3.dL);
+                                    current_length + dt * k3.dL,
+                                    get_mass(current_length + dt * k3.dL));
 
             double acceleration = k1.dv;
 
@@ -628,7 +645,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 }
                 else {
                     current_length = std::max(0.0, current_length);
-                    current_mass = proj.casing_density * area * current_length;
+                    double effective_linear_density = proj.total_mass / proj.length; 
+                    current_mass = effective_linear_density * current_length;
                     res.final_rod_length = current_length;
                     res.erosion_length_lost = proj.length - current_length;
 
