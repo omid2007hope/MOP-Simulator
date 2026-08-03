@@ -397,6 +397,16 @@ int main(int argc, char* argv[])
             simulator.printReport(results);
             simulator.generateHtml3DVisualizer(results, basePath);
         }
+        if (choice == 5) {
+            // Independent tests get fresh targets
+            ImpactSimulator reporter(munition, object, atmosphere, cons);
+                for (const auto& sc : scenarios) {
+                    ImpactSimulator simulator(munition, atmosphere, object, cons);
+                    results.push_back(simulator.simulate(sc));
+                }
+            reporter.printReport(results);
+            reporter.generateHtml3DVisualizer(results, basePath);
+        }
         else {
             // Independent tests get fresh targets
             ImpactSimulator reporter(munition, object, cons);
