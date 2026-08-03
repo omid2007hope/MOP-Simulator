@@ -93,23 +93,34 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         double t_drop = 0.0;
         int drop_frame_counter = 0;
         
+        double y_m = current_altitude / 3.28084;
+        
         while (current_altitude > 0.0) {
+            auto calc_accel = [&](double alt_m, double vel) {
+                double density = findAirDensityByAltitude(alt_m * 3.28084);
+                double mach = vel / cons.SPEED_OF_SOUND;
+                double cd = getMachDependentDrag(mach, dragCoefficient);
+                double f = 0.5 * density * vel * vel * cd * area;
+                return cons.gravity - (f / proj.total_mass);
+            };
+
+            double k1_v = calc_accel(y_m, current_velocity);
+            double k1_y = -current_velocity;
+
+            double k2_v = calc_accel(y_m + 0.5 * dt_drop * k1_y, current_velocity + 0.5 * dt_drop * k1_v);
+            double k2_y = -(current_velocity + 0.5 * dt_drop * k1_v);
+
+            double k3_v = calc_accel(y_m + 0.5 * dt_drop * k2_y, current_velocity + 0.5 * dt_drop * k2_v);
+            double k3_y = -(current_velocity + 0.5 * dt_drop * k2_v);
+
+            double k4_v = calc_accel(y_m + dt_drop * k3_y, current_velocity + dt_drop * k3_v);
+            double k4_y = -(current_velocity + dt_drop * k3_v);
+
+            current_velocity += (dt_drop / 6.0) * (k1_v + 2*k2_v + 2*k3_v + k4_v);
+            y_m += (dt_drop / 6.0) * (k1_y + 2*k2_y + 2*k3_y + k4_y);
+            
+            current_altitude = y_m * 3.28084;
             double current_density = findAirDensityByAltitude(current_altitude);
-            
-            double current_mach = current_velocity / cons.SPEED_OF_SOUND;
-            double dynamic_cd = getMachDependentDrag(current_mach, dragCoefficient);
-            
-            // Drag force: F_d = 0.5 * rho * v^2 * Cd * A
-            double drag_force = 0.5 * current_density * std::pow(current_velocity, 2) * dynamic_cd * area;
-            
-            // Net acceleration: a = g - F_d / m
-            double acceleration = cons.gravity - (drag_force / proj.total_mass);
-            
-            // Update velocity and altitude
-            current_velocity += acceleration * dt_drop;
-            
-            // Altitude decrease = velocity (m/s) * dt (s) * conversion to ft
-            current_altitude -= (current_velocity * dt_drop) * 3.28084;
             
             bool is_sonic_boom_frame = false;
             if (current_velocity >= cons.SPEED_OF_SOUND && !sonic_boom_triggered) {
@@ -134,6 +145,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             }
 
             if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
+                double acceleration = calc_accel(y_m, current_velocity);
                 double g_force = acceleration / cons.gravity;
                 std::cout << "  [Drop T+ " << std::fixed << std::setprecision(1) << t_drop << "s] Alt: " 
                           << std::setprecision(0) << current_altitude 
@@ -171,6 +183,19 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     if (!target.layers.empty()) {
         std::cout << "--- Ground Penetration Commenced ---\n";
         std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[0].material_name << "\n";
+    }
+
+    double critical_angle_threshold = 65.0 * cons.PI / 180.0;
+    if (current_velocity < 200.0) {
+        critical_angle_threshold = 50.0 * cons.PI / 180.0;
+    }
+    
+    if ((obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
+        res.casing_failure = true;
+        res.regime = "Ricochet";
+        res.outcome_summary = "Projectile deflected off target surface.";
+        res.actual_penetration_depth = 0.0;
+        return res;
     }
 
     // Time Integration Loop
@@ -224,9 +249,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         
         double deceleration_force = area * (S * effective_strength + N_star * layer_density * squaredVelocity);
 
-        // Obliquity/Bending structural failure check
+        // Obliquity/Bending structural failure check and Deflection
+        double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
+        double asymmetric_force = 0.0;
+        
         if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
-            double asymmetric_force = dynamic_pressure * area * std::sin(obliquity_radians + angleOfAttack_radians);
+            // Asymmetric force based on dynamic pressure sideways component
+            asymmetric_force = (0.5 * layer_density * squaredVelocity * area) * std::sin(obliquity_radians + angleOfAttack_radians);
             double bending_moment = asymmetric_force * (proj.length / 2.0);
 
             // Stress = M * y / I
@@ -243,10 +272,16 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 res.outcome_summary = "Bending moments exceeded casing yield strength.";
                 break;
             }
+            
+            // Deflection Kinematics
+            double lateral_acceleration = asymmetric_force / safe_mass;
+            double lateral_velocity = lateral_acceleration * dt;
+            if (current_velocity > 0.0) {
+                obliquity_radians += std::atan(lateral_velocity / current_velocity);
+            }
         }
 
         // Acceleration (incorporating gravity component)
-        double safe_mass = (current_mass > 0.001) ? current_mass : 0.001;
         double gravity_component = cons.gravity * std::cos(obliquity_radians);
         double acceleration = gravity_component - (deceleration_force / safe_mass);
 

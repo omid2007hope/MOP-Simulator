@@ -285,6 +285,8 @@ int main(int argc, char* argv[])
                 {"50,000 ft Drop", 50000.0, 500.0, 0.0, 0.0},
                 {"45,000 ft Drop", 45000.0, 400.0, 0.0, 0.0},
                 {"Subsonic Operational", 40000.0, 300.0, 0.0, 0.0},
+                {"Ricochet Test (70 deg)", 10000.0, 100.0, 10.0, 60.0}, // AoA 10, Obliquity 60 (total 70)
+                {"Deflection Test (25 deg)", 30000.0, 250.0, 5.0, 20.0}, // AoA 5, Obliquity 20 (total 25)
             };
         }
 
