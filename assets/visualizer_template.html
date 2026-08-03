@@ -2,133 +2,277 @@
 
 <!doctype html>
 <html lang="en" class="dark">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D Impact Physics & Penetration WebGL Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root { --hud-glow: rgba(56, 189, 248, 0.2); }
-        body {
-            margin: 0; overflow: hidden; background-color: #05080f;
-            font-family: "Inter", sans-serif; color: #f1f5f9; user-select: none;
+      :root {
+        --hud-glow: rgba(56, 189, 248, 0.2);
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #05080f;
+        font-family: "Inter", sans-serif;
+        color: #f1f5f9;
+        user-select: none;
+      }
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+      }
+      #canvas-container {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+
+      /* Advanced Glassmorphism & Skew */
+      .glass-panel {
+        background: rgba(9, 14, 23, 0.75);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        box-shadow:
+          inset 0 0 20px var(--hud-glow),
+          0 20px 50px rgba(0, 0, 0, 0.7);
+        transform: skewX(-2deg);
+      }
+      .unskew {
+        transform: skewX(2deg);
+      } /* Unskew content inside */
+
+      .progress-bar {
+        transition: width 0.1s linear;
+      }
+
+      /* Custom scrollbar for scenarios */
+      ::-webkit-scrollbar {
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #0ea5e9;
+        border-radius: 10px;
+      }
+
+      .pulse-active {
+        animation: pulseGlow 1.5s infinite;
+      }
+      @keyframes pulseGlow {
+        0% {
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
         }
-        .mono { font-family: "JetBrains Mono", monospace; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        /* Advanced Glassmorphism & Skew */
-        .glass-panel {
-            background: rgba(9, 14, 23, 0.75);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            box-shadow: inset 0 0 20px var(--hud-glow), 0 20px 50px rgba(0, 0, 0, 0.7);
-            transform: skewX(-2deg);
+        50% {
+          box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
         }
-        .unskew { transform: skewX(2deg); } /* Unskew content inside */
-        
-        .progress-bar { transition: width 0.1s linear; }
-        
-        /* Custom scrollbar for scenarios */
-        ::-webkit-scrollbar { height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
-        
-        .pulse-active { animation: pulseGlow 1.5s infinite; }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
-            50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.8); }
-            100% { box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+        100% {
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
         }
+      }
     </style>
-</head>
-<body class="bg-slate-950 text-slate-100">
+  </head>
+  <body class="bg-slate-950 text-slate-100">
     <div id="canvas-container"></div>
 
     <!-- HUD -->
-    <div class="absolute top-6 left-6 z-10 w-[420px] rounded-xl glass-panel p-5 transition-all duration-300">
-        <div class="unskew flex flex-col gap-3">
-            <!-- Header -->
-            <div class="border-b border-cyan-500/30 pb-3 mb-2 flex justify-between items-start">
-                <div>
-                    <h1 class="text-[10px] font-black tracking-widest text-cyan-500 uppercase flex items-center gap-2 mb-1">
-                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                        High-Fidelity Physics Telemetry
-                    </h1>
-                    <div class="text-xl font-bold text-white leading-tight uppercase tracking-wide" id="hud-scenario">-</div>
-                </div>
+    <div
+      class="absolute top-6 left-6 z-10 w-[420px] rounded-xl glass-panel p-5 transition-all duration-300 pointer-events-none"
+    >
+      <div class="unskew flex flex-col gap-3">
+        <!-- Header -->
+        <div
+          class="border-b border-cyan-500/30 pb-3 mb-2 flex justify-between items-start"
+        >
+          <div>
+            <h1
+              class="text-[10px] font-black tracking-widest text-cyan-500 uppercase flex items-center gap-2 mb-1"
+            >
+              <span
+                class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
+              ></span>
+              High-Fidelity Physics Telemetry
+            </h1>
+            <div
+              class="text-xl font-bold text-white leading-tight uppercase tracking-wide"
+              id="hud-scenario"
+            >
+              -
             </div>
-
-            <!-- Meters -->
-            <div class="space-y-3 text-xs mono">
-                <!-- Velocity -->
-                <div class="flex flex-col gap-1">
-                    <div class="flex justify-between text-slate-400"><span>Velocity</span><span id="hud-velocity" class="text-cyan-300 font-bold">0.0 m/s</span></div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden"><div id="bar-velocity" class="bg-cyan-400 h-full progress-bar" style="width: 0%"></div></div>
-                </div>
-                <!-- Dynamic Pressure -->
-                <div class="flex flex-col gap-1">
-                    <div class="flex justify-between text-slate-400"><span>Dynamic Pressure</span><span id="hud-pressure" class="text-amber-400 font-bold">0.0 GPa</span></div>
-                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden relative">
-                        <div id="bar-yield-mark" class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style="left: 80%"></div>
-                        <div id="bar-pressure" class="bg-amber-400 h-full progress-bar" style="width: 0%"></div>
-                    </div>
-                </div>
-                <!-- Deceleration & Depth -->
-                <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
-                    <div>
-                        <div class="text-[9px] text-slate-500 uppercase tracking-wider">Deceleration</div>
-                        <div class="text-rose-400 font-bold text-sm" id="hud-gforce">0 G</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-[9px] text-slate-500 uppercase tracking-wider">Actual Depth</div>
-                        <div class="text-emerald-400 font-black text-base" id="hud-depth">0.00 m</div>
-                    </div>
-                </div>
-                <!-- Graph Canvas -->
-                <div class="mt-2 h-16 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden">
-                    <canvas id="telemetry-graph" class="w-full h-full"></canvas>
-                </div>
-            </div>
-
-            <!-- Badges -->
-            <div class="mt-2 pt-3 border-t border-cyan-500/20 flex flex-col gap-2" id="badges-container">
-                <div id="hud-regime-badge" class="px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_15px_currentColor]">AWAITING IMPACT</div>
-                <div id="hud-exp-badge" class="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all">-</div>
-            </div>
+          </div>
         </div>
+
+        <!-- Meters -->
+        <div class="space-y-3 text-xs mono">
+          <!-- Velocity -->
+          <div class="flex flex-col gap-1">
+            <div class="flex justify-between text-slate-400">
+              <span>Velocity</span
+              ><span id="hud-velocity" class="text-cyan-300 font-bold"
+                >0.0 m/s</span
+              >
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                id="bar-velocity"
+                class="bg-cyan-400 h-full progress-bar"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+          <!-- Dynamic Pressure -->
+          <div class="flex flex-col gap-1">
+            <div class="flex justify-between text-slate-400">
+              <span>Dynamic Pressure</span
+              ><span id="hud-pressure" class="text-amber-400 font-bold"
+                >0.0 GPa</span
+              >
+            </div>
+            <div
+              class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden relative"
+            >
+              <div
+                id="bar-yield-mark"
+                class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                style="left: 80%"
+              ></div>
+              <div
+                id="bar-pressure"
+                class="bg-amber-400 h-full progress-bar"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+          <!-- Deceleration & Depth -->
+          <div
+            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
+          >
+            <div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Deceleration
+              </div>
+              <div class="text-rose-400 font-bold text-sm" id="hud-gforce">
+                0 G
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
+                Actual Depth
+              </div>
+              <div class="text-emerald-400 font-black text-base" id="hud-depth">
+                0.00 m
+              </div>
+            </div>
+          </div>
+          <!-- Graph Canvas -->
+          <div
+            class="mt-2 h-16 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden"
+          >
+            <canvas id="telemetry-graph" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- Badges -->
+        <div
+          class="mt-2 pt-3 border-t border-cyan-500/20 flex flex-col gap-2"
+          id="badges-container"
+        >
+          <div
+            id="hud-regime-badge"
+            class="px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_15px_currentColor]"
+          >
+            AWAITING IMPACT
+          </div>
+          <div
+            id="hud-exp-badge"
+            class="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all"
+          >
+            -
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Controls & Camera -->
     <div class="absolute top-6 right-6 z-10 w-80 rounded-xl glass-panel p-5">
-        <div class="unskew">
-            <h2 class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Targeting & Viewport</h2>
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <button onclick="smoothCameraMove(45, 30, 60, 0, -15, 0)" class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Isometric</button>
-                <button onclick="smoothCameraMove(80, -15, 0, 0, -15, 0)" class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Side Profile</button>
-                <button onclick="smoothCameraMove(0, 100, 1, 0, 0, 0)" class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Surface Top</button>
-                <button onclick="toggleFollowCam()" id="btn-follow" class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Follow Cam: OFF</button>
-            </div>
-            
-            <div class="flex gap-2">
-                <button onclick="setSimSpeed(0.1)" class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700">0.1x</button>
-                <button onclick="setSimSpeed(1.0)" class="flex-1 py-1.5 bg-cyan-900 border border-cyan-500 text-cyan-200 rounded text-xs hover:bg-cyan-800">1.0x</button>
-                <button onclick="setSimSpeed(5.0)" class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700">5.0x</button>
-            </div>
+      <div class="unskew">
+        <h2
+          class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3"
+        >
+          Targeting & Viewport
+        </h2>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <button
+            onclick="smoothCameraMove(45, 30, 60, 0, -15, 0)"
+            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
+          >
+            Isometric
+          </button>
+          <button
+            onclick="smoothCameraMove(80, -15, 0, 0, -15, 0)"
+            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
+          >
+            Side Profile
+          </button>
+          <button
+            onclick="smoothCameraMove(0, 100, 1, 0, 0, 0)"
+            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
+          >
+            Surface Top
+          </button>
+          <button
+            onclick="toggleFollowCam()"
+            id="btn-follow"
+            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
+          >
+            Follow Cam: OFF
+          </button>
         </div>
+
+        <div class="flex gap-2">
+          <button
+            onclick="setSimSpeed(0.1)"
+            class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700"
+          >
+            0.1x
+          </button>
+          <button
+            onclick="setSimSpeed(1.0)"
+            class="flex-1 py-1.5 bg-cyan-900 border border-cyan-500 text-cyan-200 rounded text-xs hover:bg-cyan-800"
+          >
+            1.0x
+          </button>
+          <button
+            onclick="setSimSpeed(5.0)"
+            class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700"
+          >
+            5.0x
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Scenarios -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto">
-        <div class="unskew flex gap-3 items-center">
-            {{SCENARIO_BUTTONS}}
-        </div>
+    <div
+      class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto"
+    >
+      <div class="unskew flex gap-3 items-center">{{SCENARIO_BUTTONS}}</div>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
+
     <!-- Post Processing via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
@@ -141,655 +285,691 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
     <script>
-        const scenarios = [
-{{SCENARIOS_DATA}}
-        ];
+              const scenarios = [
+      {{SCENARIOS_DATA}}
+              ];
 
-        let scene, camera, renderer, composer, controls;
-        let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
-        let projectile, shockwave, explosionSphere, boomRing, airBox;
-        let currentData = scenarios[0];
-        let activeCrater = null;
-        let dustParticles;
-        
-        let animState = 'IDLE'; 
-        let clock = new THREE.Clock();
-        let simTime = 0;
-        let prevFrame = null;
-        let followCam = false;
-        let simSpeedMultiplier = 1.0;
+              let scene, camera, renderer, composer, controls;
+              let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
+              let projectile, shockwave, explosionSphere, boomRing, airBox;
+              let currentData = scenarios[0];
+              let activeCrater = null;
+              let dustParticles;
 
-        // Telemetry Graph
-        const graphCanvas = document.getElementById('telemetry-graph');
-        const graphCtx = graphCanvas.getContext('2d');
-        graphCanvas.width = 380;
-        graphCanvas.height = 64;
-        let graphData = [];
+              let animState = 'IDLE';
+              let clock = new THREE.Clock();
+              let simTime = 0;
+              let prevFrame = null;
+              let followCam = false;
+              let simSpeedMultiplier = 1.0;
+              let explosionTriggered = false;
+              let cameraShake = 0;
 
-        function init() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x05080f);
-            scene.fog = new THREE.FogExp2(0x05080f, 0.006); // Reduced fog density
+              // Telemetry Graph
+              const graphCanvas = document.getElementById('telemetry-graph');
+              const graphCtx = graphCanvas.getContext('2d');
+              graphCanvas.width = 380;
+              graphCanvas.height = 64;
+              let graphData = [];
 
-            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 5000);
-            camera.position.set(45, 30, 60);
+              function init() {
+                  const container = document.getElementById('canvas-container');
+                  scene = new THREE.Scene();
+                  scene.background = new THREE.Color(0x05080f);
+                  scene.fog = new THREE.Fog(0x05080f, 300, 2000); // Linear fog pushed far back to prevent obscuring zoom
 
-            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
-            renderer.physicallyCorrectLights = true;
-            // Removed encoding to prevent warnings/errors with some ThreeJS versions
-            // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            // renderer.toneMappingExposure = 1.2;
-            container.appendChild(renderer.domElement);
+                  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 5000);
+                  camera.position.set(45, 30, 60);
 
-            // Post Processing Bloom
-            const renderScene = new THREE.RenderPass(scene, camera);
-            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0.2;
-            bloomPass.strength = 1.2; // Glowing effect
-            bloomPass.radius = 0.5;
+                  renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+                  renderer.setSize(window.innerWidth, window.innerHeight);
+                  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                  renderer.shadowMap.enabled = true;
+                  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
+                  renderer.physicallyCorrectLights = true;
+                  container.appendChild(renderer.domElement);
 
-            composer = new THREE.EffectComposer(renderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
+                  // Post Processing Bloom
+                  const renderScene = new THREE.RenderPass(scene, camera);
+                  const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                  bloomPass.threshold = 0.2;
+                  bloomPass.strength = 1.2; // Glowing effect
+                  bloomPass.radius = 0.5;
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.target.set(0, -15, 0);
-            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Restrict underground camera flip
-            controls.minDistance = 5;
-            controls.maxDistance = 350;
+                  composer = new THREE.EffectComposer(renderer);
+                  composer.addPass(renderScene);
+                  composer.addPass(bloomPass);
 
-            setupLighting();
-            setupEnvironment();
+                  controls = new THREE.OrbitControls(camera, renderer.domElement);
+                  controls.enableDamping = true;
+                  controls.dampingFactor = 0.05;
+                  controls.target.set(0, -15, 0);
+                  controls.maxPolarAngle = Math.PI / 2 + 0.1; // Restrict underground camera flip
+                  controls.minDistance = 5;
+                  controls.maxDistance = 350;
 
-            targetLayersGroup = new THREE.Group();
-            scene.add(targetLayersGroup);
-            cratersGroup = new THREE.Group();
-            scene.add(cratersGroup);
-            rulerGroup = new THREE.Group();
-            scene.add(rulerGroup);
+                  setupLighting();
+                  setupEnvironment();
 
-            setupProjectile();
-            setupEffects();
+                  targetLayersGroup = new THREE.Group();
+                  scene.add(targetLayersGroup);
+                  cratersGroup = new THREE.Group();
+                  scene.add(cratersGroup);
+                  rulerGroup = new THREE.Group();
+                  scene.add(rulerGroup);
 
-            window.addEventListener('resize', onWindowResize);
-            if (scenarios.length > 0) {
-                selectScenario(0, false);
-            }
-            animate(0);
-        }
+                  setupProjectile();
+                  setupEffects();
 
-        function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Increased base light
-            scene.add(ambientLight);
+                  window.addEventListener('resize', onWindowResize);
+                  if (scenarios.length > 0) {
+                      selectScenario(0, false);
+                  }
+                  animate(0);
+              }
 
-            const hemiLight = new THREE.HemisphereLight(0x0f172a, 0x0f172a, 0.4); // Sky color, ground color
-            scene.add(hemiLight);
+              function setupLighting() {
+                  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Increased base light
+                  scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xfff0dd, 2.5); // Warmer, brighter sun
-            dirLight.position.set(50, 100, 50);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 500;
-            const d = 80;
-            dirLight.shadow.camera.left = -d;
-            dirLight.shadow.camera.right = d;
-            dirLight.shadow.camera.top = d;
-            dirLight.shadow.camera.bottom = -d;
-            scene.add(dirLight);
+                  const hemiLight = new THREE.HemisphereLight(0x0f172a, 0x0f172a, 0.4); // Sky color, ground color
+                  scene.add(hemiLight);
 
-            const fillLight = new THREE.PointLight(0x38bdf8, 1.0, 100); // Cool fill light
-            fillLight.position.set(-30, 20, -30);
-            scene.add(fillLight);
-        }
+                  const dirLight = new THREE.DirectionalLight(0xfff0dd, 2.5); // Warmer, brighter sun
+                  dirLight.position.set(50, 100, 50);
+                  dirLight.castShadow = true;
+                  dirLight.shadow.mapSize.width = 2048;
+                  dirLight.shadow.mapSize.height = 2048;
+                  dirLight.shadow.camera.near = 0.5;
+                  dirLight.shadow.camera.far = 500;
+                  const d = 80;
+                  dirLight.shadow.camera.left = -d;
+                  dirLight.shadow.camera.right = d;
+                  dirLight.shadow.camera.top = d;
+                  dirLight.shadow.camera.bottom = -d;
+                  scene.add(dirLight);
 
-        function createTextSprite(message, color) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = 256;
-            canvas.height = 128;
-            context.font = "Bold 36px 'JetBrains Mono', monospace";
-            context.fillStyle = color;
-            context.fillText(message, 10, 50);
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(20, 10, 1);
-            return sprite;
-        }
+                  const fillLight = new THREE.PointLight(0x38bdf8, 1.0, 100); // Cool fill light
+                  fillLight.position.set(-30, 20, -30);
+                  scene.add(fillLight);
+              }
 
-        function setupEnvironment() {
-            // Ground Grid with glow
-            const gridHelper = new THREE.GridHelper(200, 100, 0x0ea5e9, 0x1e293b);
-            gridHelper.position.y = 0.1;
-            scene.add(gridHelper);
+              function createTextSprite(message, color) {
+                  const canvas = document.createElement('canvas');
+                  const context = canvas.getContext('2d');
+                  canvas.width = 256;
+                  canvas.height = 128;
+                  context.font = "Bold 36px 'JetBrains Mono', monospace";
+                  context.fillStyle = color;
+                  context.fillText(message, 10, 50);
+                  const texture = new THREE.CanvasTexture(canvas);
+                  const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                  const sprite = new THREE.Sprite(spriteMaterial);
+                  sprite.scale.set(20, 10, 1);
+                  return sprite;
+              }
 
-            // Ground Zero Decal
-            const ringGeo = new THREE.RingGeometry(0.5, 3.0, 32);
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-            const groundTarget = new THREE.Mesh(ringGeo, ringMat);
-            groundTarget.rotation.x = Math.PI / 2;
-            groundTarget.position.y = 0.2;
-            scene.add(groundTarget);
+              function setupEnvironment() {
+                  // Ground Grid with glow
+                  const gridHelper = new THREE.GridHelper(200, 100, 0x0ea5e9, 0x1e293b);
+                  gridHelper.position.y = 0.1;
+                  scene.add(gridHelper);
 
-            // Volumetric Air Box
-            airGroup = new THREE.Group();
-            scene.add(airGroup);
-        }
+                  // Ground Zero Decal
+                  const ringGeo = new THREE.RingGeometry(0.5, 3.0, 32);
+                  const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+                  const groundTarget = new THREE.Mesh(ringGeo, ringMat);
+                  groundTarget.rotation.x = Math.PI / 2;
+                  groundTarget.position.y = 0.2;
+                  scene.add(groundTarget);
 
-        function rebuildRulers(maxAlt) {
-            while(rulerGroup.children.length > 0) rulerGroup.remove(rulerGroup.children[0]);
-            
-            // Underground depth ruler
-            const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
-            for (let depthY = 0; depthY <= 150; depthY += 10) {
-                // Cylindrical ticks instead of lines
-                const tickGeom = new THREE.CylinderGeometry(0.2, 0.2, 4);
-                tickGeom.rotateZ(Math.PI / 2);
-                let tColor = 0x38bdf8;
-                if(depthY > 30) tColor = 0xfacc15;
-                if(depthY > 80) tColor = 0xf87171;
-                const tMat = new THREE.MeshBasicMaterial({color: tColor});
-                const tick = new THREE.Mesh(tickGeom, tMat);
-                tick.position.set(14, -depthY, 14);
-                rulerGroup.add(tick);
+                  // Volumetric Air Box Container
+                  airGroup = new THREE.Group();
+                  scene.add(airGroup);
+              }
 
-                if (depthY % 20 === 0) {
-                    const sprite = createTextSprite(depthY + "m", "#" + tColor.toString(16).padStart(6, '0'));
-                    sprite.position.set(20, -depthY, 14);
-                    rulerGroup.add(sprite);
-                }
-            }
+              function rebuildRulers(maxAlt) {
+                  while(rulerGroup.children.length > 0) rulerGroup.remove(rulerGroup.children[0]);
 
-            // Air altitude ruler
-            if (maxAlt > 0) {
-                const airLine = new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-15, 0, -15), new THREE.Vector3(-15, maxAlt, -15)]),
-                    new THREE.LineBasicMaterial({ color: 0x0ea5e9, transparent:true, opacity: 0.5 })
-                );
-                rulerGroup.add(airLine);
+                  // Underground depth ruler
+                  const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
+                  for (let depthY = 0; depthY <= 150; depthY += 10) {
+                      // Cylindrical ticks instead of lines
+                      const tickGeom = new THREE.CylinderGeometry(0.2, 0.2, 4);
+                      tickGeom.rotateZ(Math.PI / 2);
+                      let tColor = 0x38bdf8;
+                      if(depthY > 30) tColor = 0xfacc15;
+                      if(depthY > 80) tColor = 0xf87171;
+                      const tMat = new THREE.MeshBasicMaterial({color: tColor});
+                      const tick = new THREE.Mesh(tickGeom, tMat);
+                      tick.position.set(14, -depthY, 14);
+                      rulerGroup.add(tick);
 
-                const steps = 5;
-                for(let i=1; i<=steps; i++) {
-                    const h = (maxAlt / steps) * i;
-                    const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
-                    sprite.position.set(-20, h, -15);
-                    rulerGroup.add(sprite);
-                }
-            }
-        }
+                      if (depthY % 20 === 0) {
+                          const sprite = createTextSprite(depthY + "m", "#" + tColor.toString(16).padStart(6, '0'));
+                          sprite.position.set(20, -depthY, 14);
+                          rulerGroup.add(sprite);
+                      }
+                  }
 
-        function setupProjectile() {
-            const projGeom = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
-            // Premium material
-            const projMat = new THREE.MeshPhysicalMaterial({ 
-                color: 0x64748b, 
-                metalness: 0.9, 
-                roughness: 0.2,
-                clearcoat: 0.8,
-                clearcoatRoughness: 0.1,
-                emissive: 0x000000,
-                emissiveIntensity: 5.0
-            });
-            projectile = new THREE.Mesh(projGeom, projMat);
-            projectile.castShadow = true;
-            projectile.receiveShadow = true;
-            scene.add(projectile);
-        }
+                  // Air altitude ruler
+                  if (maxAlt > 0) {
+                      const airLine = new THREE.Line(
+                          new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-15, 0, -15), new THREE.Vector3(-15, maxAlt, -15)]),
+                          new THREE.LineBasicMaterial({ color: 0x0ea5e9, transparent:true, opacity: 0.5 })
+                      );
+                      rulerGroup.add(airLine);
 
-        function setupEffects() {
-            const shockGeom = new THREE.SphereGeometry(4.0, 32, 32);
-            const shockMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.6, wireframe: true });
-            shockwave = new THREE.Mesh(shockGeom, shockMat);
-            shockwave.visible = false;
-            scene.add(shockwave);
+                      const steps = 5;
+                      for(let i=1; i<=steps; i++) {
+                          const h = (maxAlt / steps) * i;
+                          const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
+                          sprite.position.set(-20, h, -15);
+                          rulerGroup.add(sprite);
+                      }
+                  }
+              }
 
-            const expGeom = new THREE.SphereGeometry(5.0, 32, 32);
-            const expMat = new THREE.MeshPhysicalMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 2.0, transparent: true, opacity: 0.9 });
-            explosionSphere = new THREE.Mesh(expGeom, expMat);
-            explosionSphere.visible = false;
-            scene.add(explosionSphere);
+              function setupProjectile() {
+                  const projGeom = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
+                  // Premium material
+                  const projMat = new THREE.MeshPhysicalMaterial({
+                      color: 0x64748b,
+                      metalness: 0.9,
+                      roughness: 0.2,
+                      clearcoat: 0.8,
+                      clearcoatRoughness: 0.1,
+                      emissive: 0x000000,
+                      emissiveIntensity: 5.0
+                  });
+                  projectile = new THREE.Mesh(projGeom, projMat);
+                  projectile.castShadow = true;
+                  projectile.receiveShadow = true;
+                  scene.add(projectile);
+              }
 
-            // Refractive sonic boom
-            const ringGeom = new THREE.RingGeometry(1, 2.5, 64);
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0xa5f3fc, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
-            boomRing = new THREE.Mesh(ringGeom, ringMat);
-            boomRing.rotation.x = Math.PI / 2;
-            boomRing.visible = false;
-            scene.add(boomRing);
-        }
+              function setupEffects() {
+                  const shockGeom = new THREE.SphereGeometry(4.0, 32, 32);
+                  const shockMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.6, wireframe: true });
+                  shockwave = new THREE.Mesh(shockGeom, shockMat);
+                  shockwave.visible = false;
+                  scene.add(shockwave);
 
-        function toggleFollowCam() {
-            followCam = !followCam;
-            const btn = document.getElementById('btn-follow');
-            btn.innerText = followCam ? "Follow Cam: ON" : "Follow Cam: OFF";
-            btn.className = followCam ? 
-                "px-2 py-2 rounded bg-emerald-900/80 hover:bg-emerald-500 hover:text-black font-semibold text-xs border border-emerald-500 transition" : 
-                "px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition";
-        }
+                  const expGeom = new THREE.SphereGeometry(5.0, 32, 32);
+                  const expMat = new THREE.MeshPhysicalMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 2.0, transparent: true, opacity: 0.9 });
+                  explosionSphere = new THREE.Mesh(expGeom, expMat);
+                  explosionSphere.visible = false;
+                  scene.add(explosionSphere);
 
-        function setSimSpeed(speed) { simSpeedMultiplier = speed; }
+                  // Refractive sonic boom
+                  const ringGeom = new THREE.RingGeometry(1, 2.5, 64);
+                  const ringMat = new THREE.MeshBasicMaterial({ color: 0xa5f3fc, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+                  boomRing = new THREE.Mesh(ringGeom, ringMat);
+                  boomRing.rotation.x = Math.PI / 2;
+                  boomRing.visible = false;
+                  scene.add(boomRing);
+              }
 
-        function smoothCameraMove(px, py, pz, tx, ty, tz) {
-            controls.enableDamping = false; // Prevent fighting during tween
-            new TWEEN.Tween(camera.position)
-                .to({ x: px, y: py, z: pz }, 1000)
-                .easing(TWEEN.Easing.Cubic.InOut)
-                .start();
-            
-            new TWEEN.Tween(controls.target)
-                .to({ x: tx, y: ty, z: tz }, 1000)
-                .easing(TWEEN.Easing.Cubic.InOut)
-                .onComplete(() => { controls.enableDamping = true; })
-                .start();
-        }
+              function toggleFollowCam() {
+                  followCam = !followCam;
+                  const btn = document.getElementById('btn-follow');
+                  btn.innerText = followCam ? "Follow Cam: ON" : "Follow Cam: OFF";
+                  btn.className = followCam ?
+                      "px-2 py-2 rounded bg-emerald-900/80 hover:bg-emerald-500 hover:text-black font-semibold text-xs border border-emerald-500 transition" :
+                      "px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition";
+              }
 
-        function drawGraph() {
-            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
-            if (graphData.length < 2) return;
-            
-            graphCtx.beginPath();
-            graphCtx.strokeStyle = "#38bdf8";
-            graphCtx.lineWidth = 2;
-            
-            const maxV = Math.max(...graphData.map(d => d.v), 1);
-            const w = graphCanvas.width;
-            const h = graphCanvas.height;
-            
-            for (let i = 0; i < graphData.length; i++) {
-                const x = (i / 100) * w; // Keep last 100 points
-                const y = h - ((graphData[i].v / maxV) * h);
-                if (i === 0) graphCtx.moveTo(x, y);
-                else graphCtx.lineTo(x, y);
-            }
-            graphCtx.stroke();
-            
-            // Fill under graph
-            graphCtx.lineTo(w, h);
-            graphCtx.lineTo(0, h);
-            graphCtx.fillStyle = "rgba(56, 189, 248, 0.2)";
-            graphCtx.fill();
-        }
+              function setSimSpeed(speed) { simSpeedMultiplier = speed; }
 
-        function tweenNumber(elId, newVal, formatFn) {
-            const el = document.getElementById(elId);
-            const oldVal = parseFloat(el.getAttribute('data-val') || 0);
-            new TWEEN.Tween({val: oldVal})
-                .to({val: newVal}, 100)
-                .onUpdate(function(obj) {
-                    el.innerText = formatFn(obj.val);
-                    el.setAttribute('data-val', obj.val);
-                }).start();
-        }
+              function smoothCameraMove(px, py, pz, tx, ty, tz) {
+                  controls.enableDamping = false; // Prevent fighting during tween
+                  new TWEEN.Tween(camera.position)
+                      .to({ x: px, y: py, z: pz }, 1000)
+                      .easing(TWEEN.Easing.Cubic.InOut)
+                      .start();
 
-        function updateHUD(frame) {
-            tweenNumber('hud-velocity', frame.v, v => v.toFixed(1) + ' m/s');
-            
-            if (frame.p !== undefined) {
-                tweenNumber('hud-pressure', frame.p, p => p.toFixed(2) + ' GPa');
-                const yieldLim = currentData.yield || 2.0; // fallback
-                const pPct = Math.min(100, (frame.p / yieldLim) * 100);
-                document.getElementById('bar-pressure').style.width = pPct + '%';
-                
-                if (frame.p > yieldLim) document.getElementById('bar-pressure').className = "bg-rose-500 h-full progress-bar";
-                else if (pPct > 80) document.getElementById('bar-pressure').className = "bg-amber-400 h-full progress-bar";
-                else document.getElementById('bar-pressure').className = "bg-cyan-400 h-full progress-bar";
-            }
-            
-            tweenNumber('hud-depth', Math.abs(frame.y), y => y.toFixed(2) + ' m');
-            
-            if (prevFrame && frame.t > prevFrame.t && animState === 'PENETRATING') {
-                let accel = (frame.v - prevFrame.v) / (frame.t - prevFrame.t);
-                let gForce = Math.abs(accel / 9.80665);
-                tweenNumber('hud-gforce', gForce, g => g.toFixed(0) + ' G');
-                
-                // Thermal heat glow based on G-Force
-                const heat = Math.min(1.0, gForce / 50000.0);
-                projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
-            }
+                  new TWEEN.Tween(controls.target)
+                      .to({ x: tx, y: ty, z: tz }, 1000)
+                      .easing(TWEEN.Easing.Cubic.InOut)
+                      .onComplete(() => { controls.enableDamping = true; })
+                      .start();
+              }
 
-            // Update graph
-            graphData.push({v: frame.v});
-            if (graphData.length > 100) graphData.shift();
-            drawGraph();
-        }
+              function drawGraph() {
+                  graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+                  if (graphData.length < 2) return;
 
-        function buildFinalBadges(data) {
-            const regimeBadge = document.getElementById('hud-regime-badge');
-            const expBadge = document.getElementById('hud-exp-badge');
-            document.getElementById('hud-scenario').innerText = data.name;
-            
-            // Reset yield mark
-            document.getElementById('bar-yield-mark').style.left = "100%"; // Assuming bar max is yield * 1.2
-            
-            if (data.is_kinetic) {
-                regimeBadge.innerText = 'HYPERVELOCITY KINETIC ROD';
-                regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-purple-500/20 text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.5)] pulse-active';
-                expBadge.innerText = 'PAYLOAD: ZERO EXPLOSIVE MASS';
-                expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-slate-800/80 text-slate-300 border border-slate-700';
-                
-                // Swap geometry
-                projectile.geometry.dispose();
-                projectile.geometry = new THREE.CylinderGeometry(0.2, 0.2, 8.0, 32);
-                projectile.material.metalness = 1.0;
-                projectile.material.color.setHex(0x334155);
-            } else if (data.fail || !data.exp_survives) {
-                regimeBadge.innerText = data.fail ? 'CASING SHATTER' : 'FUZE FAILURE';
-                regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.5)] pulse-active';
-                expBadge.innerText = data.fail ? 'PAYLOAD DESTROYED' : 'EXPLOSIVE CHARGE FAILED';
-                expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-rose-950/60 text-rose-300 border border-rose-800/60';
-            } else {
-                regimeBadge.innerText = 'RIGID DRILL PENETRATION';
-                regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.5)] pulse-active';
-                expBadge.innerText = 'PAYLOAD SURVIVED';
-                expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-emerald-950/60 text-emerald-300 border border-emerald-800/60';
-            }
-        }
+                  graphCtx.beginPath();
+                  graphCtx.strokeStyle = "#38bdf8";
+                  graphCtx.lineWidth = 2;
 
-        function createCraterGeometry(depth) {
-            const points = [];
-            const r_wide = 3.0;
-            const r_narrow = 0.5;
-            const shallow_depth = Math.min(depth, 3.5);
-            
-            // Spline smoothing could go here, for now linear interpolation points
-            points.push(new THREE.Vector2(r_wide, 0.1));
-            points.push(new THREE.Vector2(r_narrow, -shallow_depth));
-            points.push(new THREE.Vector2(r_narrow, -depth));
-            points.push(new THREE.Vector2(0, -depth));
-            return new THREE.LatheGeometry(points, 64);
-        }
+                  const maxV = Math.max(...graphData.map(d => d.v), 1);
+                  const w = graphCanvas.width;
+                  const h = graphCanvas.height;
 
-        function selectScenario(index, manualClick = true) {
-            if(!scenarios[index]) return;
-            currentData = scenarios[index];
-            document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
-                if (i === index) {
-                    btn.className = "px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.6)] scale-105";
-                } else {
-                    btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
-                }
-            });
-            
-            let maxAlt = 0;
-            if (currentData.drop_frames && currentData.drop_frames.length > 0) {
-                maxAlt = currentData.drop_frames[0].y;
-            }
+                  for (let i = 0; i < graphData.length; i++) {
+                      const x = (i / 100) * w; // Keep last 100 points
+                      const y = h - ((graphData[i].v / maxV) * h);
+                      if (i === 0) graphCtx.moveTo(x, y);
+                      else graphCtx.lineTo(x, y);
+                  }
+                  graphCtx.stroke();
 
-            if (manualClick) {
-                while(targetLayersGroup.children.length > 0) targetLayersGroup.remove(targetLayersGroup.children[0]);
-                while(cratersGroup.children.length > 0) cratersGroup.remove(cratersGroup.children[0]);
-                while(airGroup.children.length > 0) airGroup.remove(airGroup.children[0]);
-                
-                // Build Air Volume if altitude exists
-                if (maxAlt > 0) {
-                    const airGeo = new THREE.BoxGeometry(100, maxAlt, 100);
-                    const airMat = new THREE.MeshPhysicalMaterial({
-                        color: 0x0284c7, transparent: true, opacity: 0.05, 
-                        transmission: 0.9, roughness: 0.1, depthWrite: false, side: THREE.DoubleSide
-                    });
-                    airBox = new THREE.Mesh(airGeo, airMat);
-                    airBox.position.y = maxAlt / 2;
-                    airGroup.add(airBox);
+                  // Fill under graph
+                  graphCtx.lineTo(w, h);
+                  graphCtx.lineTo(0, h);
+                  graphCtx.fillStyle = "rgba(56, 189, 248, 0.2)";
+                  graphCtx.fill();
+              }
 
-                    // Dust particles
-                    const dustGeo = new THREE.BufferGeometry();
-                    const dustVerts = [];
-                    for(let i=0; i<2000; i++) {
-                        dustVerts.push((Math.random()-0.5)*100, Math.random()*maxAlt, (Math.random()-0.5)*100);
-                    }
-                    dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustVerts, 3));
-                    const dustMat = new THREE.PointsMaterial({color: 0xbae6fd, size: 0.5, transparent:true, opacity: 0.4});
-                    dustParticles = new THREE.Points(dustGeo, dustMat);
-                    airGroup.add(dustParticles);
-                }
+              function tweenNumber(elId, newVal, formatFn) {
+                  const el = document.getElementById(elId);
+                  const oldVal = parseFloat(el.getAttribute('data-val') || 0);
+                  new TWEEN.Tween({val: oldVal})
+                      .to({val: newVal}, 100)
+                      .onUpdate(function(obj) {
+                          el.innerText = formatFn(obj.val);
+                          el.setAttribute('data-val', obj.val);
+                      }).start();
+              }
 
-                let currentY = 0;
-                if (currentData.target_layers && currentData.target_layers.length > 0) {
-                    currentData.target_layers.forEach(layer => {
-                        const thickness = Math.max(2, Math.min(60, layer.thickness)); 
-                        const blockGeom = new THREE.BoxGeometry(32, thickness - 0.05, 32); // 0.05 gap
-                        
-                        let color = 0x334155; let rough = 0.8; let metal = 0.1;
-                        if (layer.density < 2000) { color = 0x5c4033; rough = 1.0; metal = 0.0; } // Dirt
-                        else if (layer.density > 2600) { color = 0x1e293b; rough = 0.4; metal = 0.3; } // Hard rock/concrete
-                        
-                        const blockMat = new THREE.MeshStandardMaterial({
-                            color: color, transparent: true, opacity: 0.6,
-                            roughness: rough, metalness: metal, depthWrite: false
-                        });
-                        const blockMesh = new THREE.Mesh(blockGeom, blockMat);
-                        blockMesh.position.set(0, currentY - (thickness / 2), 0);
-                        blockMesh.receiveShadow = true;
-                        
-                        const edges = new THREE.EdgesGeometry(blockGeom);
-                        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.0, transparent: true, opacity: 0.4 }));
-                        blockMesh.add(line);
-                        
-                        targetLayersGroup.add(blockMesh);
-                        currentY -= thickness;
-                    });
-                }
-                
-                rebuildRulers(maxAlt);
-                
-                // Reset graph
-                graphData = [];
-                drawGraph();
-            }
+              function updateHUD(frame) {
+                  tweenNumber('hud-velocity', frame.v, v => v.toFixed(1) + ' m/s');
 
-            const craterMat = new THREE.MeshStandardMaterial({ color: 0x22d3ee, roughness: 0.2, metalness: 0.8, side: THREE.DoubleSide });
-            activeCrater = new THREE.Mesh(createCraterGeometry(0.1), craterMat);
-            cratersGroup.add(activeCrater);
+                  if (frame.p !== undefined) {
+                      tweenNumber('hud-pressure', frame.p, p => p.toFixed(2) + ' GPa');
+                      const yieldLim = currentData.yield || 2.0; // fallback
+                      const pPct = Math.min(100, (frame.p / yieldLim) * 100);
+                      document.getElementById('bar-pressure').style.width = pPct + '%';
 
-            // Reset Projectile Geometry
-            if (!currentData.is_kinetic) {
-                projectile.geometry.dispose();
-                projectile.geometry = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
-                projectile.material.metalness = 0.9;
-                projectile.material.color.setHex(0x64748b);
-            }
-            projectile.scale.set(1, 1, 1);
-            projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
-            projectile.material.emissive.setHex(0x000000);
+                      if (frame.p > yieldLim) document.getElementById('bar-pressure').className = "bg-rose-500 h-full progress-bar";
+                      else if (pPct > 80) document.getElementById('bar-pressure').className = "bg-amber-400 h-full progress-bar";
+                      else document.getElementById('bar-pressure').className = "bg-cyan-400 h-full progress-bar";
+                  }
 
-            shockwave.visible = false;
-            explosionSphere.visible = false;
-            boomRing.visible = false;
+                  tweenNumber('hud-depth', Math.abs(frame.y), y => y.toFixed(2) + ' m');
 
-            buildFinalBadges(currentData);
-            
-            animState = 'PRE_DELAY';
-            simTime = 0;
-            prevFrame = null;
-            
-            // Screen shake init
-            camera.position.x += 0.001; 
-        }
+                  if (prevFrame && frame.t > prevFrame.t && animState === 'PENETRATING') {
+                      let accel = (frame.v - prevFrame.v) / (frame.t - prevFrame.t);
+                      let gForce = Math.abs(accel / 9.80665);
+                      tweenNumber('hud-gforce', gForce, g => g.toFixed(0) + ' G');
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        }
+                      // Thermal heat glow based on G-Force
+                      const heat = Math.min(1.0, gForce / 50000.0);
+                      projectile.material.emissive.setRGB(heat * 2.0, heat * 0.5, 0);
+                  }
 
-        function getInterpolatedFrame(frames, t) {
-            if (frames.length === 0) return null;
-            if (t <= frames[0].t) return frames[0];
-            if (t >= frames[frames.length - 1].t) return frames[frames.length - 1];
-            
-            let idx = frames.findIndex(f => f.t >= t);
-            if (idx === 0) idx = 1;
-            
-            const f0 = frames[idx - 1];
-            const f1 = frames[idx];
-            const factor = (t - f0.t) / (f1.t - f0.t);
-            
-            return {
-                t: t,
-                y: THREE.MathUtils.lerp(f0.y, f1.y, factor),
-                v: THREE.MathUtils.lerp(f0.v, f1.v, factor),
-                m: THREE.MathUtils.lerp(f0.m, f1.m, factor),
-                p: f0.p !== undefined ? THREE.MathUtils.lerp(f0.p, f1.p, factor) : undefined,
-                sb: factor < 0.5 ? f0.sb : f1.sb
-            };
-        }
+                  // Update graph
+                  graphData.push({v: frame.v});
+                  if (graphData.length > 100) graphData.shift();
+                  drawGraph();
+              }
 
-        function animate(time) {
-            requestAnimationFrame(animate);
-            TWEEN.update(time);
-            
-            let dt = clock.getDelta();
-            if (dt > 0.1) dt = 0.1; // Cap delta to prevent huge jumps
+              function buildFinalBadges(data) {
+                  const regimeBadge = document.getElementById('hud-regime-badge');
+                  const expBadge = document.getElementById('hud-exp-badge');
+                  document.getElementById('hud-scenario').innerText = data.name;
 
-            if (dustParticles) {
-                const positions = dustParticles.geometry.attributes.position.array;
-                for(let i=1; i<positions.length; i+=3) {
-                    positions[i] -= dt * 5.0; // falling dust
-                    if(positions[i] < 0) positions[i] = airBox.geometry.parameters.height;
-                }
-                dustParticles.geometry.attributes.position.needsUpdate = true;
-            }
+                  // Reset yield mark
+                  document.getElementById('bar-yield-mark').style.left = "100%"; // Assuming bar max is yield * 1.2
 
-            if (animState === 'PRE_DELAY') {
-                simTime += dt;
-                if (simTime > 1.0) {
-                    animState = (currentData.drop_frames && currentData.drop_frames.length > 0) ? 'DROPPING' : 'PENETRATING';
-                    simTime = 0;
-                }
-            } else if (animState === 'DROPPING') {
-                simTime += dt * 5.0 * simSpeedMultiplier; 
-                const maxTime = currentData.drop_frames[currentData.drop_frames.length - 1].t;
-                
-                if (simTime < maxTime) {
-                    const frame = getInterpolatedFrame(currentData.drop_frames, simTime);
-                    projectile.position.y = frame.y;
+                  if (data.is_kinetic) {
+                      regimeBadge.innerText = 'HYPERVELOCITY KINETIC ROD';
+                      regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-purple-500/20 text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.5)] pulse-active';
+                      expBadge.innerText = 'PAYLOAD: ZERO EXPLOSIVE MASS';
+                      expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-slate-800/80 text-slate-300 border border-slate-700';
 
-                    if (frame.sb && !boomRing.visible) {
-                        boomRing.visible = true;
-                        boomRing.position.copy(projectile.position);
-                        boomRing.scale.set(1, 1, 1);
-                        boomRing.material.opacity = 1.0;
-                    }
-                    updateHUD(frame);
-                    prevFrame = frame;
-                } else {
-                    animState = 'PENETRATING';
-                    simTime = 0;
-                    prevFrame = null;
-                    
-                    // Screen shake impact
-                    new TWEEN.Tween(camera.position)
-                        .to({x: camera.position.x + (Math.random()-0.5)*5, y: camera.position.y + (Math.random()-0.5)*5}, 50)
-                        .yoyo(true).repeat(3).start();
-                }
-            } else if (animState === 'PENETRATING') {
-                if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
-                    animState = 'EXPLODING';
-                    simTime = 0;
-                } else {
-                    simTime += dt * 0.02 * simSpeedMultiplier; // Slow down ms to seconds
-                    const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+                      // Swap geometry
+                      projectile.geometry.dispose();
+                      projectile.geometry = new THREE.CylinderGeometry(0.2, 0.2, 8.0, 32);
+                      projectile.material.metalness = 1.0;
+                      projectile.material.color.setHex(0x334155);
+                  } else if (data.fail || !data.exp_survives) {
+                      regimeBadge.innerText = data.fail ? 'CASING SHATTER' : 'FUZE FAILURE';
+                      regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.5)] pulse-active';
+                      expBadge.innerText = data.fail ? 'PAYLOAD DESTROYED' : 'EXPLOSIVE CHARGE FAILED';
+                      expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-rose-950/60 text-rose-300 border border-rose-800/60';
+                  } else {
+                      regimeBadge.innerText = 'RIGID DRILL PENETRATION';
+                      regimeBadge.className = 'px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.5)] pulse-active';
+                      expBadge.innerText = 'PAYLOAD SURVIVED';
+                      expBadge.className = 'px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-emerald-950/60 text-emerald-300 border border-emerald-800/60';
+                  }
+              }
 
-                    if (simTime < maxTime) {
-                        const frame = getInterpolatedFrame(currentData.pen_frames, simTime);
-                        projectile.position.y = -frame.y + (currentData.is_kinetic ? 4.0 : 3.1);
-                        
-                        activeCrater.geometry.dispose();
-                        activeCrater.geometry = createCraterGeometry(frame.y);
+              function clearGroup(group) {
+                  while(group.children.length > 0) {
+                      const child = group.children[0];
+                      if (child.geometry) child.geometry.dispose();
+                      if (child.material) {
+                          if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                          else child.material.dispose();
+                      }
+                      group.remove(child);
+                  }
+              }
 
-                        updateHUD(frame);
-                        prevFrame = frame;
-                    } else {
-                        animState = 'EXPLODING';
-                        simTime = 0;
-                    }
-                }
-            } else if (animState === 'EXPLODING') {
-                simTime += dt;
-                if (simTime < 0.1) {
-                    if (!explosionSphere.visible && !shockwave.visible && !projectile.material.emissive.getHex()) {
-                        if (currentData.is_kinetic) {
-                            projectile.material.color.setHex(0xc084fc);
-                            projectile.material.emissive.setHex(0x581c87);
-                            activeCrater.material.color.setHex(0xa855f7);
-                            shockwave.visible = true;
-                            shockwave.material.color.setHex(0xa855f7);
-                            shockwave.position.copy(projectile.position);
-                            shockwave.scale.set(1,1,1);
-                        } else if (currentData.fail || !currentData.exp_survives) {
-                            projectile.scale.set(1.8, 0.4, 1.8);
-                            projectile.material.color.setHex(0xf87171);
-                            projectile.material.emissive.setHex(0x7f1d1d);
-                            activeCrater.material.color.setHex(0xef4444);
-                        } else {
-                            explosionSphere.visible = true;
-                            explosionSphere.position.copy(projectile.position);
-                            explosionSphere.scale.set(0.1, 0.1, 0.1);
-                            explosionSphere.material.opacity = 1.0;
-                        }
-                    }
-                }
+              function createCraterGeometry(depth) {
+                  const points = [];
+                  const r_wide = 4.5;
+                  const r_narrow = 1.0;
+                  const shallow_depth = Math.min(depth, 3.5);
 
-                if (explosionSphere.visible) {
-                    // Explosion scales based on yield strength mapping loosely
-                    const maxScale = Math.max(10, currentData.yield * 5);
-                    explosionSphere.scale.addScalar(dt * 80);
-                    if(explosionSphere.scale.x > maxScale) {
-                        explosionSphere.material.opacity -= dt * 2.0;
-                    }
-                    if (explosionSphere.material.opacity <= 0) {
-                        explosionSphere.visible = false;
-                        animState = 'DONE'; simTime = 0;
-                    }
-                } else if (shockwave.visible) {
-                    shockwave.scale.addScalar(dt * 25);
-                    shockwave.material.opacity -= dt * 1.0;
-                    if (simTime > 1.5) { shockwave.visible = false; animState = 'DONE'; simTime = 0; }
-                } else {
-                    if (simTime > 1.0) { animState = 'DONE'; simTime = 0; }
-                }
-            } else if (animState === 'DONE') {
-                simTime += dt;
-                if (simTime > 2.0) {
-                    let currentIndex = scenarios.indexOf(currentData);
-                    if (currentIndex !== -1 && currentIndex + 1 < scenarios.length) {
-                        selectScenario(currentIndex + 1, false);
-                    } else {
-                        animState = 'FINISHED';
-                    }
-                }
-            }
+                  // Spline smoothing could go here, for now linear interpolation points
+                  points.push(new THREE.Vector2(r_wide, 0.1));
+                  points.push(new THREE.Vector2(r_narrow, -shallow_depth));
+                  points.push(new THREE.Vector2(r_narrow, -depth));
+                  points.push(new THREE.Vector2(0, -depth));
+                  return new THREE.LatheGeometry(points, 64);
+              }
 
-            if (boomRing.visible) {
-                boomRing.scale.addScalar(dt * 30);
-                boomRing.material.opacity -= dt * 1.5;
-                if (boomRing.material.opacity <= 0) boomRing.visible = false;
-            }
+              function selectScenario(index, manualClick = true) {
+                  if(!scenarios[index]) return;
+                  TWEEN.removeAll(); // Clear running UI/Camera animations
 
-            if (shockwave.visible) {
-                shockwave.rotation.y += dt * 2;
-                shockwave.rotation.x += dt;
-            }
+                  currentData = scenarios[index];
+                  document.querySelectorAll('button[id^="btn-"]').forEach((btn, i) => {
+                      if (i === index) {
+                          btn.className = "px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.6)] scale-105";
+                      } else {
+                          btn.className = "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
+                      }
+                  });
 
-            if (followCam && animState !== 'FINISHED') {
-                controls.target.copy(projectile.position);
-            }
+                  let maxAlt = 0;
+                  if (currentData.drop_frames && currentData.drop_frames.length > 0) {
+                      maxAlt = currentData.drop_frames[0].y;
+                  }
 
-            controls.update();
-            composer.render(); // Use composer instead of renderer for Bloom
-        }
+                  // Always clear and rebuild, properly disposing of memory
+                  clearGroup(targetLayersGroup);
+                  clearGroup(cratersGroup);
+                  clearGroup(airGroup);
 
-        window.onload = init;
+                  // Build Air Volume if altitude exists
+                  if (maxAlt > 0) {
+                      const airGeo = new THREE.BoxGeometry(100, maxAlt, 100);
+                      const airMat = new THREE.MeshPhysicalMaterial({
+                          color: 0x0284c7, transparent: true, opacity: 0.05,
+                          transmission: 0.9, roughness: 0.1, depthWrite: false, side: THREE.DoubleSide
+                      });
+                      airBox = new THREE.Mesh(airGeo, airMat);
+                      airBox.position.y = maxAlt / 2;
+                      airGroup.add(airBox);
+
+                      // Dust particles
+                      const dustGeo = new THREE.BufferGeometry();
+                      const dustVerts = [];
+                      for(let i=0; i<2000; i++) {
+                          dustVerts.push((Math.random()-0.5)*100, Math.random()*maxAlt, (Math.random()-0.5)*100);
+                      }
+                      dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustVerts, 3));
+                      const dustMat = new THREE.PointsMaterial({color: 0xbae6fd, size: 0.5, transparent:true, opacity: 0.4});
+                      dustParticles = new THREE.Points(dustGeo, dustMat);
+                      airGroup.add(dustParticles);
+                  }
+
+                  let currentY = 0;
+                  if (currentData.target_layers && currentData.target_layers.length > 0) {
+                      currentData.target_layers.forEach(layer => {
+                          const thickness = Math.max(2, Math.min(60, layer.thickness));
+                          const blockGeom = new THREE.BoxGeometry(32, thickness - 0.05, 32); // 0.05 gap
+
+                          let color = 0x334155; let rough = 0.8; let metal = 0.1;
+                          if (layer.density < 2000) { color = 0x5c4033; rough = 1.0; metal = 0.0; } // Dirt
+                          else if (layer.density > 2600) { color = 0x1e293b; rough = 0.4; metal = 0.3; } // Hard rock/concrete
+
+                          const blockMat = new THREE.MeshStandardMaterial({
+                              color: color, transparent: true, opacity: 0.6,
+                              roughness: rough, metalness: metal, depthWrite: false
+                          });
+                          const blockMesh = new THREE.Mesh(blockGeom, blockMat);
+                          blockMesh.position.set(0, currentY - (thickness / 2), 0);
+                          blockMesh.receiveShadow = true;
+
+                          const edges = new THREE.EdgesGeometry(blockGeom);
+                          const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.0, transparent: true, opacity: 0.4 }));
+                          blockMesh.add(line);
+
+                          targetLayersGroup.add(blockMesh);
+                          currentY -= thickness;
+                      });
+                  }
+
+                  rebuildRulers(maxAlt);
+
+                  // Reset graph
+                  graphData = [];
+                  drawGraph();
+
+                  // Give the crater a wide, emissive glow so it stands out inside the dark target blocks
+                  const craterMat = new THREE.MeshStandardMaterial({
+                      color: 0x22d3ee,
+                      emissive: 0x0891b2,
+                      emissiveIntensity: 1.5,
+                      roughness: 0.2,
+                      metalness: 0.8,
+                      side: THREE.DoubleSide
+                  });
+                  activeCrater = new THREE.Mesh(createCraterGeometry(0.1), craterMat);
+                  cratersGroup.add(activeCrater);
+
+                  // Reset Projectile Geometry
+                  if (!currentData.is_kinetic) {
+                      projectile.geometry.dispose();
+                      projectile.geometry = new THREE.CylinderGeometry(0.4, 0.4, 6.2, 32);
+                      projectile.material.metalness = 0.9;
+                      projectile.material.color.setHex(0x64748b);
+                  }
+                  projectile.scale.set(1, 1, 1);
+                  projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
+                  projectile.material.emissive.setHex(0x000000);
+
+                  // Reset Effect States fully
+                  shockwave.visible = false;
+                  shockwave.scale.set(1, 1, 1);
+                  shockwave.material.opacity = 0.6;
+
+                  explosionSphere.visible = false;
+                  explosionSphere.scale.set(0.1, 0.1, 0.1);
+                  explosionSphere.material.opacity = 0.9;
+
+                  boomRing.visible = false;
+                  boomRing.scale.set(1, 1, 1);
+                  boomRing.material.opacity = 0.9;
+
+                  buildFinalBadges(currentData);
+
+                  animState = 'PRE_DELAY';
+                  simTime = 0;
+                  prevFrame = null;
+                  explosionTriggered = false;
+                  cameraShake = 0;
+              }
+
+              function onWindowResize() {
+                  camera.aspect = window.innerWidth / window.innerHeight;
+                  camera.updateProjectionMatrix();
+                  renderer.setSize(window.innerWidth, window.innerHeight);
+                  composer.setSize(window.innerWidth, window.innerHeight);
+              }
+
+              function getInterpolatedFrame(frames, t) {
+                  if (frames.length === 0) return null;
+                  if (t <= frames[0].t) return frames[0];
+                  if (t >= frames[frames.length - 1].t) return frames[frames.length - 1];
+
+                  let idx = frames.findIndex(f => f.t >= t);
+                  if (idx === 0) idx = 1;
+
+                  const f0 = frames[idx - 1];
+                  const f1 = frames[idx];
+                  const factor = (t - f0.t) / (f1.t - f0.t);
+
+                  return {
+                      t: t,
+                      y: THREE.MathUtils.lerp(f0.y, f1.y, factor),
+                      v: THREE.MathUtils.lerp(f0.v, f1.v, factor),
+                      m: THREE.MathUtils.lerp(f0.m, f1.m, factor),
+                      p: f0.p !== undefined ? THREE.MathUtils.lerp(f0.p, f1.p, factor) : undefined,
+                      sb: factor < 0.5 ? f0.sb : f1.sb
+                  };
+              }
+
+              function animate(time) {
+                  requestAnimationFrame(animate);
+                  TWEEN.update(time);
+
+                  let dt = clock.getDelta();
+                  if (dt > 0.1) dt = 0.1; // Cap delta to prevent huge jumps
+
+                  if (dustParticles && airBox) {
+                      const positions = dustParticles.geometry.attributes.position.array;
+                      for(let i=1; i<positions.length; i+=3) {
+                          positions[i] -= dt * 5.0; // falling dust
+                          if(positions[i] < 0) positions[i] = airBox.geometry.parameters.height;
+                      }
+                      dustParticles.geometry.attributes.position.needsUpdate = true;
+                  }
+
+                  if (animState === 'PRE_DELAY') {
+                      simTime += dt;
+                      if (simTime > 1.0) {
+                          animState = (currentData.drop_frames && currentData.drop_frames.length > 0) ? 'DROPPING' : 'PENETRATING';
+                          simTime = 0;
+                      }
+                  } else if (animState === 'DROPPING') {
+                      simTime += dt * 5.0 * simSpeedMultiplier;
+                      const maxTime = currentData.drop_frames[currentData.drop_frames.length - 1].t;
+
+                      if (simTime < maxTime) {
+                          const frame = getInterpolatedFrame(currentData.drop_frames, simTime);
+                          projectile.position.y = frame.y;
+
+                          if (frame.sb && !boomRing.visible) {
+                              boomRing.visible = true;
+                              boomRing.position.copy(projectile.position);
+                              boomRing.scale.set(1, 1, 1);
+                              boomRing.material.opacity = 1.0;
+                          }
+                          updateHUD(frame);
+                          prevFrame = frame;
+                      } else {
+                          animState = 'PENETRATING';
+                          simTime = 0;
+                          prevFrame = null;
+                          cameraShake = 0.5; // Trigger non-drifting camera shake
+                      }
+                  } else if (animState === 'PENETRATING') {
+                      if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
+                          animState = 'EXPLODING';
+                          simTime = 0;
+                      } else {
+                          simTime += dt * 0.02 * simSpeedMultiplier; // Slow down ms to seconds
+                          const maxTime = currentData.pen_frames[currentData.pen_frames.length - 1].t;
+
+                          if (simTime < maxTime) {
+                              const frame = getInterpolatedFrame(currentData.pen_frames, simTime);
+                              projectile.position.y = -frame.y + (currentData.is_kinetic ? 4.0 : 3.1);
+
+                              activeCrater.geometry.dispose();
+                              activeCrater.geometry = createCraterGeometry(frame.y);
+
+                              updateHUD(frame);
+                              prevFrame = frame;
+                          } else {
+                              animState = 'EXPLODING';
+                              simTime = 0;
+                          }
+                      }
+                  } else if (animState === 'EXPLODING') {
+                      simTime += dt;
+
+                      if (!explosionTriggered) {
+                          explosionTriggered = true;
+                          if (currentData.is_kinetic) {
+                              projectile.material.color.setHex(0xc084fc);
+                              projectile.material.emissive.setHex(0x581c87);
+                              activeCrater.material.color.setHex(0xa855f7);
+                              activeCrater.material.emissive.setHex(0x7e22ce);
+                              shockwave.visible = true;
+                              shockwave.material.color.setHex(0xa855f7);
+                              shockwave.position.copy(projectile.position);
+                          } else if (currentData.fail || !currentData.exp_survives) {
+                              projectile.scale.set(1.8, 0.4, 1.8);
+                              projectile.material.color.setHex(0xf87171);
+                              projectile.material.emissive.setHex(0x7f1d1d);
+                              activeCrater.material.color.setHex(0xef4444);
+                              activeCrater.material.emissive.setHex(0xb91c1c);
+                          } else {
+                              explosionSphere.visible = true;
+                              explosionSphere.position.copy(projectile.position);
+                          }
+                      }
+
+                      if (explosionSphere.visible) {
+                          const maxScale = Math.max(5, currentData.yield * 3); // Scaled down sizing
+                          explosionSphere.scale.addScalar(dt * 40); // Slower growth
+                          if(explosionSphere.scale.x > maxScale) {
+                              explosionSphere.material.opacity -= dt * 2.0;
+                          }
+                          if (explosionSphere.material.opacity <= 0) {
+                              explosionSphere.visible = false;
+                              animState = 'DONE'; simTime = 0;
+                          }
+                      } else if (shockwave.visible) {
+                          shockwave.scale.addScalar(dt * 18); // Scaled down
+                          shockwave.material.opacity -= dt * 1.0;
+                          if (simTime > 1.5) { shockwave.visible = false; animState = 'DONE'; simTime = 0; }
+                      } else {
+                          if (simTime > 1.0) { animState = 'DONE'; simTime = 0; }
+                      }
+                  } else if (animState === 'DONE') {
+                      simTime += dt;
+                      if (simTime > 2.0) {
+                          let currentIndex = scenarios.indexOf(currentData);
+                          if (currentIndex !== -1 && currentIndex + 1 < scenarios.length) {
+                              selectScenario(currentIndex + 1, false);
+                          } else {
+                              animState = 'FINISHED';
+                          }
+                      }
+                  }
+
+                  if (boomRing.visible) {
+                      boomRing.scale.addScalar(dt * 15); // Scaled down
+                      boomRing.material.opacity -= dt * 1.5;
+                      if (boomRing.material.opacity <= 0) boomRing.visible = false;
+                  }
+
+                  if (shockwave.visible) {
+                      shockwave.rotation.y += dt * 2;
+                      shockwave.rotation.x += dt;
+                  }
+
+                  if (followCam && animState !== 'FINISHED') {
+                      controls.target.copy(projectile.position);
+                  }
+
+                  controls.update();
+
+                  // Apply camera shake temporarily before rendering
+                  let shakeOffset = new THREE.Vector3();
+                  if (cameraShake > 0) {
+                      shakeOffset.set((Math.random() - 0.5) * cameraShake * 6, (Math.random() - 0.5) * cameraShake * 6, 0);
+                      camera.position.add(shakeOffset);
+                      cameraShake -= dt * 1.5;
+                  }
+
+                  composer.render(); // Use composer instead of renderer for Bloom
+
+                  // Revert shake offset so it doesn't drift
+                  if (shakeOffset.x !== 0 || shakeOffset.y !== 0) {
+                      camera.position.sub(shakeOffset);
+                  }
+              }
+
+              window.onload = init;
     </script>
-</body>
+  </body>
 </html>
