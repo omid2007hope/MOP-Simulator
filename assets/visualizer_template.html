@@ -517,32 +517,65 @@
         while (rulerGroup.children.length > 0)
           rulerGroup.remove(rulerGroup.children[0]);
 
-        // Underground depth ruler
-        const rulerMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
-        for (let depthY = 0; depthY <= 150; depthY += 10) {
-          // Cylindrical ticks instead of lines
-          const tickGeom = new THREE.CylinderGeometry(0.2, 0.2, 4);
-          tickGeom.rotateZ(Math.PI / 2);
+        // 1. Underground Depth Ruler (0m to 150m with 1m/5m/10m school ruler sub-divisions)
+        const depthLine = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(14, 0, 14),
+            new THREE.Vector3(14, -150, 14),
+          ]),
+          new THREE.LineBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.6,
+          }),
+        );
+        rulerGroup.add(depthLine);
+
+        for (let depthY = 0; depthY <= 150; depthY++) {
+          let tickLen = 0.8; // 1m minor tick
+          let tickRadius = 0.08;
+          let isMajor = depthY % 10 === 0;
+          let isMedium = depthY % 5 === 0 && !isMajor;
+
+          if (isMajor) {
+            tickLen = 3.5;
+            tickRadius = 0.2;
+          } else if (isMedium) {
+            tickLen = 2.0;
+            tickRadius = 0.12;
+          }
+
           let tColor = 0x38bdf8;
           if (depthY > 30) tColor = 0xfacc15;
           if (depthY > 80) tColor = 0xf87171;
+
+          const tickGeom = new THREE.CylinderGeometry(
+            tickRadius,
+            tickRadius,
+            tickLen,
+          );
+          tickGeom.rotateZ(Math.PI / 2);
           const tMat = new THREE.MeshBasicMaterial({ color: tColor });
           const tick = new THREE.Mesh(tickGeom, tMat);
-          tick.position.set(14, -depthY, 14);
+
+          tick.position.set(14 + tickLen / 2, -depthY, 14);
           rulerGroup.add(tick);
 
-          if (depthY % 20 === 0) {
+          if (isMajor) {
             const sprite = createTextSprite(
               depthY + "m",
               "#" + tColor.toString(16).padStart(6, "0"),
             );
-            sprite.position.set(20, -depthY, 14);
+            sprite.position.set(14 + tickLen + 3.0, -depthY, 14);
             rulerGroup.add(sprite);
           }
         }
 
-        // Air altitude ruler
-        let altLimit = maxAlt > 0 ? maxAlt : 50;
+        // 2. Air Altitude Ruler (0m to altLimit with 1m/5m/10m school ruler sub-divisions)
+        let altLimit = Math.max(
+          50,
+          Math.ceil((maxAlt > 0 ? maxAlt : 50) / 10) * 10,
+        );
         const airLine = new THREE.Line(
           new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(-15, 0, -15),
@@ -551,17 +584,42 @@
           new THREE.LineBasicMaterial({
             color: 0x0ea5e9,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.6,
           }),
         );
         rulerGroup.add(airLine);
 
-        const steps = 5;
-        for (let i = 1; i <= steps; i++) {
-          const h = (altLimit / steps) * i;
-          const sprite = createTextSprite(Math.round(h) + "m", "#0ea5e9");
-          sprite.position.set(-20, h, -15);
-          rulerGroup.add(sprite);
+        for (let altY = 0; altY <= altLimit; altY++) {
+          let tickLen = 0.8; // 1m minor tick
+          let tickRadius = 0.08;
+          let isMajor = altY % 10 === 0;
+          let isMedium = altY % 5 === 0 && !isMajor;
+
+          if (isMajor) {
+            tickLen = 3.5;
+            tickRadius = 0.2;
+          } else if (isMedium) {
+            tickLen = 2.0;
+            tickRadius = 0.12;
+          }
+
+          const tickGeom = new THREE.CylinderGeometry(
+            tickRadius,
+            tickRadius,
+            tickLen,
+          );
+          tickGeom.rotateZ(Math.PI / 2);
+          const tMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
+          const tick = new THREE.Mesh(tickGeom, tMat);
+
+          tick.position.set(-15 - tickLen / 2, altY, -15);
+          rulerGroup.add(tick);
+
+          if (isMajor && altY > 0) {
+            const sprite = createTextSprite(altY + "m", "#0ea5e9");
+            sprite.position.set(-15 - tickLen - 3.0, altY, -15);
+            rulerGroup.add(sprite);
+          }
         }
       }
 
