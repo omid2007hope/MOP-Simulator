@@ -738,18 +738,88 @@
         boomRing.visible = false;
         scene.add(boomRing);
 
-        const coneGeom = new THREE.ConeGeometry(3.0, 10.0, 32);
+        // Volumetric Prandtl-Glauert Supersonic Mach Vapor Cone
+        const machConeGroup = new THREE.Group();
+
+        // 1. Core High-Pressure Compression Cone (Vertex gradient: High opacity at tip, fading at base)
+        const coneGeom = new THREE.ConeGeometry(3.5, 12.0, 32, 16, true);
+        const posAttr = coneGeom.attributes.position;
+        const colors = [];
+        const baseVaporColor = new THREE.Color(0x38bdf8); // Atmospheric cyan-blue vapor
+        const tipIntenseColor = new THREE.Color(0xf0f9ff); // Bright shock compression tip
+
+        for (let i = 0; i < posAttr.count; i++) {
+          const y = posAttr.getY(i);
+          // t = 1 at tip (y = +6), t = 0 at base (y = -6)
+          const t = Math.max(0, Math.min(1, (y - -6.0) / 12.0));
+          const c = new THREE.Color().lerpColors(
+            baseVaporColor,
+            tipIntenseColor,
+            Math.pow(t, 2.0),
+          );
+          // Multiply RGB by t^1.5 so alpha/brightness vanishes towards base
+          const intensity = Math.pow(t, 1.5);
+          colors.push(c.r * intensity, c.g * intensity, c.b * intensity);
+        }
+        coneGeom.setAttribute(
+          "color",
+          new THREE.Float32BufferAttribute(colors, 3),
+        );
+
         const coneMat = new THREE.MeshBasicMaterial({
-          color: 0xffffff,
+          vertexColors: true,
           transparent: true,
-          opacity: 0.15,
+          opacity: 0.32,
           side: THREE.DoubleSide,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
-        machCone = new THREE.Mesh(coneGeom, coneMat);
+        const innerCone = new THREE.Mesh(coneGeom, coneMat);
+        innerCone.rotation.x = Math.PI; // point down towards projectile nose
+        machConeGroup.add(innerCone);
+
+        // 2. Outer Soft Vapor Condensation Envelope
+        const outerGeom = new THREE.ConeGeometry(4.8, 14.0, 32, 1, true);
+        const outerMat = new THREE.MeshBasicMaterial({
+          color: 0x0284c7,
+          transparent: true,
+          opacity: 0.08,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const outerCone = new THREE.Mesh(outerGeom, outerMat);
+        outerCone.rotation.x = Math.PI;
+        machConeGroup.add(outerCone);
+
+        // 3. Supersonic Condensation Dust / Vapor Swarm Particles
+        const machDustGeo = new THREE.BufferGeometry();
+        const machDustCount = 350;
+        const machDustPos = new Float32Array(machDustCount * 3);
+        for (let i = 0; i < machDustCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const h = Math.random(); // 0 at tip to 1 at base
+          const r = h * 4.2 * Math.random();
+          machDustPos[i * 3] = Math.cos(angle) * r;
+          machDustPos[i * 3 + 1] = -6.0 + h * 12.0; // extending UPWARDS from apex (-6) to base (+6)
+          machDustPos[i * 3 + 2] = Math.sin(angle) * r;
+        }
+        machDustGeo.setAttribute(
+          "position",
+          new THREE.BufferAttribute(machDustPos, 3),
+        );
+        const machDustMat = new THREE.PointsMaterial({
+          color: 0x7dd3fc,
+          size: 0.5,
+          transparent: true,
+          opacity: 0.3,
+          blending: THREE.AdditiveBlending,
+        });
+        const machDust = new THREE.Points(machDustGeo, machDustMat);
+        machConeGroup.add(machDust);
+
+        machCone = machConeGroup;
         machCone.visible = false;
-        machCone.rotation.x = Math.PI; // point down
         scene.add(machCone);
 
         // Volumetric dust particles (InstancedMesh for high performance)
@@ -1316,7 +1386,16 @@
             if (frame.m > 1.0) {
               machCone.visible = true;
               machCone.position.copy(projectile.position);
-              machCone.position.y += currentData.proj_length / 2.0 - 2.0;
+              // Shift shockwave origin up slightly (+7.8) so the ogive nose tip remains visible out in front
+              machCone.position.y =
+                projectile.position.y - currentData.proj_length / 2.0 + 7.8;
+
+              // Dynamically scale Mach cone angle (sin(alpha) = 1/M): higher Mach = narrower cone
+              const machAngleFactor = Math.max(
+                0.35,
+                Math.min(1.2, 1.4 / Math.max(1.01, frame.m)),
+              );
+              machCone.scale.set(machAngleFactor, 1.0, machAngleFactor);
             } else {
               machCone.visible = false;
             }
