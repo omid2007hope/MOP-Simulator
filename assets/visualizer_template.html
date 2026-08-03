@@ -1000,8 +1000,9 @@
         rebuildRulers(maxAlt);
 
         // Reset graph
-        graphData = [];
-        drawGraph();
+        chartDataTime = [];
+        chartDataVel = [];
+        updateChart();
 
         // Red glowing hole/tunnel as requested by user
         const craterMat = new THREE.MeshStandardMaterial({
