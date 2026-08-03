@@ -61,25 +61,25 @@ inline const Target Midnight_Hammer_Target = {
          .hugoniot_c0 = 1800.0,
          .hugoniot_s = 1.5},
         {.material_name = "Reinforced Concrete (facility structure / shaft lining)",
-         .thickness = 5.0,         // m (hardened internal structure)
-         .density = 2500.0–2650.0, // kg/m³ (use 2600.0)
+         .thickness = 5.0,  // m (hardened internal structure)
+         .density = 2650.0, // kg/m³ (use 2600.0)
          .compressive_strength =
-             50.0e6–70.0e6, // Pa (high-strength military-grade; 60e6 retained as good mid-value)
-         .rebar_volume_fraction = 0.02–0.04, // 0.025 reasonable
-         .rebar_yield_strength = 400.0e6–500.0e6,
+             70.0e6, // Pa (high-strength military-grade; 60e6 retained as good mid-value)
+         .rebar_volume_fraction = 0.04, // 0.025 reasonable
+         .rebar_yield_strength = 500.0e6,
          .hugoniot_c0 = 3200.0,
          .hugoniot_s = 1.9},
         {.material_name = "Solid Mountain Rock (limestone/granite-like)",
-         .thickness = 80.0–90.0,   // m (Fordow main halls estimated 80–90 m underground; prior 50 m
-                                   // understated. Sequential MOPs on shafts aimed to exploit weaker
-                                   // paths / progressive penetration)
-         .density = 2650.0–2750.0, // kg/m³ (use 2700.0)
-         .compressive_strength = 100.0e6–170.0e6, // Pa (reports of high-strength limestone up to
-                                                  // ~25 ksi / 172 MPa; 130e6 still solid mid-range)
+         .thickness = 90.0, // m (Fordow main halls estimated 80–90 m underground; prior 50 m
+                            // understated. Sequential MOPs on shafts aimed to exploit weaker
+                            // paths / progressive penetration)
+         .density = 2750.0, // kg/m³ (use 2700.0)
+         .compressive_strength = 170.0e6, // Pa (reports of high-strength limestone up to
+                                          // ~25 ksi / 172 MPa; 130e6 still solid mid-range)
          .rebar_volume_fraction = 0.0,
          .rebar_yield_strength = 0.0,
-         .hugoniot_c0 = 3500.0–3800.0, // m/s (rock typical)
-         .hugoniot_s = 1.3–1.5}        // use 1.35–1.4
+         .hugoniot_c0 = 3800.0, // m/s (rock typical)
+         .hugoniot_s = 11.5}    // use 1.35–1.4
     }};
 
 inline const Projectile MOP_DEFAULT = {.name = "GBU-57 Massive Ordnance Penetrator (MOP)",
