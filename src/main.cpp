@@ -106,14 +106,14 @@ int main(int argc, char* argv[])
         while (true) {
             std::cout << "Do you agree to these terms? (Y/N): ";
                 if (std::cin >> tos_agree) {
-                    for (auto& c : tos_agree) {
-                        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-                    }
-                    if (tos_agree == "Y" || tos_agree == "YES") {
-                        safeCin();
-                        std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
-                        break;
-                    }
+                        for (auto& c : tos_agree) {
+                            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                        }
+                        if (tos_agree == "Y" || tos_agree == "YES") {
+                            safeCin();
+                            std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
+                            break;
+                        }
                         else if (tos_agree == "N" || tos_agree == "NO") {
                             safeCin();
                             std::cout << "\nAccess Denied. You must agree to the Terms of Service "
@@ -135,12 +135,13 @@ int main(int argc, char* argv[])
     std::cout << "  [2] Interactive Custom Input (cin values for mass, velocity, density, etc.)\n";
     std::cout << "  [3] Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten Penetrators)\n";
     std::cout << "  [4] Sequential Strike (Multi-Bomb Burrowing Tactic)\n";
+    std::cout << "  [5] Operation Midnight Hammer (12 days war)\n";
     std::cout << "---------------------------------------------------------------------------------"
                  "------------------\n";
 
         while (true) {
-            std::cout << "Enter choice [1, 2, 3, or 4]: ";
-                if (std::cin >> choice && (choice >= 1 && choice <= 4)) {
+            std::cout << "Enter choice [1, 2, 3, 4 or 5]: ";
+                if (std::cin >> choice && (choice >= 1 && choice <= 5)) {
                     std::cout << "Scenario: " << choice << " Confirmed!";
                     safeCin();
                     break;
@@ -196,7 +197,8 @@ int main(int argc, char* argv[])
 
             double modulus =
                 getValidInput<double>("Enter Elastic Modulus E (GPa) [e.g., 200]: ", true);
-            if (modulus > 0) munition.elastic_modulus = modulus * 1e9;
+            if (modulus > 0)
+                munition.elastic_modulus = modulus * 1e9;
 
             munition.casing_wall_thickness =
                 getValidInput<double>("Enter Casing Wall Thickness (meters) [e.g., 0.05]: ", true);
@@ -207,9 +209,10 @@ int main(int argc, char* argv[])
             munition.hugoniot_s =
                 getValidInput<double>("Enter Projectile Hugoniot S [e.g., 1.49]: ", true);
 
-            double ec =
-                getValidInput<double>("Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ", true);
-            if (ec > 0) munition.explosive_critical_energy = ec * 1e15;
+            double ec = getValidInput<double>(
+                "Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ", true);
+            if (ec > 0)
+                munition.explosive_critical_energy = ec * 1e15;
 
             object.layers.clear();
             TargetLayer customLayer;
@@ -231,11 +234,14 @@ int main(int argc, char* argv[])
                 getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
             customLayer.compressive_strength = targetStrength * 1e6;
 
-            double tc0 = getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ", true);
-            if (tc0 > 0) customLayer.hugoniot_c0 = tc0;
+            double tc0 =
+                getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ", true);
+            if (tc0 > 0)
+                customLayer.hugoniot_c0 = tc0;
 
             double ts = getValidInput<double>("Enter Target Hugoniot S [e.g., 1.9]: ", true);
-            if (ts > 0) customLayer.hugoniot_s = ts;
+            if (ts > 0)
+                customLayer.hugoniot_s = ts;
 
             object.layers.push_back(customLayer);
 
@@ -325,6 +331,25 @@ int main(int argc, char* argv[])
                     name_ss << "Sequential Drop #" << (i + 1);
                     scenarios.push_back({name_ss.str(), 40000.0, 300.0, 0.0, 0.0});
                 }
+        }
+
+        else if (choice = 5) {
+            std::cout << "\n[+] Loading Operation Midnight Hammer Preset (12 days war)\n";
+
+                if (auto p = ConfigLoader::getProjectileByName(
+                        projectilesDb, "Operation Midnight Hammer (12 days war)")) {
+                    munition = *p;
+                }
+                else {
+                    munition = Midnight_Hammer_projectile;
+                }
+
+            scenarios = {
+                {"Default Hammer", 50000.0, 420.0, 0.0, 0.0},
+                {"50,000 ft Drop", 50000.0, 610.0, 10.0, 0.0},
+                {"45,000 ft Drop", 45000.0, 520.0, 5.0, 0.0},
+                {"40,000 ft Drop", 40000.0, 450.0, 0.0, 0.0},
+            };
         }
         else { // choice == 1 or fallback
             std::cout << "\n[+] Loading standard GBU-57 MOP drop scenarios...\n";
