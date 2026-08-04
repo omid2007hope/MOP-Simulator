@@ -18,6 +18,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
                                               double& impact_pitch,
                                               double dt)
 {
+    (void)dt; // Suppress unused parameter warning
     double current_altitude = scenario.altitude_ft;
     double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
     double current_vx = scenario.velocity * std::cos(fpa_rad);
@@ -317,6 +318,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
         }
 
         auto derivative = [&](double v, double z, double theta, double T, double L, double m) -> PenDeriv {
+            (void)T; // Suppress unused parameter warning
             PenDeriv d;
             double vSq = v * v;
             double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
