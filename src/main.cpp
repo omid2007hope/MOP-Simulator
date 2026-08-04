@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
                  "------------------\n";
 
         while (true) {
-            std::cout << "Enter choice [1, 2, 3]: ";
+            std::cout << "Enter choice [1, 2 or 3]: ";
                 if (std::cin >> choice && (choice >= 1 && choice <= 3)) {
                     std::cout << "Scenario: " << choice << " Confirmed!";
                     safeCin();
@@ -250,6 +250,11 @@ int main(int argc, char* argv[])
                             safeCin();
                             break;
                         }
+                        else {
+                            safeCin();
+                            std::cout << "Invalid Entry, please try again!\n";
+                        };
+
                         if (std::cin.eof()) {
                             std::cerr << "\n[!] EOF encountered. Exiting safely to prevent "
                                          "infinite loop.\n";
@@ -287,10 +292,6 @@ int main(int argc, char* argv[])
                     scenarios.push_back(
                         {name_ss.str(), dropAltitude_ft, initial_velocity, obliquity, aoa});
                 }
-
-                if (scenarios.empty()) {
-                    scenarios.push_back({"Custom Default Test", 50000.0, 500.0, 0.0, 0.0});
-                }
         }
 
     // ! ********************
@@ -310,7 +311,7 @@ int main(int argc, char* argv[])
                 }
 
             scenarios = {
-                {"Orbital Strike", 3000000.0, 0.0, 0.0, 0.0},
+                {"Orbital Strike", 3000000.0, 7800.0, 0.0, 0.0},
             };
         }
 
@@ -367,7 +368,7 @@ int main(int argc, char* argv[])
                         else {
                             name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
                         }
-                    scenarios.push_back({name_ss.str(), 50000.0, 0.0, 0.0, 0.0});
+                    scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0});
                 }
         }
 
