@@ -79,7 +79,7 @@ inline const Target Midnight_Hammer_Target = {
          .rebar_volume_fraction = 0.0,
          .rebar_yield_strength = 0.0,
          .hugoniot_c0 = 3800.0, // m/s (rock typical)
-         .hugoniot_s = 11.5}    // use 1.35–1.4
+         .hugoniot_s = 1.35}    // use 1.35–1.4
     }};
 
 inline const Projectile MOP_DEFAULT = {.name = "GBU-57 Massive Ordnance Penetrator (MOP)",

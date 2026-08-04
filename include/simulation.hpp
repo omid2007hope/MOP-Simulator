@@ -58,8 +58,9 @@ struct Target
         double currentDepthAcc = 0.0;
             for (auto& layer : layers) {
                     if (breachDepth > currentDepthAcc) {
-                        layer.pulverized_depth =
-                            std::max(layer.pulverized_depth, breachDepth - currentDepthAcc);
+                        layer.pulverized_depth = std::max(
+                            layer.pulverized_depth,
+                            std::min(layer.thickness, breachDepth - currentDepthAcc));
                     }
                 currentDepthAcc += layer.thickness;
             }
@@ -188,21 +189,17 @@ private:
     Target target;
     PhysicsConstants cons;
 
-    double getMachDependentDrag(double mach, double baseCd) const;
+    void simulateAtmosphericDrop(const ImpactScenario& scenario,
+                                 SimulationResult& res,
+                                 double& impact_velocity,
+                                 double& impact_pitch,
+                                 double dt);
 
-    AtmosphereState standardAtmosphere(double altitude_m) const;
-
-    static double computeDIF(double strain_rate_per_s, double fc_static_pa);
-
-    double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt) const;
-
-    double solveHugoniotInterfaceVelocity(double v,
-                                          double rho_t,
-                                          double C0_t,
-                                          double S_t,
-                                          double rho_p,
-                                          double C0_p,
-                                          double S_p) const;
+    void simulateGroundPenetration(const ImpactScenario& scenario,
+                                   SimulationResult& res,
+                                   double impact_velocity,
+                                   double impact_pitch,
+                                   double dt);
 
 public:
     ImpactSimulator(const Projectile& p,
@@ -211,12 +208,7 @@ public:
 
     SimulationResult simulate(const ImpactScenario& scenario);
 
-    void printAscii3DVisualizer(const SimulationResult& r);
-
-    void printReport(const std::vector<SimulationResult>& results);
-
-    void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
-                                  const std::string& basePath);
+    const Target& getTarget() const { return target; }
 };
 
 #endif // SIMULATION_HPP

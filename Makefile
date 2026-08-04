@@ -22,8 +22,8 @@ endif
 TARGET = bin/mop_sim$(EXE)
 TEST_TARGET = bin/test_simulation$(EXE)
 
-OBJS = build/main.o build/simulation.o build/config_loader.o
-TEST_OBJS = build/test_simulation.o build/simulation.o build/config_loader.o
+OBJS = build/main.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
+TEST_OBJS = build/test_simulation.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
 
 all: $(TARGET)
 
@@ -40,6 +40,14 @@ build/simulation.o: src/simulation.cpp include/simulation.hpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 build/config_loader.o: src/config_loader.cpp include/config_loader.hpp include/simulation.hpp
+	@$(MKDIR_BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+build/environment_physics.o: src/environment_physics.cpp include/environment_physics.hpp include/simulation.hpp
+	@$(MKDIR_BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+build/telemetry_exporter.o: src/telemetry_exporter.cpp include/telemetry_exporter.hpp include/simulation.hpp include/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 

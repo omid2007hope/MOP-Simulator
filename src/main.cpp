@@ -11,7 +11,7 @@
 #include "config_loader.hpp"
 #include "default.hpp"
 #include "simulation.hpp"
-
+#include "telemetry_exporter.hpp"
 void safeCin()
 {
         if (!std::cin) {
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 
     // Default target
     Target object = CONCRETE_DEFAULT;
-        if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
+        if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete Structure")) {
             object = *t;
         }
 
@@ -329,7 +329,7 @@ int main(int argc, char* argv[])
                          "Shaft Strike)\n";
 
                 if (auto p = ConfigLoader::getProjectileByName(
-                        projectilesDb, "Operation Midnight Hammer (12 days war)")) {
+                        projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
                     munition = *p;
                 }
                 else {
@@ -382,24 +382,23 @@ int main(int argc, char* argv[])
 
         if (choice == 1 || choice == 2) {
             // Independent tests get fresh targets
-            ImpactSimulator reporter(munition, object, cons);
-                for (const auto& sc : scenarios) {
-                    ImpactSimulator simulator(munition, object, cons);
-                    results.push_back(simulator.simulate(sc));
-                }
-            reporter.printReport(results);
-            reporter.generateHtml3DVisualizer(results, basePath);
+            for (const auto& sc : scenarios) {
+                ImpactSimulator simulator(munition, object, cons);
+                results.push_back(simulator.simulate(sc));
+            }
+            TelemetryExporter::printReport(results, munition, object);
+            TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
         }
 
         else {
             // Sequential multi-bomb strikes use a persistent simulator instance to maintain
             // cumulative shaft crater depth
             ImpactSimulator simulator(munition, object, cons);
-                for (const auto& sc : scenarios) {
-                    results.push_back(simulator.simulate(sc));
-                }
-            simulator.printReport(results);
-            simulator.generateHtml3DVisualizer(results, basePath);
+            for (const auto& sc : scenarios) {
+                results.push_back(simulator.simulate(sc));
+            }
+            TelemetryExporter::printReport(results, munition, simulator.getTarget());
+            TelemetryExporter::generateHtml3DVisualizer(results, munition, simulator.getTarget(), basePath);
         }
 
     std::cout << "\nPress Enter to exit...";
