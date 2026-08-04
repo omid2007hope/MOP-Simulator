@@ -185,9 +185,7 @@ private:
     PhysicsConstants cons;
     ImpactScenario scenario;
 
-    double computeProjectileRotationInAir(double x_acceleration,
-                                          double y_acceleration,
-                                          double horizontal_velocity,
+    double computeProjectileRotationInAir(double horizontal_velocity,
                                           double vertical_velocity,
                                           double gamma,
                                           double dragCoefficient) const;

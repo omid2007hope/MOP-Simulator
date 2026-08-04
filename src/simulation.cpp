@@ -14,20 +14,18 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 {
 }
 
-double ImpactSimulator::computeProjectileRotationInAir(double x_acceleration,
-                                                       double y_acceleration,
-                                                       double horizontal_velocity,
+double ImpactSimulator::computeProjectileRotationInAir(double horizontal_velocity,
                                                        double vertical_velocity,
-                                                       double gamma,
-                                                       double dragCoefficient) const
+                                                       double gamma) const
 {
     // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
     // based on drag force, mass, gravity, and current velocity vector.
 
     gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
 
-    x_acceleration = -(dragCoefficient * std::sin(gamma)) / proj.total_mass;
-    y_acceleration = cons.gravity - (dragCoefficient * std::cos(gamma)) / proj.total_mass;
+    double x_acceleration = -(scenario.dragCoefficient * std::sin(gamma)) / proj.total_mass;
+    double y_acceleration =
+        cons.gravity - (scenario.dragCoefficient * std::cos(gamma)) / proj.total_mass;
 };
 
 double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
@@ -287,7 +285,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // Calculate Nose Performance Coefficient (N)
     double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
 
-    double dragCoefficient =
+    scenario.dragCoefficient =
         (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
     double dropAltitude = scenario.altitude_ft;
@@ -307,7 +305,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     auto calc_accel = [&](double alt_m, double vel) {
                         AtmosphereState atm = standardAtmosphere(alt_m);
                         double mach = vel / atm.speed_of_sound_ms;
-                        double cd = getMachDependentDrag(mach, dragCoefficient);
+                        double cd = getMachDependentDrag(mach, scenario.dragCoefficient);
                         double f = 0.5 * atm.density_kgm3 * vel * vel * cd * area;
                         return cons.gravity - (f / proj.total_mass);
                     };
@@ -588,8 +586,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         // construction at z_local=2d), full cavity expansion resistance beyond.
                         double fc_mpa = std::max(0.001, effective_strength / 1.0e6);
                         double S = 82.6 * std::pow(fc_mpa, -0.544);
-                        double tunnelForce =
-                            area * (S * effective_strength + dragCoefficient * baseDensity * vSq);
+                        double tunnelForce = area * (S * effective_strength +
+                                                     scenario.dragCoefficient * baseDensity * vSq);
                         double craterDepthLimit = 2.0 * proj.diameter;
                         double zLocal = z - layerEntryDepth;
                         double axialForce =
