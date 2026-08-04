@@ -14,19 +14,19 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 {
 }
 
-double ImpactSimulator::computeProjectileRotationInAir(double horizontal_velocity,
-                                                       double vertical_velocity,
-                                                       double gamma) const
+std::pair<double, double> ImpactSimulator::computeProjectileRotationInAir(double horizontal_velocity,
+                                                                        double vertical_velocity,
+                                                                        double drag_coef) const
 {
     // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
     // based on drag force, mass, gravity, and current velocity vector.
+    double gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
 
-    gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
-
-    double x_acceleration = -(scenario.dragCoefficient * std::sin(gamma)) / proj.total_mass;
-    double y_acceleration =
-        cons.gravity - (scenario.dragCoefficient * std::cos(gamma)) / proj.total_mass;
-};
+    double x_acceleration = -(drag_coef * std::sin(gamma)) / proj.total_mass;
+    double y_acceleration = cons.gravity - (drag_coef * std::cos(gamma)) / proj.total_mass;
+    
+    return {x_acceleration, y_acceleration};
+}
 
 double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
 {
@@ -285,7 +285,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // Calculate Nose Performance Coefficient (N)
     double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
 
-    scenario.dragCoefficient =
+    double dragCoefficient =
         (8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
 
     double dropAltitude = scenario.altitude_ft;
@@ -305,7 +305,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     auto calc_accel = [&](double alt_m, double vel) {
                         AtmosphereState atm = standardAtmosphere(alt_m);
                         double mach = vel / atm.speed_of_sound_ms;
-                        double cd = getMachDependentDrag(mach, scenario.dragCoefficient);
+                        double cd = getMachDependentDrag(mach, dragCoefficient);
                         double f = 0.5 * atm.density_kgm3 * vel * vel * cd * area;
                         return cons.gravity - (f / proj.total_mass);
                     };

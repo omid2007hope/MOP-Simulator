@@ -103,12 +103,12 @@ struct ImpactScenario
     double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
     double angle_of_attack = 0.0; // Degrees
 
-    double x_acceleration;
-    double y_acceleration;
-    double horizontal_velocity;
-    double vertical_velocity;
-    double gamma;
-    double dragCoefficient;
+    double x_acceleration = 0.0;
+    double y_acceleration = 0.0;
+    double horizontal_velocity = 0.0;
+    double vertical_velocity = 0.0;
+    double gamma = 0.0;
+    double dragCoefficient = 0.0;
 };
 
 struct TelemetryFrame
@@ -183,12 +183,10 @@ private:
     Projectile proj;
     Target target;
     PhysicsConstants cons;
-    ImpactScenario scenario;
-
-    double computeProjectileRotationInAir(double horizontal_velocity,
-                                          double vertical_velocity,
-                                          double gamma,
-                                          double dragCoefficient) const;
+    // Helper for 2DOF
+    std::pair<double, double> computeProjectileRotationInAir(double horizontal_velocity,
+                                                             double vertical_velocity,
+                                                             double drag_coef) const;
 
     double getMachDependentDrag(double mach, double baseCd) const;
 
@@ -207,10 +205,7 @@ private:
                                           double S_p) const;
 
 public:
-    ImpactSimulator(const Projectile& p,
-                    const Target& t,
-                    const PhysicsConstants& c,
-                    const ImpactSimulator& s);
+    ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
     SimulationResult simulate(const ImpactScenario& scenario);
 
