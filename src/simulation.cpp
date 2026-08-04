@@ -20,15 +20,16 @@ double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
     // McCoy/US-Army tabulated data), scaled by this projectile's CRH-derived form factor and
     // blended into modified-Newtonian hypersonic theory above Mach 5 (needed for orbital
     // kinetic strikes at Mach 10-22, well beyond the G7 table's validated range).
-    static constexpr double g7Mach[] = {0.00, 0.20, 0.40, 0.60, 0.70, 0.80, 0.85, 0.90, 0.95, 1.00,
-                                        1.05, 1.10, 1.20, 1.30, 1.40, 1.50, 1.70, 1.90, 2.10, 2.30,
-                                        2.50, 2.70, 2.90, 3.10, 3.30, 3.50, 3.70, 3.90, 4.20, 4.60,
-                                        5.00};
-    static constexpr double g7Cd[] = {0.1198, 0.1193, 0.1193, 0.1194, 0.1197, 0.1226, 0.1266,
-                                      0.1368, 0.1660, 0.2993, 0.4015, 0.4034, 0.3919, 0.3785,
-                                      0.3660, 0.3550, 0.3363, 0.3213, 0.3099, 0.3007, 0.2931,
-                                      0.2864, 0.2806, 0.2754, 0.2709, 0.2668, 0.2632, 0.2599,
-                                      0.2557, 0.2508, 0.2465};
+    static constexpr double g7Mach[] = {0.00, 0.20, 0.40, 0.60, 0.70, 0.80, 0.85, 0.90,
+                                        0.95, 1.00, 1.05, 1.10, 1.20, 1.30, 1.40, 1.50,
+                                        1.70, 1.90, 2.10, 2.30, 2.50, 2.70, 2.90, 3.10,
+                                        3.30, 3.50, 3.70, 3.90, 4.20, 4.60, 5.00};
+
+    static constexpr double g7Cd[] = {
+        0.1198, 0.1193, 0.1193, 0.1194, 0.1197, 0.1226, 0.1266, 0.1368, 0.1660, 0.2993, 0.4015,
+        0.4034, 0.3919, 0.3785, 0.3660, 0.3550, 0.3363, 0.3213, 0.3099, 0.3007, 0.2931, 0.2864,
+        0.2806, 0.2754, 0.2709, 0.2668, 0.2632, 0.2599, 0.2557, 0.2508, 0.2465};
+
     constexpr size_t g7Points = sizeof(g7Mach) / sizeof(g7Mach[0]);
 
     double formFactor = baseCd / g7Cd[0];
@@ -147,8 +148,8 @@ double ImpactSimulator::computeDIF(double strain_rate_per_s, double fc_static_pa
     return gamma * std::pow(strain_rate / staticReferenceStrainRate, 1.0 / 3.0);
 }
 
-double ImpactSimulator::solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp,
-                                               double Rt) const
+double ImpactSimulator::solveInterfaceVelocity(
+    double v, double rho_p, double rho_t, double Yp, double Rt) const
 {
     // Tate-Bernoulli quasi-steady balance at the eroding interface:
     //   0.5*rho_p*(v-u)^2 + Yp = 0.5*rho_t*u^2 + Rt
@@ -188,9 +189,8 @@ double ImpactSimulator::solveInterfaceVelocity(double v, double rho_p, double rh
     return 0.0;
 }
 
-double ImpactSimulator::solveHugoniotInterfaceVelocity(double v, double rho_t, double C0_t,
-                                                       double S_t, double rho_p, double C0_p,
-                                                       double S_p) const
+double ImpactSimulator::solveHugoniotInterfaceVelocity(
+    double v, double rho_t, double C0_t, double S_t, double rho_p, double C0_p, double S_p) const
 {
     // Shock impedance matching at the target/casing interface: continuity of pressure and
     // particle velocity between the target's Hugoniot (shocked from rest) and the projectile's
@@ -236,7 +236,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.scenario_name = scenario.name;
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
-    res.mach_number = scenario.velocity / standardAtmosphere(scenario.altitude_ft / 3.28084).speed_of_sound_ms;
+    res.mach_number =
+        scenario.velocity / standardAtmosphere(scenario.altitude_ft / 3.28084).speed_of_sound_ms;
 
     res.casing_failure = false;
     res.premature_detonation = false;
@@ -316,19 +317,20 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     current_velocity += (dt_drop / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
                     y_m += (dt_drop / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
 
-                    if (y_m < 0.0) {
-                        double fraction = prev_y_m / (prev_y_m - y_m);
-                        current_velocity = prev_vel + fraction * (current_velocity - prev_vel);
-                        y_m = 0.0;
-                        t_drop = t_drop - dt_drop + fraction * dt_drop;
-                    }
+                        if (y_m < 0.0) {
+                            double fraction = prev_y_m / (prev_y_m - y_m);
+                            current_velocity = prev_vel + fraction * (current_velocity - prev_vel);
+                            y_m = 0.0;
+                            t_drop = t_drop - dt_drop + fraction * dt_drop;
+                        }
 
                     current_altitude = y_m * 3.28084;
                     AtmosphereState current_atm = standardAtmosphere(y_m);
                     double current_density = current_atm.density_kgm3;
 
                     bool is_sonic_boom_frame = false;
-                        if (current_velocity >= current_atm.speed_of_sound_ms && !sonic_boom_triggered) {
+                        if (current_velocity >= current_atm.speed_of_sound_ms &&
+                            !sonic_boom_triggered) {
                             sonic_boom_triggered = true;
                             is_sonic_boom_frame = true;
                             std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ " << std::fixed
@@ -379,17 +381,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // Mach number is not a standard concept once inside a solid target)
     // Multi-bomb salvo cumulative shaft tracking: calculate initial breached shaft entry depth
     double initial_shaft_depth = 0.0;
-    for (const auto& layer : target.layers) {
-        if (layer.pulverized_depth > 0) {
-            initial_shaft_depth += std::min(layer.thickness, layer.pulverized_depth);
+        for (const auto& layer : target.layers) {
+                if (layer.pulverized_depth > 0) {
+                    initial_shaft_depth += std::min(layer.thickness, layer.pulverized_depth);
+                }
         }
-    }
     res.previous_strike_depth = initial_shaft_depth;
-    if (initial_shaft_depth > 0) {
-        current_depth = initial_shaft_depth;
-        std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
-                  << initial_shaft_depth << " m\n";
-    }
+        if (initial_shaft_depth > 0) {
+            current_depth = initial_shaft_depth;
+            std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
+                      << initial_shaft_depth << " m\n";
+        }
 
     // Convert target layers to fullDepth depths
     std::vector<double> layer_bottom_depths;
@@ -400,18 +402,18 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         }
 
     size_t current_layer_idx = 0;
-    while (current_layer_idx < layer_bottom_depths.size() &&
-           current_depth >= layer_bottom_depths[current_layer_idx]) {
-        current_layer_idx++;
-    }
+        while (current_layer_idx < layer_bottom_depths.size() &&
+               current_depth >= layer_bottom_depths[current_layer_idx]) {
+            current_layer_idx++;
+        }
     size_t last_layer_idx = current_layer_idx;
     double next_print_depth = std::floor(current_depth) + 1.0;
     int pen_frame_counter = 0;
 
         if (current_layer_idx < target.layers.size()) {
             std::cout << "--- Ground Penetration Commenced ---\n";
-            std::cout << "  [LAYER BREACH] Entering layer: " << target.layers[current_layer_idx].material_name
-                      << "\n";
+            std::cout << "  [LAYER BREACH] Entering layer: "
+                      << target.layers[current_layer_idx].material_name << "\n";
         }
 
     double critical_angle_threshold = 65.0 * cons.PI / 180.0;
@@ -427,46 +429,50 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             return res;
         }
 
-        // Walker-Wasley shock initiation (Hugoniot impedance matching): each new material
-        // interface encountered (initial impact, and every subsequent layer breach) generates a
-        // fresh transient shock loading event into the casing. Track the worst P^2*tau observed.
-        auto evaluateShockEvent = [&](double impactVel, const TargetLayer& lyr) {
-            double Up = solveHugoniotInterfaceVelocity(impactVel, lyr.density, lyr.hugoniot_c0,
-                                                       lyr.hugoniot_s, proj.casing_density,
-                                                       proj.hugoniot_c0, proj.hugoniot_s);
-            double P = lyr.density * (lyr.hugoniot_c0 + lyr.hugoniot_s * Up) * Up;
-            double Us_casing = proj.hugoniot_c0 + proj.hugoniot_s * (impactVel - Up);
-            double tau = (Us_casing > 1.0) ? (proj.casing_wall_thickness / Us_casing) : 0.0;
-            double product = P * P * tau;
-                if (product > max_walker_wasley_product) {
-                    max_walker_wasley_product = product;
-                    res.shock_pressure_gpa_peak = P / 1.0e9;
-                    res.shock_pulse_duration_us = tau * 1.0e6;
-                }
-        };
-            if (!target.layers.empty()) {
-                evaluateShockEvent(current_velocity, target.layers[0]);
+    // Walker-Wasley shock initiation (Hugoniot impedance matching): each new material
+    // interface encountered (initial impact, and every subsequent layer breach) generates a
+    // fresh transient shock loading event into the casing. Track the worst P^2*tau observed.
+    auto evaluateShockEvent = [&](double impactVel, const TargetLayer& lyr) {
+        double Up = solveHugoniotInterfaceVelocity(impactVel,
+                                                   lyr.density,
+                                                   lyr.hugoniot_c0,
+                                                   lyr.hugoniot_s,
+                                                   proj.casing_density,
+                                                   proj.hugoniot_c0,
+                                                   proj.hugoniot_s);
+        double P = lyr.density * (lyr.hugoniot_c0 + lyr.hugoniot_s * Up) * Up;
+        double Us_casing = proj.hugoniot_c0 + proj.hugoniot_s * (impactVel - Up);
+        double tau = (Us_casing > 1.0) ? (proj.casing_wall_thickness / Us_casing) : 0.0;
+        double product = P * P * tau;
+            if (product > max_walker_wasley_product) {
+                max_walker_wasley_product = product;
+                res.shock_pressure_gpa_peak = P / 1.0e9;
+                res.shock_pulse_duration_us = tau * 1.0e6;
             }
+    };
+        if (!target.layers.empty()) {
+            evaluateShockEvent(current_velocity, target.layers[0]);
+        }
 
-        const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
-        res.mach_number = current_velocity / groundSpeedOfSound;
+    const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
+    res.mach_number = current_velocity / groundSpeedOfSound;
 
-        // Time Integration Loop (RK4) - two-phase Forrestal cratering/tunneling with CEB-FIP
-        // strain-rate strengthening in the rigid regime, transitioning to the Walker-Anderson
-        // erosion model (WAPM) once hydrodynamic pressure overwhelms the casing's dynamic yield.
-        double current_length = proj.length;
-        bool erosion_active = false;
-        double bar_wave_speed = std::sqrt(proj.elastic_modulus / proj.casing_density);
-        res.bar_wave_speed = bar_wave_speed;
+    // Time Integration Loop (RK4) - two-phase Forrestal cratering/tunneling with CEB-FIP
+    // strain-rate strengthening in the rigid regime, transitioning to the Walker-Anderson
+    // erosion model (WAPM) once hydrodynamic pressure overwhelms the casing's dynamic yield.
+    double current_length = proj.length;
+    bool erosion_active = false;
+    double bar_wave_speed = std::sqrt(proj.elastic_modulus / proj.casing_density);
+    res.bar_wave_speed = bar_wave_speed;
 
-        struct PenDeriv
-        {
-            double dv = 0.0;
-            double dz = 0.0;
-            double dtheta = 0.0;
-            double dT = 0.0;
-            double dL = 0.0;
-        };
+    struct PenDeriv
+    {
+        double dv = 0.0;
+        double dz = 0.0;
+        double dtheta = 0.0;
+        double dT = 0.0;
+        double dL = 0.0;
+    };
 
         while (current_velocity > 0.0 && !res.casing_failure && current_depth < fullDepth) {
                 // Advance layer if we've pierced the current one
@@ -518,8 +524,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     res.erosion_occurred = true;
                     std::cout << "  [WAPM EROSION ONSET] Hydrodynamic pressure exceeded casing "
                                  "yield at Depth: "
-                              << current_depth << " m | Velocity: " << current_velocity
-                              << " m/s\n";
+                              << current_depth << " m | Velocity: " << current_velocity << " m/s\n";
                 }
 
             // Obliquity/AoA bending structural failure check (discrete, evaluated pre-step)
@@ -544,8 +549,9 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 }
 
             // RK4 state derivative: (velocity, depth, obliquity, temperature, rigid/eroding length)
-            auto derivative = [&](double v, double z, double theta, [[maybe_unused]] double T,
-                                  double L, double m) -> PenDeriv {
+            auto derivative =
+                [&](double v, double z, double theta, [[maybe_unused]] double T, double L, double m)
+                -> PenDeriv {
                 PenDeriv d;
                 double vSq = v * v;
                 double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
@@ -555,8 +561,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
                 double lateral_force = 0.0;
                     if (theta > 0.0 || angleOfAttack_radians > 0.0) {
-                        lateral_force =
-                            (0.5 * baseDensity * vSq * area) * std::sin(theta + angleOfAttack_radians);
+                        lateral_force = (0.5 * baseDensity * vSq * area) *
+                                        std::sin(theta + angleOfAttack_radians);
                     }
                 double safeMass = std::max(0.001, m);
                 double gravity_component = cons.gravity * std::cos(theta);
@@ -585,13 +591,18 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                     else {
                         // Walker-Anderson (WAPM): Tate-Bernoulli interface velocity u, then the
                         // rate-dependent tail deceleration coupling the elastic bar wave speed.
-                        double u = solveInterfaceVelocity(v, proj.casing_density, baseDensity,
-                                                          proj.yield_strength, effective_strength);
-                        double Le = std::max(0.01, L); // elastic length ~= instantaneous rigid length
+                        double u = solveInterfaceVelocity(v,
+                                                          proj.casing_density,
+                                                          baseDensity,
+                                                          proj.yield_strength,
+                                                          effective_strength);
+                        double Le =
+                            std::max(0.01, L); // elastic length ~= instantaneous rigid length
                         d.dv = -(proj.yield_strength / (proj.casing_density * Le)) *
                                    (1.0 + (v - u) / bar_wave_speed) +
                                gravity_component;
-                        d.dz = u * std::cos(theta); // depth tracks the eroding interface, not tail v
+                        d.dz =
+                            u * std::cos(theta); // depth tracks the eroding interface, not tail v
                         d.dL = -(v - u);
 
                         double erosion_heat_rate =
@@ -607,28 +618,34 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             };
 
             auto get_mass = [&](double L_eval) {
-                return erosion_active ? (proj.total_mass / proj.length) * std::max(0.0, L_eval) : current_mass;
+                return erosion_active ? (proj.total_mass / proj.length) * std::max(0.0, L_eval)
+                                      : current_mass;
             };
 
-            PenDeriv k1 = derivative(current_velocity, current_depth, obliquity_radians,
-                                    current_temperature, current_length, get_mass(current_length));
+            PenDeriv k1 = derivative(current_velocity,
+                                     current_depth,
+                                     obliquity_radians,
+                                     current_temperature,
+                                     current_length,
+                                     get_mass(current_length));
             PenDeriv k2 = derivative(current_velocity + 0.5 * dt * k1.dv,
-                                    current_depth + 0.5 * dt * k1.dz,
-                                    obliquity_radians + 0.5 * dt * k1.dtheta,
-                                    current_temperature + 0.5 * dt * k1.dT,
-                                    current_length + 0.5 * dt * k1.dL,
-                                    get_mass(current_length + 0.5 * dt * k1.dL));
+                                     current_depth + 0.5 * dt * k1.dz,
+                                     obliquity_radians + 0.5 * dt * k1.dtheta,
+                                     current_temperature + 0.5 * dt * k1.dT,
+                                     current_length + 0.5 * dt * k1.dL,
+                                     get_mass(current_length + 0.5 * dt * k1.dL));
             PenDeriv k3 = derivative(current_velocity + 0.5 * dt * k2.dv,
-                                    current_depth + 0.5 * dt * k2.dz,
-                                    obliquity_radians + 0.5 * dt * k2.dtheta,
-                                    current_temperature + 0.5 * dt * k2.dT,
-                                    current_length + 0.5 * dt * k2.dL,
-                                    get_mass(current_length + 0.5 * dt * k2.dL));
-            PenDeriv k4 = derivative(current_velocity + dt * k3.dv, current_depth + dt * k3.dz,
-                                    obliquity_radians + dt * k3.dtheta,
-                                    current_temperature + dt * k3.dT,
-                                    current_length + dt * k3.dL,
-                                    get_mass(current_length + dt * k3.dL));
+                                     current_depth + 0.5 * dt * k2.dz,
+                                     obliquity_radians + 0.5 * dt * k2.dtheta,
+                                     current_temperature + 0.5 * dt * k2.dT,
+                                     current_length + 0.5 * dt * k2.dL,
+                                     get_mass(current_length + 0.5 * dt * k2.dL));
+            PenDeriv k4 = derivative(current_velocity + dt * k3.dv,
+                                     current_depth + dt * k3.dz,
+                                     obliquity_radians + dt * k3.dtheta,
+                                     current_temperature + dt * k3.dT,
+                                     current_length + dt * k3.dL,
+                                     get_mass(current_length + dt * k3.dL));
 
             double acceleration = k1.dv;
 
@@ -662,7 +679,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                 }
                 else {
                     current_length = std::max(0.0, current_length);
-                    double effective_linear_density = proj.total_mass / proj.length; 
+                    double effective_linear_density = proj.total_mass / proj.length;
                     current_mass = effective_linear_density * current_length;
                     res.final_rod_length = current_length;
                     res.erosion_length_lost = proj.length - current_length;
@@ -723,9 +740,9 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
         }
     std::cout << "------------------------------------\n\n";
 
-        // Update the pulverized depth for sequential strikes
-        target.pulverizeDepth(current_depth);
-        res.cumulative_breach_depth = current_depth;
+    // Update the pulverized depth for sequential strikes
+    target.pulverizeDepth(current_depth);
+    res.cumulative_breach_depth = current_depth;
 
     res.actual_penetration_depth = current_depth;
     res.dynamic_pressure = max_dynamic_pressure;
@@ -795,15 +812,17 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 
     // Populate Visualization Data
     res.explosive_mass = proj.explosive_mass;
-    if (res.is_kinetic_rod) {
-        res.explosion_scale = 1.0; 
-        res.crater_wide_radius = proj.diameter * 2.0; // minimal crater
-    } else {
-        res.explosion_scale = std::max(5.0, (proj.yield_strength / 1e9) * 3.0); // original logic was based on casing yield
-        // if we want it based on explosive mass:
-        res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
-        res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
-    }
+        if (res.is_kinetic_rod) {
+            res.explosion_scale = 1.0;
+            res.crater_wide_radius = proj.diameter * 2.0; // minimal crater
+        }
+        else {
+            res.explosion_scale = std::max(
+                5.0, (proj.yield_strength / 1e9) * 3.0); // original logic was based on casing yield
+            // if we want it based on explosive mass:
+            res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
+            res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
+        }
     res.crater_narrow_radius = proj.diameter / 2.0;
     res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9); // scale down energy
 
@@ -811,10 +830,11 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     // duration (fast erosion vs. slow rigid drilling) maps onto a consistent, watchable window,
     // instead of a fixed arbitrary constant.
     constexpr double desiredWallClockSeconds = 6.0;
-    double totalPenSimTime = res.penetration_frames.empty() ? dt : res.penetration_frames.back().time;
+    double totalPenSimTime =
+        res.penetration_frames.empty() ? dt : res.penetration_frames.back().time;
     res.time_scale_pen = (totalPenSimTime > 1.0e-9)
-                            ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
-                            : 0.02;
+                             ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
+                             : 0.02;
 
     return res;
 }
@@ -1067,7 +1087,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
     // Generate scenario buttons
     std::stringstream buttons;
         for (size_t i = 0; i < results.size(); ++i) {
-            buttons << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-scenario-" << i
+            buttons << "        <button onclick=\"selectScenario(" << i << ")\" id=\"btn-scenario-"
+                    << i
                     << "\" class=\"scenario-btn px-4 py-1.5 rounded-full text-xs font-semibold "
                        "whitespace-nowrap "
                        "transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500 "
@@ -1098,9 +1119,9 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                     penFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
                                   << ",m:" << f.mach << ",p:" << (f.dynamic_pressure / 1.0e9)
                                   << ",g:" << f.g_force << ",h:" << f.heat
-                                  << ",e:" << (f.is_eroding ? "true" : "false")
-                                  << ",dif:" << f.dif << ",rl:" << f.remaining_length
-                                  << ",ob:" << f.obliquity_deg << "}";
+                                  << ",e:" << (f.is_eroding ? "true" : "false") << ",dif:" << f.dif
+                                  << ",rl:" << f.remaining_length << ",ob:" << f.obliquity_deg
+                                  << "}";
                     if (j + 1 < r.penetration_frames.size())
                         penFramesJson << ",";
                 }
