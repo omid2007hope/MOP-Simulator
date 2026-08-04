@@ -360,16 +360,15 @@ int main(int argc, char* argv[])
             else
                 numBombs = 6;
 
-                for (int i = 0; i < numBombs; ++i) {
-                    std::stringstream name_ss;
-                        if (i == 0) {
-                            name_ss << "Bomb #1 (Shaft Breaker)";
-                        }
-                        else {
-                            name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-                        }
-                    scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0});
+            for (int i = 0; i < numBombs; ++i) {
+                std::stringstream name_ss;
+                if (i == 0) {
+                    name_ss << "Bomb #1 (Shaft Breaker)";
+                } else {
+                    name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
                 }
+                scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0});
+            }
         }
 
     // Run simulations
