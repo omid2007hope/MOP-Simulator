@@ -1664,7 +1664,20 @@
 
             if (frame.sb === true) {
               boomRing.visible = true;
-              boomRing.position.copy(projectile.position);
+              // boomRing.position.copy(projectile.position);
+
+              // Match projectile pitch rotation angle
+              boomRing.rotation.z = projectile.rotation.z;
+
+              // Rotate offset vector around Z axis so Mach cone stays attached to nose tip as bomb rotates
+              const offsetLen = currentData.proj_length / 2.0 - 1.8;
+              boomRing.position.x =
+                projectile.position.x -
+                Math.sin(projectile.rotation.z) * offsetLen;
+              boomRing.position.y =
+                projectile.position.y +
+                Math.cos(projectile.rotation.z) * offsetLen;
+
               boomRing.scale.set(1, 1, 1);
               boomRing.material.opacity = 1.0;
               // Faster/more energetic booms for higher Mach numbers (physics-derived rate)
@@ -1672,7 +1685,7 @@
             }
 
             // 100% Physically-based Mach Cone Generation: Velocity + Aerodynamic Friction + Air Density
-            if (frame.v >= 343.0) {
+            if (frame.v > 343.0 && frame.m > 1.0) {
               machCone.visible = true;
 
               // Local atmospheric air density ratio (highest at ground level y=0, decaying exponentially with altitude)
