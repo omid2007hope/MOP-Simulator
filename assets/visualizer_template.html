@@ -1662,7 +1662,7 @@
               (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
             projectile.rotation.z = pitchRad;
 
-            if (frame.sb === true && !boomRing.visible) {
+            if (frame.sb === true) {
               boomRing.visible = true;
               boomRing.position.copy(projectile.position);
               boomRing.scale.set(1, 1, 1);
@@ -1672,7 +1672,7 @@
             }
 
             // 100% Physically-based Mach Cone Generation: Velocity + Aerodynamic Friction + Air Density
-            if (frame.m > 1.0) {
+            if (frame.v >= 343.0) {
               machCone.visible = true;
 
               // Local atmospheric air density ratio (highest at ground level y=0, decaying exponentially with altitude)
