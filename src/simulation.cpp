@@ -9,23 +9,12 @@
 #include <limits>
 #include <sstream>
 
-ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
-    : proj(p), target(t), cons(c)
+ImpactSimulator::ImpactSimulator(const Projectile& p,
+                                 const Target& t,
+                                 const PhysicsConstants& c,
+                                 const ImpactScenario& s)
+    : proj(p), target(t), cons(c), scenario(s)
 {
-}
-
-std::pair<double, double> ImpactSimulator::computeProjectileRotationInAir(double horizontal_velocity,
-                                                                        double vertical_velocity,
-                                                                        double drag_coef) const
-{
-    // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
-    // based on drag force, mass, gravity, and current velocity vector.
-    double gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
-
-    double x_acceleration = -(drag_coef * std::sin(gamma)) / proj.total_mass;
-    double y_acceleration = cons.gravity - (drag_coef * std::cos(gamma)) / proj.total_mass;
-    
-    return {x_acceleration, y_acceleration};
 }
 
 double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
@@ -244,12 +233,15 @@ double ImpactSimulator::solveHugoniotInterfaceVelocity(
     return 0.0;
 }
 
-SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
+SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario, const Projectile& proj)
 {
     SimulationResult res;
     res.scenario_name = scenario.name;
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
+
+    double current_velocity = res.velocity;
+
     res.mach_number =
         scenario.velocity / standardAtmosphere(scenario.altitude_ft / 3.28084).speed_of_sound_ms;
 
@@ -260,7 +252,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.regime = "Rigid Penetration (Crater+Tunnel)";
     res.outcome_summary = "Intact";
 
-    double current_velocity = scenario.velocity;
     double current_mass = proj.total_mass;
     double current_depth = 0.0;
 
@@ -586,8 +577,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         // construction at z_local=2d), full cavity expansion resistance beyond.
                         double fc_mpa = std::max(0.001, effective_strength / 1.0e6);
                         double S = 82.6 * std::pow(fc_mpa, -0.544);
-                        double tunnelForce = area * (S * effective_strength +
-                                                     scenario.dragCoefficient * baseDensity * vSq);
+                        double tunnelForce =
+                            area * (S * effective_strength + dragCoefficient * baseDensity * vSq);
                         double craterDepthLimit = 2.0 * proj.diameter;
                         double zLocal = z - layerEntryDepth;
                         double axialForce =
@@ -850,8 +841,26 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                              ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
                              : 0.02;
 
+    // ! ********************
+    // ! Rotation after drop
+    // ! ********************
+
+    double horizontal_velocity = scenario.velocity;
+    double vertical_velocity = current_velocity;
+
+    // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
+    // based on drag force, mass, gravity, and current velocity vector.
+    double gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
+
+    res.x_acceleration = -(dragCoefficient * std::sin(gamma)) / proj.total_mass;
+    res.y_acceleration = cons.gravity - (dragCoefficient * std::cos(gamma)) / proj.total_mass;
+
     return res;
 }
+
+// ! ********************
+// ! 3DVisualize
+// ! ********************
 
 void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
 {

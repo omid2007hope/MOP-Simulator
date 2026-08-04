@@ -98,18 +98,10 @@ struct Projectile
 struct ImpactScenario
 {
     std::string name;
-    double altitude_ft = 0.0;      // feet
-    double velocity = 0.0;         // m/s
-    double current_velocity = 0.0; //
-    double obliquity_angle = 0.0;  // Degrees (0 = perfectly perpendicular)
-    double angle_of_attack = 0.0;  // Degrees
-
-    double x_acceleration = 0.0;
-    double y_acceleration = 0.0;
-    double horizontal_velocity = 0.0;
-    double vertical_velocity = 0.0;
-    double gamma = 0.0;
-    double dragCoefficient = 0.0;
+    double altitude_ft = 0.0;     // feet
+    double velocity = 0.0;        // m/s
+    double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
+    double angle_of_attack = 0.0; // Degrees
 };
 
 struct TelemetryFrame
@@ -174,6 +166,9 @@ struct SimulationResult
     double camera_shake_magnitude = 0.0;
     double time_scale_pen = 0.02;
 
+    double x_acceleration = 0.0;
+    double y_acceleration = 0.0;
+
     std::vector<TelemetryFrame> drop_frames;
     std::vector<TelemetryFrame> penetration_frames;
 };
@@ -185,11 +180,6 @@ private:
     Target target;
     PhysicsConstants cons;
     ImpactScenario scenario;
-
-    // Helper for 2DOF
-    std::pair<double, double> computeProjectileRotationInAir(double horizontal_velocity,
-                                                             double vertical_velocity,
-                                                             double drag_coef) const;
 
     double getMachDependentDrag(double mach, double baseCd) const;
 
