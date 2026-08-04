@@ -178,9 +178,13 @@ private:
     PhysicsConstants cons;
 
     double getMachDependentDrag(double mach, double baseCd) const;
+
     AtmosphereState standardAtmosphere(double altitude_m) const;
+
     static double computeDIF(double strain_rate_per_s, double fc_static_pa);
+
     double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt) const;
+
     double solveHugoniotInterfaceVelocity(double v,
                                           double rho_t,
                                           double C0_t,
@@ -194,9 +198,13 @@ public:
                     const Target& t,
                     const PhysicsConstants& c,
                     const ImpactSimulator& s);
+
     SimulationResult simulate(const ImpactScenario& scenario);
+
     void printAscii3DVisualizer(const SimulationResult& r);
+
     void printReport(const std::vector<SimulationResult>& results);
+
     void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
                                   const std::string& basePath);
 };
