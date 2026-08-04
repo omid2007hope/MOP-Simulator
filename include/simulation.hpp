@@ -99,9 +99,10 @@ struct ImpactScenario
 {
     std::string name;
     double altitude_ft = 0.0;     // feet
-    double velocity = 0.0;        // m/s
-    double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
-    double angle_of_attack = 0.0; // Degrees
+    double velocity = 0.0;          // m/s
+    double flight_path_angle = 0.0; // Degrees (0 = horizontal plane drop, 90 = vertical strike)
+    double obliquity_angle = 0.0;   // Degrees (0 = perfectly perpendicular to ground)
+    double angle_of_attack = 0.0;   // Degrees
 };
 
 struct TelemetryFrame
