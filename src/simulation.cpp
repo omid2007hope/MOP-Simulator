@@ -296,7 +296,6 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             double y_m = current_altitude / 3.28084;
 
                 while (current_altitude > 0.0) {
-                    struct DropDeriv { double dv_x, dv_y, dy; };
                     auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
                         AtmosphereState atm = standardAtmosphere(alt_m);
                         double v_mag = std::hypot(vx, vy);

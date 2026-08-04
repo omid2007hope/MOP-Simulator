@@ -174,6 +174,12 @@ struct SimulationResult
     std::vector<TelemetryFrame> penetration_frames;
 };
 
+struct DropDeriv {
+    double dv_x;
+    double dv_y;
+    double dy;
+};
+
 class ImpactSimulator
 {
 private:
