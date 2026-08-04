@@ -42,7 +42,9 @@
           inset 0 0 20px var(--hud-glow),
           0 20px 50px rgba(0, 0, 0, 0.7);
         transform: skewX(-2deg);
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        transition:
+          border-color 0.3s ease,
+          box-shadow 0.3s ease;
       }
       .glass-panel:hover {
         border-color: rgba(56, 189, 248, 0.65);
@@ -635,11 +637,11 @@
       let anthemNodes = [];
 
       // Resume audio context on first user interaction if suspended
-      ['click', 'keydown', 'pointerdown'].forEach((evt) => {
+      ["click", "keydown", "pointerdown"].forEach((evt) => {
         window.addEventListener(
           evt,
           () => {
-            if (audioCtx && audioCtx.state === 'suspended') {
+            if (audioCtx && audioCtx.state === "suspended") {
               audioCtx.resume().catch(() => {});
             }
           },
@@ -651,62 +653,62 @@
         stopAnthem();
         try {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === 'suspended') {
+          if (audioCtx.state === "suspended") {
             audioCtx.resume().catch(() => {});
           }
 
           // Star-Spangled Banner Anthem Notes (Frequency in Hz, Duration in Seconds)
           const notes = [
-            { f: 392.00, d: 0.35 }, // G4 (Oh)
+            { f: 392.0, d: 0.35 }, // G4 (Oh)
             { f: 329.63, d: 0.35 }, // E4 (say)
-            { f: 261.63, d: 0.60 }, // C4 (can)
-            { f: 329.63, d: 0.60 }, // E4 (you)
-            { f: 392.00, d: 0.60 }, // G4 (see)
-            { f: 523.25, d: 1.10 }, // C5 (by)
+            { f: 261.63, d: 0.6 }, // C4 (can)
+            { f: 329.63, d: 0.6 }, // E4 (you)
+            { f: 392.0, d: 0.6 }, // G4 (see)
+            { f: 523.25, d: 1.1 }, // C5 (by)
 
-            { f: 659.25, d: 0.70 }, // E5 (the)
+            { f: 659.25, d: 0.7 }, // E5 (the)
             { f: 587.33, d: 0.35 }, // D5 (dawn's)
-            { f: 523.25, d: 0.60 }, // C5 (ear-)
-            { f: 329.63, d: 0.60 }, // E4 (ly)
-            { f: 370.00, d: 0.60 }, // F#4 (light)
-            { f: 392.00, d: 1.10 }, // G4 (what)
+            { f: 523.25, d: 0.6 }, // C5 (ear-)
+            { f: 329.63, d: 0.6 }, // E4 (ly)
+            { f: 370.0, d: 0.6 }, // F#4 (light)
+            { f: 392.0, d: 1.1 }, // G4 (what)
 
-            { f: 392.00, d: 0.35 }, // G4 (so)
-            { f: 392.00, d: 0.35 }, // G4 (proud-)
-            { f: 659.25, d: 0.70 }, // E5 (ly)
+            { f: 392.0, d: 0.35 }, // G4 (so)
+            { f: 392.0, d: 0.35 }, // G4 (proud-)
+            { f: 659.25, d: 0.7 }, // E5 (ly)
             { f: 587.33, d: 0.35 }, // D5 (we)
-            { f: 523.25, d: 0.60 }, // C5 (hailed)
-            { f: 493.88, d: 0.60 }, // B4 (at)
-            { f: 440.00, d: 0.60 }, // A4 (the)
-            { f: 493.88, d: 0.60 }, // B4 (twilight's)
-            { f: 523.25, d: 1.20 }, // C5 (last)
+            { f: 523.25, d: 0.6 }, // C5 (hailed)
+            { f: 493.88, d: 0.6 }, // B4 (at)
+            { f: 440.0, d: 0.6 }, // A4 (the)
+            { f: 493.88, d: 0.6 }, // B4 (twilight's)
+            { f: 523.25, d: 1.2 }, // C5 (last)
 
             { f: 523.25, d: 0.35 }, // C5 (gleaming?)
             { f: 523.25, d: 0.35 }, // C5 (Whose)
-            { f: 659.25, d: 0.60 }, // E5 (broad)
-            { f: 698.46, d: 0.60 }, // F5 (stripes)
-            { f: 783.99, d: 1.00 }, // G5 (and)
-            { f: 783.99, d: 0.60 }, // G5 (bright)
+            { f: 659.25, d: 0.6 }, // E5 (broad)
+            { f: 698.46, d: 0.6 }, // F5 (stripes)
+            { f: 783.99, d: 1.0 }, // G5 (and)
+            { f: 783.99, d: 0.6 }, // G5 (bright)
             { f: 659.25, d: 0.35 }, // E5 (stars)
-            { f: 587.33, d: 0.60 }, // D5 (through)
-            { f: 523.25, d: 0.60 }, // C5 (the)
-            { f: 587.33, d: 1.20 }, // D5 (perilous)
+            { f: 587.33, d: 0.6 }, // D5 (through)
+            { f: 523.25, d: 0.6 }, // C5 (the)
+            { f: 587.33, d: 1.2 }, // D5 (perilous)
 
-            { f: 659.25, d: 0.60 }, // E5 (fight)
+            { f: 659.25, d: 0.6 }, // E5 (fight)
             { f: 659.25, d: 0.35 }, // E5 (O'er)
             { f: 587.33, d: 0.35 }, // D5 (the)
-            { f: 523.25, d: 0.60 }, // C5 (ramparts)
-            { f: 493.88, d: 0.60 }, // B4 (we)
-            { f: 440.00, d: 0.60 }, // A4 (watched)
-            { f: 493.88, d: 0.60 }, // B4 (were)
-            { f: 523.25, d: 1.40 }, // C5 (so)
+            { f: 523.25, d: 0.6 }, // C5 (ramparts)
+            { f: 493.88, d: 0.6 }, // B4 (we)
+            { f: 440.0, d: 0.6 }, // A4 (watched)
+            { f: 493.88, d: 0.6 }, // B4 (were)
+            { f: 523.25, d: 1.4 }, // C5 (so)
 
             { f: 523.25, d: 0.35 }, // C5 (gal-)
             { f: 523.25, d: 0.35 }, // C5 (lant-)
-            { f: 392.00, d: 0.60 }, // G4 (ly)
-            { f: 329.63, d: 0.60 }, // E4 (stream-)
-            { f: 392.00, d: 0.60 }, // G4 (ing?)
-            { f: 523.25, d: 1.40 }  // C5 (!!!)
+            { f: 392.0, d: 0.6 }, // G4 (ly)
+            { f: 329.63, d: 0.6 }, // E4 (stream-)
+            { f: 392.0, d: 0.6 }, // G4 (ing?)
+            { f: 523.25, d: 1.4 }, // C5 (!!!)
           ];
 
           let currentTime = audioCtx.currentTime + 0.05;
@@ -724,8 +726,11 @@
             osc.frequency.setValueAtTime(n.f, currentTime);
 
             noteGain.gain.setValueAtTime(0.001, currentTime);
-            noteGain.gain.linearRampToValueAtTime(0.20, currentTime + 0.04);
-            noteGain.gain.exponentialRampToValueAtTime(0.001, currentTime + n.d * 0.95);
+            noteGain.gain.linearRampToValueAtTime(0.2, currentTime + 0.04);
+            noteGain.gain.exponentialRampToValueAtTime(
+              0.001,
+              currentTime + n.d * 0.95,
+            );
 
             osc.connect(noteGain);
             noteGain.connect(masterGain);
@@ -751,7 +756,7 @@
           } catch (e) {}
         });
         anthemNodes = [];
-        if (audioCtx && audioCtx.state !== 'closed') {
+        if (audioCtx && audioCtx.state !== "closed") {
           try {
             audioCtx.close();
           } catch (e) {}
@@ -1320,7 +1325,7 @@
         stopAnthem(); // Stop any running national anthem sound
 
         currentData = scenarios[index];
-        document.querySelectorAll('.scenario-btn').forEach((btn, i) => {
+        document.querySelectorAll(".scenario-btn").forEach((btn, i) => {
           if (i === index) {
             btn.className =
               "scenario-btn px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.6)] scale-105";
@@ -1452,11 +1457,14 @@
           side: THREE.DoubleSide,
         });
         const initialCraterDepth =
-          currentData.prev_strike_depth !== undefined && currentData.prev_strike_depth > 0
+          currentData.prev_strike_depth !== undefined &&
+          currentData.prev_strike_depth > 0
             ? currentData.prev_strike_depth
-            : currentData.pen_frames && currentData.pen_frames.length > 0 && currentData.pen_frames[0].y > 0
-            ? currentData.pen_frames[0].y
-            : 0.1;
+            : currentData.pen_frames &&
+                currentData.pen_frames.length > 0 &&
+                currentData.pen_frames[0].y > 0
+              ? currentData.pen_frames[0].y
+              : 0.1;
 
         activeCrater = new THREE.Mesh(
           createCraterGeometry(Math.max(0.1, initialCraterDepth)),
@@ -1562,8 +1570,8 @@
             f0.obliquity_deg !== undefined
               ? THREE.MathUtils.lerp(f0.obliquity_deg, f1.obliquity_deg, factor)
               : f0.ob !== undefined
-              ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
-              : undefined,
+                ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
+                : undefined,
           aoa_deg:
             f0.aoa_deg !== undefined
               ? THREE.MathUtils.lerp(f0.aoa_deg, f1.aoa_deg, factor)
@@ -1608,7 +1616,7 @@
               currentData.drop_frames && currentData.drop_frames.length > 0
                 ? "DROPPING"
                 : "PENETRATING";
-            
+
             // Play USA National Anthem as bomb drop animation begins!
             playAnthem();
 
@@ -1654,7 +1662,7 @@
               (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
             projectile.rotation.z = pitchRad;
 
-            if (frame.sb && !boomRing.visible) {
+            if (frame.sb && !boomRing.visible && frame.v === 343) {
               boomRing.visible = true;
               boomRing.position.copy(projectile.position);
               boomRing.scale.set(1, 1, 1);
@@ -1681,7 +1689,7 @@
               if (machCone.children && machCone.children.length >= 3) {
                 machCone.children[0].material.opacity = 0.35 * machIntensity;
                 machCone.children[1].material.opacity = 0.08 * machIntensity;
-                machCone.children[2].material.opacity = 0.30 * machIntensity;
+                machCone.children[2].material.opacity = 0.3 * machIntensity;
               }
 
               // Match projectile pitch rotation angle
@@ -1719,12 +1727,20 @@
                 : prevFrame;
             const impactVelocity = (lastDropFrame && lastDropFrame.v) || 300.0;
             const impactMass = currentData.proj_mass || 13600.0;
-            const kineticEnergyJoules = 0.5 * impactMass * impactVelocity * impactVelocity;
+            const kineticEnergyJoules =
+              0.5 * impactMass * impactVelocity * impactVelocity;
             // Energy scale factor for sphere radius and expansion rate
-            const keScale = Math.max(1.0, Math.pow(kineticEnergyJoules / 1e8, 0.333));
+            const keScale = Math.max(
+              1.0,
+              Math.pow(kineticEnergyJoules / 1e8, 0.333),
+            );
 
             shockwave.visible = true;
-            shockwave.position.set(projectile.position.x, 0, projectile.position.z);
+            shockwave.position.set(
+              projectile.position.x,
+              0,
+              projectile.position.z,
+            );
             shockwave.scale.set(0.5, 0.5, 0.5);
             shockwave.material.color.setHex(0xef4444);
             shockwave.material.opacity = 0.85;
@@ -1767,12 +1783,15 @@
 
               // 2. C++ Hydrocode Obliquity & Trajectory Bending Dynamics
               // Read exact C++ simulation obliquity/refraction angle (obliquity_deg or ob)
-              const oblDeg = frame.obliquity_deg !== undefined ? frame.obliquity_deg : (frame.ob || 0);
+              const oblDeg =
+                frame.obliquity_deg !== undefined
+                  ? frame.obliquity_deg
+                  : frame.ob || 0;
               const aoaDeg = frame.aoa_deg || 0;
-              
+
               // Total orientation angle = C++ Obliquity Trajectory Bending + Angle of Attack
               const totalAngleRad = (oblDeg + aoaDeg) * (Math.PI / 180);
-              
+
               projectile.rotation.z = totalAngleRad;
               activeCrater.rotation.z = totalAngleRad;
 
@@ -1781,13 +1800,17 @@
               // If temperature is reported in Celsius, convert to Kelvin
               const tempKelvin = tempVal < 200 ? tempVal + 273.15 : tempVal;
               const baseColorHex = currentData.is_kinetic ? 0xa855f7 : 0x00ffff;
-              
-              const thermoColor = computePlanckBlackbodyColor(tempKelvin, baseColorHex);
+
+              const thermoColor = computePlanckBlackbodyColor(
+                tempKelvin,
+                baseColorHex,
+              );
               projectile.material.emissive.copy(thermoColor);
 
               // Stefan-Boltzmann Law emissive radiation intensity (scaling with T^4)
               const tempNorm = Math.max(0, (tempKelvin - 300) / 1500);
-              projectile.material.emissiveIntensity = 2.0 + Math.pow(tempNorm, 3.0) * 18.0;
+              projectile.material.emissiveIntensity =
+                2.0 + Math.pow(tempNorm, 3.0) * 18.0;
 
               // 5. Shock Stress & G-Force Tremors
               const gForce = frame.g || 0;
