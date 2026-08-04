@@ -1662,7 +1662,7 @@
               (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
             projectile.rotation.z = pitchRad;
 
-            if (frame.sb && !boomRing.visible && frame.v === 343) {
+            if (frame.sb === true && !boomRing.visible) {
               boomRing.visible = true;
               boomRing.position.copy(projectile.position);
               boomRing.scale.set(1, 1, 1);
