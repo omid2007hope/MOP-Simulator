@@ -98,10 +98,11 @@ struct Projectile
 struct ImpactScenario
 {
     std::string name;
-    double altitude_ft = 0.0;     // feet
-    double velocity = 0.0;        // m/s
-    double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
-    double angle_of_attack = 0.0; // Degrees
+    double altitude_ft = 0.0;      // feet
+    double velocity = 0.0;         // m/s
+    double current_velocity = 0.0; //
+    double obliquity_angle = 0.0;  // Degrees (0 = perfectly perpendicular)
+    double angle_of_attack = 0.0;  // Degrees
 
     double x_acceleration = 0.0;
     double y_acceleration = 0.0;
