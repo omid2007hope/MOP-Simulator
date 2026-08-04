@@ -28,7 +28,7 @@ int main()
 
     // Test 1: Subsonic Operational Impact (Mach ~1.0, 340 m/s)
     std::cout << "[Test 1] Testing Subsonic Rigid Penetration (340 m/s)...\n";
-    ImpactScenario subScenario {"Subsonic Test", 0.0, 340.0, 0.0, 0.0};
+    ImpactScenario subScenario {"Subsonic Test", 0.0, 340.0, 90.0, 0.0, 0.0};
     SimulationResult resSub = simulator.simulate(subScenario);
 
     assert(approxEqual(resSub.kinetic_energy, 786080000.0, 1.0));
@@ -53,7 +53,7 @@ int main()
 
     // Test 2: Hypervelocity Impact (Mach ~14.7, 1500 m/s) - Tests Walker-Wasley Triggering
     std::cout << "[Test 2] Testing Hypervelocity Impact (1500 m/s) for Walker-Wasley Shock Initiation...\n";
-    ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 1500.0, 0.0, 0.0};
+    ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 1500.0, 90.0, 0.0, 0.0};
     SimulationResult resHyper = simulator.simulate(hyperScenario);
     
     assert(resHyper.regime == "Shock Initiation (Walker-Wasley)");
@@ -69,7 +69,7 @@ int main()
     std::cout << "[Test 3] Testing Orbital Tungsten Kinetic Rod (3400 m/s) for WAPM Erosion...\n";
     Projectile rod = RODS_FROM_GOD_DEFAULT;
     ImpactSimulator rodSim(rod, concrete, cons);
-    ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 0.0, 0.0};
+    ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 90.0, 0.0, 0.0};
     SimulationResult resRod = rodSim.simulate(rodScenario);
 
     assert(resRod.is_kinetic_rod == true);
@@ -97,7 +97,7 @@ int main()
 
     // Test 5: Oblique Impact
     std::cout << "[Test 5] Testing Oblique Impact (Obliquity 30 deg, AoA 5 deg, 400 m/s)...\n";
-    ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 30.0, 5.0};
+    ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 90.0, 30.0, 5.0};
     SimulationResult resOblique = simulator.simulate(obliqueScenario);
     
     assert(resOblique.actual_penetration_depth > 5.0);
