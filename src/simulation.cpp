@@ -11,9 +11,8 @@
 
 ImpactSimulator::ImpactSimulator(const Projectile& p,
                                  const Target& t,
-                                 const PhysicsConstants& c,
-                                 const ImpactScenario& s)
-    : proj(p), target(t), cons(c), scenario(s)
+                                 const PhysicsConstants& c)
+    : proj(p), target(t), cons(c)
 {
 }
 
@@ -233,7 +232,7 @@ double ImpactSimulator::solveHugoniotInterfaceVelocity(
     return 0.0;
 }
 
-SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario, const Projectile& proj)
+SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
 {
     SimulationResult res;
     res.scenario_name = scenario.name;

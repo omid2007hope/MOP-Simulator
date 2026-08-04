@@ -179,7 +179,6 @@ private:
     Projectile proj;
     Target target;
     PhysicsConstants cons;
-    ImpactScenario scenario;
 
     double getMachDependentDrag(double mach, double baseCd) const;
 
@@ -200,8 +199,7 @@ private:
 public:
     ImpactSimulator(const Projectile& p,
                     const Target& t,
-                    const PhysicsConstants& c,
-                    const ImpactScenario& s);
+                    const PhysicsConstants& c);
 
     SimulationResult simulate(const ImpactScenario& scenario);
 
