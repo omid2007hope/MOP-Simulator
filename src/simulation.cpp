@@ -306,6 +306,16 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         if (v_mag > 0.0) {
                             d.dv_x = -(f / proj.total_mass) * (vx / v_mag);
                             d.dv_y = cons.gravity - (f / proj.total_mass) * (vy / v_mag);
+                            
+                            // Earth Penetrator Terminal Guidance (steer to vertical strike)
+                            // The tail fins generate lift to bleed off horizontal velocity (vx).
+                            double guidance_pull = 1.5 * cons.gravity; // 1.5 Gs of lateral lift
+                            double guidance_accel = (vx > 0.0) ? -guidance_pull : guidance_pull;
+                            // Smooth out near zero to prevent oscillation
+                            if (std::abs(vx) < 5.0) {
+                                guidance_accel = -vx * 1.5; 
+                            }
+                            d.dv_x += guidance_accel;
                         } else {
                             d.dv_x = 0.0;
                             d.dv_y = cons.gravity;
