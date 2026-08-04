@@ -53,14 +53,16 @@ struct Target
     std::string name;
     std::vector<TargetLayer> layers;
 
-    void pulverizeDepth(double breachDepth) {
+    void pulverizeDepth(double breachDepth)
+    {
         double currentDepthAcc = 0.0;
-        for (auto& layer : layers) {
-            if (breachDepth > currentDepthAcc) {
-                layer.pulverized_depth = std::max(layer.pulverized_depth, breachDepth - currentDepthAcc);
+            for (auto& layer : layers) {
+                    if (breachDepth > currentDepthAcc) {
+                        layer.pulverized_depth =
+                            std::max(layer.pulverized_depth, breachDepth - currentDepthAcc);
+                    }
+                currentDepthAcc += layer.thickness;
             }
-            currentDepthAcc += layer.thickness;
-        }
     }
 };
 
@@ -85,11 +87,14 @@ struct Projectile
     double area_moment_inertia = 0.02; // m^4 (for bending moment calculations)
 
     // Walker-Anderson erosion & Walker-Wasley shock initiation properties
-    double elastic_modulus = 200.0e9;           // Pascals (Young's modulus; bar wave speed c = sqrt(E/rho_p))
-    double casing_wall_thickness = 0.05;        // meters (shock transit path into explosive fill)
-    double hugoniot_c0 = 4570.0;                // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
-    double hugoniot_s = 1.49;                   // dimensionless (Hugoniot slope)
+    double elastic_modulus = 200.0e9; // Pascals (Young's modulus; bar wave speed c = sqrt(E/rho_p))
+    double casing_wall_thickness = 0.05;       // meters (shock transit path into explosive fill)
+    double hugoniot_c0 = 4570.0;               // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
+    double hugoniot_s = 1.49;                  // dimensionless (Hugoniot slope)
     double explosive_critical_energy = 3.0e15; // Pa^2*s (Walker-Wasley Ec, Comp-B-like)
+
+    double x_axis;
+    double y_axis;
 };
 
 // Scenario input definition
@@ -115,10 +120,10 @@ struct TelemetryFrame
     double g_force = 0.0;
 
     // Penetration-phase physics telemetry (Phase 3/4 two-phase Forrestal + WAPM)
-    bool is_eroding = false;        // true once the Walker-Anderson erosion regime is active
-    double dif = 1.0;               // CEB-FIP Dynamic Increase Factor at this instant
-    double remaining_length = 0.0;  // meters (rigid/eroding rod length at this instant)
-    double obliquity_deg = 0.0;     // degrees (instantaneous obliquity, for trajectory bending)
+    bool is_eroding = false;       // true once the Walker-Anderson erosion regime is active
+    double dif = 1.0;              // CEB-FIP Dynamic Increase Factor at this instant
+    double remaining_length = 0.0; // meters (rigid/eroding rod length at this instant)
+    double obliquity_deg = 0.0;    // degrees (instantaneous obliquity, for trajectory bending)
 };
 
 // Simulation results for a given scenario
@@ -142,19 +147,19 @@ struct SimulationResult
     std::string outcome_summary;
 
     // Two-phase penetration & Walker-Anderson erosion (WAPM) telemetry
-    bool erosion_occurred = false;         // true if hydrodynamic pressure ever exceeded casing yield
-    double final_rod_length = 0.0;         // meters (remaining rigid length after erosion)
-    double erosion_length_lost = 0.0;      // meters (proj.length - final_rod_length)
-    double dynamic_increase_factor = 1.0;  // last-evaluated CEB-FIP DIF on the target strength
-    double bar_wave_speed = 0.0;           // m/s (WAPM elastic bar wave speed, sqrt(E/rho_p))
+    bool erosion_occurred = false;    // true if hydrodynamic pressure ever exceeded casing yield
+    double final_rod_length = 0.0;    // meters (remaining rigid length after erosion)
+    double erosion_length_lost = 0.0; // meters (proj.length - final_rod_length)
+    double dynamic_increase_factor = 1.0; // last-evaluated CEB-FIP DIF on the target strength
+    double bar_wave_speed = 0.0;          // m/s (WAPM elastic bar wave speed, sqrt(E/rho_p))
 
     // Walker-Wasley shock initiation telemetry (Hugoniot impedance matching)
-    double shock_pressure_gpa_peak = 0.0;  // GPa (peak transmitted shock pressure at any interface)
-    double shock_pulse_duration_us = 0.0;  // microseconds (shock transit time through casing wall)
+    double shock_pressure_gpa_peak = 0.0; // GPa (peak transmitted shock pressure at any interface)
+    double shock_pulse_duration_us = 0.0; // microseconds (shock transit time through casing wall)
 
     // Multi-bomb salvo & Operation Midnight Hammer sequential shaft telemetry
-    double previous_strike_depth = 0.0;     // meters (breached shaft entry depth from prior bombs)
-    double cumulative_breach_depth = 0.0;   // meters (total accumulated shaft depth after this bomb)
+    double previous_strike_depth = 0.0;   // meters (breached shaft entry depth from prior bombs)
+    double cumulative_breach_depth = 0.0; // meters (total accumulated shaft depth after this bomb)
 
     // Visualization Data
     double explosive_mass = 0.0;
@@ -179,8 +184,13 @@ private:
     AtmosphereState standardAtmosphere(double altitude_m) const;
     static double computeDIF(double strain_rate_per_s, double fc_static_pa);
     double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt) const;
-    double solveHugoniotInterfaceVelocity(double v, double rho_t, double C0_t, double S_t,
-                                          double rho_p, double C0_p, double S_p) const;
+    double solveHugoniotInterfaceVelocity(double v,
+                                          double rho_t,
+                                          double C0_t,
+                                          double S_t,
+                                          double rho_p,
+                                          double C0_p,
+                                          double S_p) const;
 
 public:
     ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
