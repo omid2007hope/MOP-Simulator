@@ -826,6 +826,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.crater_narrow_radius = proj.diameter / 2.0;
     res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9); // scale down energy
 
+    const TranslationDynamicsX_to_Z = ;
+
     // Physics-derived playback multiplier: scale so the actual simulated penetration-phase
     // duration (fast erosion vs. slow rigid drilling) maps onto a consistent, watchable window,
     // instead of a fixed arbitrary constant.
