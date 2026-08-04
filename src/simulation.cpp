@@ -14,6 +14,22 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 {
 }
 
+double ImpactSimulator::computeProjectileRotationInAir(double x_acceleration,
+                                                       double y_acceleration,
+                                                       double horizontal_velocity,
+                                                       double vertical_velocity,
+                                                       double gamma,
+                                                       double dragCoefficient) const
+{
+    // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
+    // based on drag force, mass, gravity, and current velocity vector.
+
+    gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
+
+    x_acceleration = -(dragCoefficient * std::sin(gamma)) / proj.total_mass;
+    y_acceleration = cons.gravity - (dragCoefficient * std::cos(gamma)) / proj.total_mass;
+};
+
 double ImpactSimulator::getMachDependentDrag(double mach, double baseCd) const
 {
     // Standard G7 reference drag function (boat-tailed long-rod/bomb shape; public-domain
@@ -340,514 +356,503 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                                       << current_density << " kg/m^3) <<<\n";
                         }
 
-                    // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
-                    // based on drag force, mass, gravity, and current velocity vector.
+                        // Save telemetry frame every 10 steps (0.1s) or on sonic boom to keep JSON
+                        // size reasonable
+                        if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame) {
+                            TelemetryFrame frame;
+                            frame.time = t_drop;
+                            frame.altitude =
+                                current_altitude / 3.28084; // Store altitude in meters for WebGL
+                            frame.depth = -frame.altitude;  // Visualizer expects depth, so sky is
+                                                            // negative depth
+                            frame.velocity = current_velocity;
+                            frame.mach = current_velocity / current_atm.speed_of_sound_ms;
+                            frame.is_sonic_boom = is_sonic_boom_frame;
+                            res.drop_frames.push_back(frame);
+                        }
 
-                    const auto rotation_x_to_y =
-
-                        double x_velocity = scenario.velocity;
-                    double y_velocity = current_velocity;
-
-                    double gamma = std::atan2(x_velocity, y_velocity); // Flight path angle
-
-                    double x_acceleration = -(dragCoefficient * std::sin(gamma)) / proj.total_mass;
-                    double y_acceleration =
-                        cons.gravity - (dragCoefficient * std::cos(gamma)) / proj.total_mass;
-
-                    return {x_acceleration, y_acceleration};
-                };
-
-                // Save telemetry frame every 10 steps (0.1s) or on sonic boom to keep JSON
-                // size reasonable
-                if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame) {
-                    TelemetryFrame frame;
-                    frame.time = t_drop;
-                    frame.altitude =
-                        current_altitude / 3.28084; // Store altitude in meters for WebGL
-                    frame.depth = -frame.altitude;  // Visualizer expects depth, so sky is
-                                                    // negative depth
-                    frame.velocity = current_velocity;
-                    frame.mach = current_velocity / current_atm.speed_of_sound_ms;
-                    frame.is_sonic_boom = is_sonic_boom_frame;
-                    res.drop_frames.push_back(frame);
+                        if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
+                            double acceleration = calc_accel(y_m, current_velocity);
+                            double g_force = acceleration / cons.gravity;
+                            std::cout << "  [Drop T+ " << std::fixed << std::setprecision(1)
+                                      << t_drop << "s] Alt: " << std::setprecision(0)
+                                      << current_altitude << " ft | Vel: " << std::setprecision(1)
+                                      << current_velocity
+                                      << " m/s | Accel: " << std::setprecision(2) << g_force
+                                      << " G | Density: " << std::setprecision(3) << current_density
+                                      << " kg/m^3\n";
+                            next_print_altitude -= 5000.0;
+                        }
+                    t_drop += dt_drop;
                 }
 
-                if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
-                    double acceleration = calc_accel(y_m, current_velocity);
-                    double g_force = acceleration / cons.gravity;
-                    std::cout << "  [Drop T+ " << std::fixed << std::setprecision(1) << t_drop
-                              << "s] Alt: " << std::setprecision(0) << current_altitude
-                              << " ft | Vel: " << std::setprecision(1) << current_velocity
-                              << " m/s | Accel: " << std::setprecision(2) << g_force
-                              << " G | Density: " << std::setprecision(3) << current_density
-                              << " kg/m^3\n";
-                    next_print_altitude -= 5000.0;
-                }
-            t_drop += dt_drop;
+            current_altitude = 0.0;
+            std::cout << "  [Impact T+ " << std::fixed << std::setprecision(2) << t_drop
+                      << "s] Alt: 0 ft | Impact Velocity: " << std::setprecision(1)
+                      << current_velocity << " m/s\n";
+            std::cout << "--------------------------------------------------------\n\n";
         }
 
-    current_altitude = 0.0;
-    std::cout << "  [Impact T+ " << std::fixed << std::setprecision(2) << t_drop
-              << "s] Alt: 0 ft | Impact Velocity: " << std::setprecision(1) << current_velocity
-              << " m/s\n";
-    std::cout << "--------------------------------------------------------\n\n";
-}
-
-// Update result with final impact velocity (Mach referenced to sea-level speed of sound;
-// Mach number is not a standard concept once inside a solid target)
-// Multi-bomb salvo cumulative shaft tracking: calculate initial breached shaft entry depth
-double initial_shaft_depth = 0.0;
-    for (const auto& layer : target.layers) {
-            if (layer.pulverized_depth > 0) {
-                initial_shaft_depth += std::min(layer.thickness, layer.pulverized_depth);
-            }
-    }
-res.previous_strike_depth = initial_shaft_depth;
-    if (initial_shaft_depth > 0) {
-        current_depth = initial_shaft_depth;
-        std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
-                  << initial_shaft_depth << " m\n";
-    }
-
-// Convert target layers to fullDepth depths
-std::vector<double> layer_bottom_depths;
-double fullDepth = 0.0;
-    for (const auto& layer : target.layers) {
-        fullDepth += layer.thickness;
-        layer_bottom_depths.push_back(fullDepth);
-    }
-
-size_t current_layer_idx = 0;
-    while (current_layer_idx < layer_bottom_depths.size() &&
-           current_depth >= layer_bottom_depths[current_layer_idx]) {
-        current_layer_idx++;
-    }
-size_t last_layer_idx = current_layer_idx;
-double next_print_depth = std::floor(current_depth) + 1.0;
-int pen_frame_counter = 0;
-
-    if (current_layer_idx < target.layers.size()) {
-        std::cout << "--- Ground Penetration Commenced ---\n";
-        std::cout << "  [LAYER BREACH] Entering layer: "
-                  << target.layers[current_layer_idx].material_name << "\n";
-    }
-
-double critical_angle_threshold = 65.0 * cons.PI / 180.0;
-    if (current_velocity < 200.0) {
-        critical_angle_threshold = 50.0 * cons.PI / 180.0;
-    }
-
-    if ((obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
-        res.casing_failure = true;
-        res.regime = "Ricochet";
-        res.outcome_summary = "Projectile deflected off target surface.";
-        res.actual_penetration_depth = 0.0;
-        return res;
-    }
-
-// Walker-Wasley shock initiation (Hugoniot impedance matching): each new material
-// interface encountered (initial impact, and every subsequent layer breach) generates a
-// fresh transient shock loading event into the casing. Track the worst P^2*tau observed.
-auto evaluateShockEvent = [&](double impactVel, const TargetLayer& lyr) {
-    double Up = solveHugoniotInterfaceVelocity(impactVel,
-                                               lyr.density,
-                                               lyr.hugoniot_c0,
-                                               lyr.hugoniot_s,
-                                               proj.casing_density,
-                                               proj.hugoniot_c0,
-                                               proj.hugoniot_s);
-    double P = lyr.density * (lyr.hugoniot_c0 + lyr.hugoniot_s * Up) * Up;
-    double Us_casing = proj.hugoniot_c0 + proj.hugoniot_s * (impactVel - Up);
-    double tau = (Us_casing > 1.0) ? (proj.casing_wall_thickness / Us_casing) : 0.0;
-    double product = P * P * tau;
-        if (product > max_walker_wasley_product) {
-            max_walker_wasley_product = product;
-            res.shock_pressure_gpa_peak = P / 1.0e9;
-            res.shock_pulse_duration_us = tau * 1.0e6;
+    // Update result with final impact velocity (Mach referenced to sea-level speed of sound;
+    // Mach number is not a standard concept once inside a solid target)
+    // Multi-bomb salvo cumulative shaft tracking: calculate initial breached shaft entry depth
+    double initial_shaft_depth = 0.0;
+        for (const auto& layer : target.layers) {
+                if (layer.pulverized_depth > 0) {
+                    initial_shaft_depth += std::min(layer.thickness, layer.pulverized_depth);
+                }
         }
-};
-    if (!target.layers.empty()) {
-        evaluateShockEvent(current_velocity, target.layers[0]);
-    }
+    res.previous_strike_depth = initial_shaft_depth;
+        if (initial_shaft_depth > 0) {
+            current_depth = initial_shaft_depth;
+            std::cout << "  [SEQUENTIAL SALVO STRIKE] Entering pre-existing breached shaft depth: "
+                      << initial_shaft_depth << " m\n";
+        }
 
-const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
-res.mach_number = current_velocity / groundSpeedOfSound;
+    // Convert target layers to fullDepth depths
+    std::vector<double> layer_bottom_depths;
+    double fullDepth = 0.0;
+        for (const auto& layer : target.layers) {
+            fullDepth += layer.thickness;
+            layer_bottom_depths.push_back(fullDepth);
+        }
 
-// Time Integration Loop (RK4) - two-phase Forrestal cratering/tunneling with CEB-FIP
-// strain-rate strengthening in the rigid regime, transitioning to the Walker-Anderson
-// erosion model (WAPM) once hydrodynamic pressure overwhelms the casing's dynamic yield.
-double current_length = proj.length;
-bool erosion_active = false;
-double bar_wave_speed = std::sqrt(proj.elastic_modulus / proj.casing_density);
-res.bar_wave_speed = bar_wave_speed;
+    size_t current_layer_idx = 0;
+        while (current_layer_idx < layer_bottom_depths.size() &&
+               current_depth >= layer_bottom_depths[current_layer_idx]) {
+            current_layer_idx++;
+        }
+    size_t last_layer_idx = current_layer_idx;
+    double next_print_depth = std::floor(current_depth) + 1.0;
+    int pen_frame_counter = 0;
 
-struct PenDeriv
-{
-    double dv = 0.0;
-    double dz = 0.0;
-    double dtheta = 0.0;
-    double dT = 0.0;
-    double dL = 0.0;
-};
+        if (current_layer_idx < target.layers.size()) {
+            std::cout << "--- Ground Penetration Commenced ---\n";
+            std::cout << "  [LAYER BREACH] Entering layer: "
+                      << target.layers[current_layer_idx].material_name << "\n";
+        }
 
-    while (current_velocity > 0.0 && !res.casing_failure && current_depth < fullDepth) {
-            // Advance layer if we've pierced the current one
-            while (current_layer_idx < layer_bottom_depths.size() &&
-                   current_depth >= layer_bottom_depths[current_layer_idx]) {
-                current_layer_idx++;
+    double critical_angle_threshold = 65.0 * cons.PI / 180.0;
+        if (current_velocity < 200.0) {
+            critical_angle_threshold = 50.0 * cons.PI / 180.0;
+        }
+
+        if ((obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
+            res.casing_failure = true;
+            res.regime = "Ricochet";
+            res.outcome_summary = "Projectile deflected off target surface.";
+            res.actual_penetration_depth = 0.0;
+            return res;
+        }
+
+    // Walker-Wasley shock initiation (Hugoniot impedance matching): each new material
+    // interface encountered (initial impact, and every subsequent layer breach) generates a
+    // fresh transient shock loading event into the casing. Track the worst P^2*tau observed.
+    auto evaluateShockEvent = [&](double impactVel, const TargetLayer& lyr) {
+        double Up = solveHugoniotInterfaceVelocity(impactVel,
+                                                   lyr.density,
+                                                   lyr.hugoniot_c0,
+                                                   lyr.hugoniot_s,
+                                                   proj.casing_density,
+                                                   proj.hugoniot_c0,
+                                                   proj.hugoniot_s);
+        double P = lyr.density * (lyr.hugoniot_c0 + lyr.hugoniot_s * Up) * Up;
+        double Us_casing = proj.hugoniot_c0 + proj.hugoniot_s * (impactVel - Up);
+        double tau = (Us_casing > 1.0) ? (proj.casing_wall_thickness / Us_casing) : 0.0;
+        double product = P * P * tau;
+            if (product > max_walker_wasley_product) {
+                max_walker_wasley_product = product;
+                res.shock_pressure_gpa_peak = P / 1.0e9;
+                res.shock_pulse_duration_us = tau * 1.0e6;
             }
+    };
+        if (!target.layers.empty()) {
+            evaluateShockEvent(current_velocity, target.layers[0]);
+        }
 
-            if (current_layer_idx >= target.layers.size()) {
-                res.regime = "Target Perforated";
-                res.outcome_summary = "Projectile completely pierced all target layers.";
-                break;
-            }
+    const double groundSpeedOfSound = standardAtmosphere(0.0).speed_of_sound_ms;
+    res.mach_number = current_velocity / groundSpeedOfSound;
 
-            if (current_layer_idx != last_layer_idx) {
-                last_layer_idx = current_layer_idx;
-                std::cout << "  [LAYER BREACH] Pierced into layer: "
-                          << target.layers[current_layer_idx].material_name << "\n";
-                evaluateShockEvent(current_velocity, target.layers[current_layer_idx]);
-            }
+    // Time Integration Loop (RK4) - two-phase Forrestal cratering/tunneling with CEB-FIP
+    // strain-rate strengthening in the rigid regime, transitioning to the Walker-Anderson
+    // erosion model (WAPM) once hydrodynamic pressure overwhelms the casing's dynamic yield.
+    double current_length = proj.length;
+    bool erosion_active = false;
+    double bar_wave_speed = std::sqrt(proj.elastic_modulus / proj.casing_density);
+    res.bar_wave_speed = bar_wave_speed;
 
-        const auto& layer = target.layers[current_layer_idx];
-        double layerEntryDepth =
-            (current_layer_idx == 0) ? 0.0 : layer_bottom_depths[current_layer_idx - 1];
+    struct PenDeriv
+    {
+        double dv = 0.0;
+        double dz = 0.0;
+        double dtheta = 0.0;
+        double dT = 0.0;
+        double dL = 0.0;
+    };
 
-        double squaredVelocity = current_velocity * current_velocity;
-
-        // Pulverized crater zone (from previous strikes) vastly reduces base resistance
-        double baseStrength =
-            layer.compressive_strength + (layer.rebar_yield_strength * layer.rebar_volume_fraction);
-        double baseDensity = layer.density;
-            if (current_depth < layer.pulverized_depth) {
-                baseStrength = 5.0e6;              // 5 MPa for pulverized rubble
-                baseDensity = layer.density * 0.7; // 30% void fraction
-            }
-
-        // Dynamic Pressure (drives shock-initiation tracking and the WAPM transition test)
-        double dynamic_pressure = 0.5 * baseDensity * squaredVelocity;
-            if (dynamic_pressure > max_dynamic_pressure) {
-                max_dynamic_pressure = dynamic_pressure;
-            }
-
-            // Walker & Anderson (1995) transition: once hydrodynamic pressure overwhelms the
-            // casing's dynamic yield strength, the rigid-body assumption breaks down and the
-            // projectile begins eroding hydrodynamically (latches permanently once triggered).
-            if (!erosion_active && proj.yield_strength > 0.0 &&
-                dynamic_pressure >= proj.yield_strength) {
-                erosion_active = true;
-                res.erosion_occurred = true;
-                std::cout << "  [WAPM EROSION ONSET] Hydrodynamic pressure exceeded casing "
-                             "yield at Depth: "
-                          << current_depth << " m | Velocity: " << current_velocity << " m/s\n";
-            }
-
-        // Obliquity/AoA bending structural failure check (discrete, evaluated pre-step)
-        double asymmetric_force = 0.0;
-            if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
-                asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
-                                   std::sin(obliquity_radians + angleOfAttack_radians);
-                double bending_moment = asymmetric_force * (proj.length / 2.0);
-
-                double max_bending_stress = 0.0;
-                    if (proj.area_moment_inertia > 0) {
-                        max_bending_stress =
-                            (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
-                    }
-
-                    if (proj.yield_strength > 0.0 && max_bending_stress > proj.yield_strength) {
-                        res.casing_failure = true;
-                        res.regime = "Structural Failure (J-Hook/Snap)";
-                        res.outcome_summary = "Bending moments exceeded casing yield strength.";
-                        break;
-                    }
-            }
-
-        // RK4 state derivative: (velocity, depth, obliquity, temperature, rigid/eroding length)
-        auto derivative =
-            [&](double v, double z, double theta, [[maybe_unused]] double T, double L, double m)
-            -> PenDeriv {
-            PenDeriv d;
-            double vSq = v * v;
-            double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
-            double dif = computeDIF(strain_rate, baseStrength);
-            res.dynamic_increase_factor = dif;
-            double effective_strength = baseStrength * dif;
-
-            double lateral_force = 0.0;
-                if (theta > 0.0 || angleOfAttack_radians > 0.0) {
-                    lateral_force =
-                        (0.5 * baseDensity * vSq * area) * std::sin(theta + angleOfAttack_radians);
-                }
-            double safeMass = std::max(0.001, m);
-            double gravity_component = cons.gravity * std::cos(theta);
-
-                if (!erosion_active) {
-                    // Two-phase Forrestal: linear crater ramp for z_local<=2d (continuous by
-                    // construction at z_local=2d), full cavity expansion resistance beyond.
-                    double fc_mpa = std::max(0.001, effective_strength / 1.0e6);
-                    double S = 82.6 * std::pow(fc_mpa, -0.544);
-                    double tunnelForce =
-                        area * (S * effective_strength + dragCoefficient * baseDensity * vSq);
-                    double craterDepthLimit = 2.0 * proj.diameter;
-                    double zLocal = z - layerEntryDepth;
-                    double axialForce =
-                        (craterDepthLimit > 0.0 && zLocal < craterDepthLimit)
-                            ? tunnelForce * std::clamp(zLocal / craterDepthLimit, 0.0, 1.0)
-                            : tunnelForce;
-
-                    d.dv = gravity_component - (axialForce / safeMass);
-                    d.dz = v * std::cos(theta);
-                    d.dL = 0.0;
-
-                    double heat_rate = (axialForce * cons.frictionFactor) * std::fabs(v);
-                    d.dT = heat_rate / (safeMass * proj.specific_heat);
-                }
-                else {
-                    // Walker-Anderson (WAPM): Tate-Bernoulli interface velocity u, then the
-                    // rate-dependent tail deceleration coupling the elastic bar wave speed.
-                    double u = solveInterfaceVelocity(v,
-                                                      proj.casing_density,
-                                                      baseDensity,
-                                                      proj.yield_strength,
-                                                      effective_strength);
-                    double Le = std::max(0.01, L); // elastic length ~= instantaneous rigid length
-                    d.dv = -(proj.yield_strength / (proj.casing_density * Le)) *
-                               (1.0 + (v - u) / bar_wave_speed) +
-                           gravity_component;
-                    d.dz = u * std::cos(theta); // depth tracks the eroding interface, not tail v
-                    d.dL = -(v - u);
-
-                    double erosion_heat_rate =
-                        0.5 * baseDensity * (v - u) * (v - u) * area * std::fabs(v - u);
-                    d.dT = erosion_heat_rate / (safeMass * proj.specific_heat);
+        while (current_velocity > 0.0 && !res.casing_failure && current_depth < fullDepth) {
+                // Advance layer if we've pierced the current one
+                while (current_layer_idx < layer_bottom_depths.size() &&
+                       current_depth >= layer_bottom_depths[current_layer_idx]) {
+                    current_layer_idx++;
                 }
 
-                if (v > 0.1) {
-                    d.dtheta = (lateral_force / safeMass) / v;
+                if (current_layer_idx >= target.layers.size()) {
+                    res.regime = "Target Perforated";
+                    res.outcome_summary = "Projectile completely pierced all target layers.";
+                    break;
                 }
 
-            return d;
-        };
+                if (current_layer_idx != last_layer_idx) {
+                    last_layer_idx = current_layer_idx;
+                    std::cout << "  [LAYER BREACH] Pierced into layer: "
+                              << target.layers[current_layer_idx].material_name << "\n";
+                    evaluateShockEvent(current_velocity, target.layers[current_layer_idx]);
+                }
 
-        auto get_mass = [&](double L_eval) {
-            return erosion_active ? (proj.total_mass / proj.length) * std::max(0.0, L_eval)
-                                  : current_mass;
-        };
+            const auto& layer = target.layers[current_layer_idx];
+            double layerEntryDepth =
+                (current_layer_idx == 0) ? 0.0 : layer_bottom_depths[current_layer_idx - 1];
 
-        PenDeriv k1 = derivative(current_velocity,
-                                 current_depth,
-                                 obliquity_radians,
-                                 current_temperature,
-                                 current_length,
-                                 get_mass(current_length));
-        PenDeriv k2 = derivative(current_velocity + 0.5 * dt * k1.dv,
-                                 current_depth + 0.5 * dt * k1.dz,
-                                 obliquity_radians + 0.5 * dt * k1.dtheta,
-                                 current_temperature + 0.5 * dt * k1.dT,
-                                 current_length + 0.5 * dt * k1.dL,
-                                 get_mass(current_length + 0.5 * dt * k1.dL));
-        PenDeriv k3 = derivative(current_velocity + 0.5 * dt * k2.dv,
-                                 current_depth + 0.5 * dt * k2.dz,
-                                 obliquity_radians + 0.5 * dt * k2.dtheta,
-                                 current_temperature + 0.5 * dt * k2.dT,
-                                 current_length + 0.5 * dt * k2.dL,
-                                 get_mass(current_length + 0.5 * dt * k2.dL));
-        PenDeriv k4 = derivative(current_velocity + dt * k3.dv,
-                                 current_depth + dt * k3.dz,
-                                 obliquity_radians + dt * k3.dtheta,
-                                 current_temperature + dt * k3.dT,
-                                 current_length + dt * k3.dL,
-                                 get_mass(current_length + dt * k3.dL));
+            double squaredVelocity = current_velocity * current_velocity;
 
-        double acceleration = k1.dv;
+            // Pulverized crater zone (from previous strikes) vastly reduces base resistance
+            double baseStrength = layer.compressive_strength +
+                                  (layer.rebar_yield_strength * layer.rebar_volume_fraction);
+            double baseDensity = layer.density;
+                if (current_depth < layer.pulverized_depth) {
+                    baseStrength = 5.0e6;              // 5 MPa for pulverized rubble
+                    baseDensity = layer.density * 0.7; // 30% void fraction
+                }
 
-        current_velocity += (dt / 6.0) * (k1.dv + 2 * k2.dv + 2 * k3.dv + k4.dv);
-        current_depth += (dt / 6.0) * (k1.dz + 2 * k2.dz + 2 * k3.dz + k4.dz);
-        obliquity_radians += (dt / 6.0) * (k1.dtheta + 2 * k2.dtheta + 2 * k3.dtheta + k4.dtheta);
-        current_temperature += (dt / 6.0) * (k1.dT + 2 * k2.dT + 2 * k3.dT + k4.dT);
-        current_length += (dt / 6.0) * (k1.dL + 2 * k2.dL + 2 * k3.dL + k4.dL);
+            // Dynamic Pressure (drives shock-initiation tracking and the WAPM transition test)
+            double dynamic_pressure = 0.5 * baseDensity * squaredVelocity;
+                if (dynamic_pressure > max_dynamic_pressure) {
+                    max_dynamic_pressure = dynamic_pressure;
+                }
 
-            if (!erosion_active) {
-                // Thermal ablation mass loss (rigid regime only; the eroding regime derives
-                // mass loss from the eroded length instead, to avoid double-counting).
-                    if (current_temperature > proj.melting_point) {
-                        double excess_temp = current_temperature - proj.melting_point;
-                        double excess_heat = excess_temp * current_mass * proj.specific_heat;
+                // Walker & Anderson (1995) transition: once hydrodynamic pressure overwhelms the
+                // casing's dynamic yield strength, the rigid-body assumption breaks down and the
+                // projectile begins eroding hydrodynamically (latches permanently once triggered).
+                if (!erosion_active && proj.yield_strength > 0.0 &&
+                    dynamic_pressure >= proj.yield_strength) {
+                    erosion_active = true;
+                    res.erosion_occurred = true;
+                    std::cout << "  [WAPM EROSION ONSET] Hydrodynamic pressure exceeded casing "
+                                 "yield at Depth: "
+                              << current_depth << " m | Velocity: " << current_velocity << " m/s\n";
+                }
 
-                            if (excess_heat > 0 && proj.heat_of_fusion > 0) {
-                                double mass_loss = excess_heat / proj.heat_of_fusion;
-                                current_mass -= mass_loss;
-                                current_temperature = proj.melting_point; // Clamp temperature
+            // Obliquity/AoA bending structural failure check (discrete, evaluated pre-step)
+            double asymmetric_force = 0.0;
+                if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
+                    asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
+                                       std::sin(obliquity_radians + angleOfAttack_radians);
+                    double bending_moment = asymmetric_force * (proj.length / 2.0);
 
-                                    if (current_mass < 0.1 * proj.total_mass) { // Burned up
-                                        res.casing_failure = true;
-                                        res.regime = "Thermal Destruction";
-                                        res.outcome_summary = "Projectile completely ablated.";
-                                        break;
-                                    }
-                            }
+                    double max_bending_stress = 0.0;
+                        if (proj.area_moment_inertia > 0) {
+                            max_bending_stress =
+                                (bending_moment * (proj.diameter / 2.0)) / proj.area_moment_inertia;
+                        }
+
+                        if (proj.yield_strength > 0.0 && max_bending_stress > proj.yield_strength) {
+                            res.casing_failure = true;
+                            res.regime = "Structural Failure (J-Hook/Snap)";
+                            res.outcome_summary = "Bending moments exceeded casing yield strength.";
+                            break;
+                        }
+                }
+
+            // RK4 state derivative: (velocity, depth, obliquity, temperature, rigid/eroding length)
+            auto derivative =
+                [&](double v, double z, double theta, [[maybe_unused]] double T, double L, double m)
+                -> PenDeriv {
+                PenDeriv d;
+                double vSq = v * v;
+                double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
+                double dif = computeDIF(strain_rate, baseStrength);
+                res.dynamic_increase_factor = dif;
+                double effective_strength = baseStrength * dif;
+
+                double lateral_force = 0.0;
+                    if (theta > 0.0 || angleOfAttack_radians > 0.0) {
+                        lateral_force = (0.5 * baseDensity * vSq * area) *
+                                        std::sin(theta + angleOfAttack_radians);
                     }
-            }
-            else {
-                current_length = std::max(0.0, current_length);
-                double effective_linear_density = proj.total_mass / proj.length;
-                current_mass = effective_linear_density * current_length;
-                res.final_rod_length = current_length;
-                res.erosion_length_lost = proj.length - current_length;
+                double safeMass = std::max(0.001, m);
+                double gravity_component = cons.gravity * std::cos(theta);
 
-                    if (current_length < 0.05 * proj.length) { // Fully eroded/consumed
-                        res.casing_failure = true;
-                        res.regime = "Hypervelocity Erosion Burnout";
-                        res.outcome_summary =
-                            "Projectile fully eroded by hydrodynamic penetration.";
-                        break;
-                    }
-            }
+                    if (!erosion_active) {
+                        // Two-phase Forrestal: linear crater ramp for z_local<=2d (continuous by
+                        // construction at z_local=2d), full cavity expansion resistance beyond.
+                        double fc_mpa = std::max(0.001, effective_strength / 1.0e6);
+                        double S = 82.6 * std::pow(fc_mpa, -0.544);
+                        double tunnelForce =
+                            area * (S * effective_strength + dragCoefficient * baseDensity * vSq);
+                        double craterDepthLimit = 2.0 * proj.diameter;
+                        double zLocal = z - layerEntryDepth;
+                        double axialForce =
+                            (craterDepthLimit > 0.0 && zLocal < craterDepthLimit)
+                                ? tunnelForce * std::clamp(zLocal / craterDepthLimit, 0.0, 1.0)
+                                : tunnelForce;
 
-            if (current_depth >= next_print_depth) {
-                double g_force = acceleration / cons.gravity;
-                std::cout << "  [Penetration T+ " << std::fixed << std::setprecision(2)
-                          << (t * 1000.0) << " ms] Depth: " << std::setprecision(1) << current_depth
-                          << " m | Vel: " << std::setprecision(1) << current_velocity
-                          << " m/s | Decel: " << std::setprecision(0) << g_force
-                          << " G | Temp: " << current_temperature
-                          << " K | Layer: " << layer.material_name
-                          << (erosion_active ? " | [ERODING]" : "") << "\n";
-                next_print_depth += 1.0;
-            }
+                        d.dv = gravity_component - (axialForce / safeMass);
+                        d.dz = v * std::cos(theta);
+                        d.dL = 0.0;
 
-            // Add telemetry frame every 20 iterations (200 microseconds)
-            if (pen_frame_counter++ % 20 == 0) {
-                TelemetryFrame frame;
-                frame.time = t;
-                frame.altitude = 0.0;
-                frame.depth = current_depth;
-                frame.velocity = current_velocity;
-                frame.mach = current_velocity / groundSpeedOfSound;
-                frame.dynamic_pressure = dynamic_pressure;
-                frame.g_force = std::abs(acceleration / cons.gravity);
-                frame.heat = std::min(1.0, current_temperature / proj.melting_point);
-                frame.is_eroding = erosion_active;
-                frame.dif = res.dynamic_increase_factor;
-                frame.remaining_length = erosion_active ? current_length : proj.length;
-                frame.obliquity_deg = obliquity_radians * 180.0 / cons.PI;
-                res.penetration_frames.push_back(frame);
-            }
-
-        t += dt;
-
-        // Failsafe for infinite loop (e.g. 10 seconds max)
-        if (t > 10.0)
-            break;
-    }
-
-    if (current_velocity <= 0.0) {
-        std::string final_layer = current_layer_idx < target.layers.size()
-                                      ? target.layers[current_layer_idx].material_name
-                                      : "Unknown";
-        std::cout << "  [FULL STOP at T+ " << std::fixed << std::setprecision(2) << (t * 1000.0)
-                  << " ms] Projectile came to rest at Depth: " << std::setprecision(2)
-                  << current_depth << " m inside layer: " << final_layer << "\n";
-    }
-std::cout << "------------------------------------\n\n";
-
-// Update the pulverized depth for sequential strikes
-target.pulverizeDepth(current_depth);
-res.cumulative_breach_depth = current_depth;
-
-res.actual_penetration_depth = current_depth;
-res.dynamic_pressure = max_dynamic_pressure;
-res.kinetic_energy = 0.5 * proj.total_mass * std::pow(res.velocity, 2);
-res.rigid_penetration = current_depth; // Backward compat
-
-double total_thickness = 0.0;
-double weighted_density_sum = 0.0;
-    for (const auto& layer : target.layers) {
-        weighted_density_sum += layer.density * layer.thickness;
-        total_thickness += layer.thickness;
-    }
-double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
-double average_density =
-    (total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
-res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
-
-// Shock Damage
-res.is_kinetic_rod = (proj.explosive_mass == 0.0);
-
-    if (res.is_kinetic_rod) {
-            if (res.casing_failure) {
-                // Already failed due to bending, thermal destruction, or erosion burnout
-            }
-            else if (res.erosion_occurred) {
-                res.regime = "Hypervelocity Erosion (Walker-Anderson)";
-                res.outcome_summary = "Projectile eroded hydrodynamically; casing survived intact.";
-            }
-            else {
-                res.regime = "Rigid Penetration (Crater+Tunnel)";
-            }
-        res.shock_damage_prob_percent = 0.0;
-        res.explosive_charge_survives = true;
-    }
-    else {
-            if (res.casing_failure) {
-                // Casing already failed in the loop (e.g. J-Hook, Thermal, or Erosion Burnout)
-                res.explosive_charge_survives = false;
-                res.premature_detonation = true;
-                res.shock_damage_prob_percent = 100.0;
-            }
-            else {
-                // Walker-Wasley shock initiation criterion: P^2*tau >= Ec triggers
-                // detonation via the shock wave transmitted through the casing wall.
-                double criticalEnergy = std::max(1.0, proj.explosive_critical_energy);
-                res.shock_damage_prob_percent =
-                    std::min(100.0, 100.0 * max_walker_wasley_product / criticalEnergy);
-                bool shockInitiates = max_walker_wasley_product >= criticalEnergy;
-
-                    if (shockInitiates) {
-                        res.explosive_charge_survives = false;
-                        res.premature_detonation = true;
-                        res.regime = "Shock Initiation (Walker-Wasley)";
-                        res.outcome_summary =
-                            "Transmitted shock exceeded the Walker-Wasley critical "
-                            "initiation energy (P^2*tau >= Ec).";
+                        double heat_rate = (axialForce * cons.frictionFactor) * std::fabs(v);
+                        d.dT = heat_rate / (safeMass * proj.specific_heat);
                     }
                     else {
-                        res.explosive_charge_survives = true;
-                            if (res.erosion_occurred) {
-                                res.regime = "Hypervelocity Erosion (Walker-Anderson)";
-                            }
+                        // Walker-Anderson (WAPM): Tate-Bernoulli interface velocity u, then the
+                        // rate-dependent tail deceleration coupling the elastic bar wave speed.
+                        double u = solveInterfaceVelocity(v,
+                                                          proj.casing_density,
+                                                          baseDensity,
+                                                          proj.yield_strength,
+                                                          effective_strength);
+                        double Le =
+                            std::max(0.01, L); // elastic length ~= instantaneous rigid length
+                        d.dv = -(proj.yield_strength / (proj.casing_density * Le)) *
+                                   (1.0 + (v - u) / bar_wave_speed) +
+                               gravity_component;
+                        d.dz =
+                            u * std::cos(theta); // depth tracks the eroding interface, not tail v
+                        d.dL = -(v - u);
+
+                        double erosion_heat_rate =
+                            0.5 * baseDensity * (v - u) * (v - u) * area * std::fabs(v - u);
+                        d.dT = erosion_heat_rate / (safeMass * proj.specific_heat);
                     }
-            }
-    }
 
-// Populate Visualization Data
-res.explosive_mass = proj.explosive_mass;
-    if (res.is_kinetic_rod) {
-        res.explosion_scale = 1.0;
-        res.crater_wide_radius = proj.diameter * 2.0; // minimal crater
-    }
-    else {
-        res.explosion_scale = std::max(
-            5.0, (proj.yield_strength / 1e9) * 3.0); // original logic was based on casing yield
-        // if we want it based on explosive mass:
-        res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
-        res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
-    }
-res.crater_narrow_radius = proj.diameter / 2.0;
-res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9); // scale down energy
+                    if (v > 0.1) {
+                        d.dtheta = (lateral_force / safeMass) / v;
+                    }
 
-// Physics-derived playback multiplier: scale so the actual simulated penetration-phase
-// duration (fast erosion vs. slow rigid drilling) maps onto a consistent, watchable window,
-// instead of a fixed arbitrary constant.
-constexpr double desiredWallClockSeconds = 6.0;
-double totalPenSimTime = res.penetration_frames.empty() ? dt : res.penetration_frames.back().time;
-res.time_scale_pen = (totalPenSimTime > 1.0e-9)
-                         ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
-                         : 0.02;
+                return d;
+            };
 
-return res;
+            auto get_mass = [&](double L_eval) {
+                return erosion_active ? (proj.total_mass / proj.length) * std::max(0.0, L_eval)
+                                      : current_mass;
+            };
+
+            PenDeriv k1 = derivative(current_velocity,
+                                     current_depth,
+                                     obliquity_radians,
+                                     current_temperature,
+                                     current_length,
+                                     get_mass(current_length));
+            PenDeriv k2 = derivative(current_velocity + 0.5 * dt * k1.dv,
+                                     current_depth + 0.5 * dt * k1.dz,
+                                     obliquity_radians + 0.5 * dt * k1.dtheta,
+                                     current_temperature + 0.5 * dt * k1.dT,
+                                     current_length + 0.5 * dt * k1.dL,
+                                     get_mass(current_length + 0.5 * dt * k1.dL));
+            PenDeriv k3 = derivative(current_velocity + 0.5 * dt * k2.dv,
+                                     current_depth + 0.5 * dt * k2.dz,
+                                     obliquity_radians + 0.5 * dt * k2.dtheta,
+                                     current_temperature + 0.5 * dt * k2.dT,
+                                     current_length + 0.5 * dt * k2.dL,
+                                     get_mass(current_length + 0.5 * dt * k2.dL));
+            PenDeriv k4 = derivative(current_velocity + dt * k3.dv,
+                                     current_depth + dt * k3.dz,
+                                     obliquity_radians + dt * k3.dtheta,
+                                     current_temperature + dt * k3.dT,
+                                     current_length + dt * k3.dL,
+                                     get_mass(current_length + dt * k3.dL));
+
+            double acceleration = k1.dv;
+
+            current_velocity += (dt / 6.0) * (k1.dv + 2 * k2.dv + 2 * k3.dv + k4.dv);
+            current_depth += (dt / 6.0) * (k1.dz + 2 * k2.dz + 2 * k3.dz + k4.dz);
+            obliquity_radians +=
+                (dt / 6.0) * (k1.dtheta + 2 * k2.dtheta + 2 * k3.dtheta + k4.dtheta);
+            current_temperature += (dt / 6.0) * (k1.dT + 2 * k2.dT + 2 * k3.dT + k4.dT);
+            current_length += (dt / 6.0) * (k1.dL + 2 * k2.dL + 2 * k3.dL + k4.dL);
+
+                if (!erosion_active) {
+                    // Thermal ablation mass loss (rigid regime only; the eroding regime derives
+                    // mass loss from the eroded length instead, to avoid double-counting).
+                        if (current_temperature > proj.melting_point) {
+                            double excess_temp = current_temperature - proj.melting_point;
+                            double excess_heat = excess_temp * current_mass * proj.specific_heat;
+
+                                if (excess_heat > 0 && proj.heat_of_fusion > 0) {
+                                    double mass_loss = excess_heat / proj.heat_of_fusion;
+                                    current_mass -= mass_loss;
+                                    current_temperature = proj.melting_point; // Clamp temperature
+
+                                        if (current_mass < 0.1 * proj.total_mass) { // Burned up
+                                            res.casing_failure = true;
+                                            res.regime = "Thermal Destruction";
+                                            res.outcome_summary = "Projectile completely ablated.";
+                                            break;
+                                        }
+                                }
+                        }
+                }
+                else {
+                    current_length = std::max(0.0, current_length);
+                    double effective_linear_density = proj.total_mass / proj.length;
+                    current_mass = effective_linear_density * current_length;
+                    res.final_rod_length = current_length;
+                    res.erosion_length_lost = proj.length - current_length;
+
+                        if (current_length < 0.05 * proj.length) { // Fully eroded/consumed
+                            res.casing_failure = true;
+                            res.regime = "Hypervelocity Erosion Burnout";
+                            res.outcome_summary =
+                                "Projectile fully eroded by hydrodynamic penetration.";
+                            break;
+                        }
+                }
+
+                if (current_depth >= next_print_depth) {
+                    double g_force = acceleration / cons.gravity;
+                    std::cout << "  [Penetration T+ " << std::fixed << std::setprecision(2)
+                              << (t * 1000.0) << " ms] Depth: " << std::setprecision(1)
+                              << current_depth << " m | Vel: " << std::setprecision(1)
+                              << current_velocity << " m/s | Decel: " << std::setprecision(0)
+                              << g_force << " G | Temp: " << current_temperature
+                              << " K | Layer: " << layer.material_name
+                              << (erosion_active ? " | [ERODING]" : "") << "\n";
+                    next_print_depth += 1.0;
+                }
+
+                // Add telemetry frame every 20 iterations (200 microseconds)
+                if (pen_frame_counter++ % 20 == 0) {
+                    TelemetryFrame frame;
+                    frame.time = t;
+                    frame.altitude = 0.0;
+                    frame.depth = current_depth;
+                    frame.velocity = current_velocity;
+                    frame.mach = current_velocity / groundSpeedOfSound;
+                    frame.dynamic_pressure = dynamic_pressure;
+                    frame.g_force = std::abs(acceleration / cons.gravity);
+                    frame.heat = std::min(1.0, current_temperature / proj.melting_point);
+                    frame.is_eroding = erosion_active;
+                    frame.dif = res.dynamic_increase_factor;
+                    frame.remaining_length = erosion_active ? current_length : proj.length;
+                    frame.obliquity_deg = obliquity_radians * 180.0 / cons.PI;
+                    res.penetration_frames.push_back(frame);
+                }
+
+            t += dt;
+
+            // Failsafe for infinite loop (e.g. 10 seconds max)
+            if (t > 10.0)
+                break;
+        }
+
+        if (current_velocity <= 0.0) {
+            std::string final_layer = current_layer_idx < target.layers.size()
+                                          ? target.layers[current_layer_idx].material_name
+                                          : "Unknown";
+            std::cout << "  [FULL STOP at T+ " << std::fixed << std::setprecision(2) << (t * 1000.0)
+                      << " ms] Projectile came to rest at Depth: " << std::setprecision(2)
+                      << current_depth << " m inside layer: " << final_layer << "\n";
+        }
+    std::cout << "------------------------------------\n\n";
+
+    // Update the pulverized depth for sequential strikes
+    target.pulverizeDepth(current_depth);
+    res.cumulative_breach_depth = current_depth;
+
+    res.actual_penetration_depth = current_depth;
+    res.dynamic_pressure = max_dynamic_pressure;
+    res.kinetic_energy = 0.5 * proj.total_mass * std::pow(res.velocity, 2);
+    res.rigid_penetration = current_depth; // Backward compat
+
+    double total_thickness = 0.0;
+    double weighted_density_sum = 0.0;
+        for (const auto& layer : target.layers) {
+            weighted_density_sum += layer.density * layer.thickness;
+            total_thickness += layer.thickness;
+        }
+    double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
+    double average_density =
+        (total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
+    res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
+
+    // Shock Damage
+    res.is_kinetic_rod = (proj.explosive_mass == 0.0);
+
+        if (res.is_kinetic_rod) {
+                if (res.casing_failure) {
+                    // Already failed due to bending, thermal destruction, or erosion burnout
+                }
+                else if (res.erosion_occurred) {
+                    res.regime = "Hypervelocity Erosion (Walker-Anderson)";
+                    res.outcome_summary =
+                        "Projectile eroded hydrodynamically; casing survived intact.";
+                }
+                else {
+                    res.regime = "Rigid Penetration (Crater+Tunnel)";
+                }
+            res.shock_damage_prob_percent = 0.0;
+            res.explosive_charge_survives = true;
+        }
+        else {
+                if (res.casing_failure) {
+                    // Casing already failed in the loop (e.g. J-Hook, Thermal, or Erosion Burnout)
+                    res.explosive_charge_survives = false;
+                    res.premature_detonation = true;
+                    res.shock_damage_prob_percent = 100.0;
+                }
+                else {
+                    // Walker-Wasley shock initiation criterion: P^2*tau >= Ec triggers
+                    // detonation via the shock wave transmitted through the casing wall.
+                    double criticalEnergy = std::max(1.0, proj.explosive_critical_energy);
+                    res.shock_damage_prob_percent =
+                        std::min(100.0, 100.0 * max_walker_wasley_product / criticalEnergy);
+                    bool shockInitiates = max_walker_wasley_product >= criticalEnergy;
+
+                        if (shockInitiates) {
+                            res.explosive_charge_survives = false;
+                            res.premature_detonation = true;
+                            res.regime = "Shock Initiation (Walker-Wasley)";
+                            res.outcome_summary =
+                                "Transmitted shock exceeded the Walker-Wasley critical "
+                                "initiation energy (P^2*tau >= Ec).";
+                        }
+                        else {
+                            res.explosive_charge_survives = true;
+                                if (res.erosion_occurred) {
+                                    res.regime = "Hypervelocity Erosion (Walker-Anderson)";
+                                }
+                        }
+                }
+        }
+
+    // Populate Visualization Data
+    res.explosive_mass = proj.explosive_mass;
+        if (res.is_kinetic_rod) {
+            res.explosion_scale = 1.0;
+            res.crater_wide_radius = proj.diameter * 2.0; // minimal crater
+        }
+        else {
+            res.explosion_scale = std::max(
+                5.0, (proj.yield_strength / 1e9) * 3.0); // original logic was based on casing yield
+            // if we want it based on explosive mass:
+            res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
+            res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
+        }
+    res.crater_narrow_radius = proj.diameter / 2.0;
+    res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9); // scale down energy
+
+    // Physics-derived playback multiplier: scale so the actual simulated penetration-phase
+    // duration (fast erosion vs. slow rigid drilling) maps onto a consistent, watchable window,
+    // instead of a fixed arbitrary constant.
+    constexpr double desiredWallClockSeconds = 6.0;
+    double totalPenSimTime =
+        res.penetration_frames.empty() ? dt : res.penetration_frames.back().time;
+    res.time_scale_pen = (totalPenSimTime > 1.0e-9)
+                             ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
+                             : 0.02;
+
+    return res;
 }
 
 void ImpactSimulator::printAscii3DVisualizer(const SimulationResult& r)
