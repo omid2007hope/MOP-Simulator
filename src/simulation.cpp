@@ -239,7 +239,10 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     res.altitude_ft = scenario.altitude_ft;
     res.velocity = scenario.velocity;
 
-    double current_velocity = res.velocity;
+    double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
+    double current_velocity = res.velocity; // Will be updated to magnitude
+    double current_vx = res.velocity * std::cos(fpa_rad);
+    double current_vy = res.velocity * std::sin(fpa_rad);
 
     res.mach_number =
         scenario.velocity / standardAtmosphere(scenario.altitude_ft / 3.28084).speed_of_sound_ms;
@@ -255,7 +258,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
     double current_depth = 0.0;
 
     // Obliquity and AoA
-    double obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
+    double target_obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
+    double obliquity_radians = target_obliquity_radians; // Will be updated after drop
     double angleOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
 
     double dt = 1e-5; // 10 microseconds
@@ -292,40 +296,52 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             double y_m = current_altitude / 3.28084;
 
                 while (current_altitude > 0.0) {
-                    auto calc_accel = [&](double alt_m, double vel) {
+                    struct DropDeriv { double dv_x, dv_y, dy; };
+                    auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
                         AtmosphereState atm = standardAtmosphere(alt_m);
-                        double mach = vel / atm.speed_of_sound_ms;
+                        double v_mag = std::hypot(vx, vy);
+                        double mach = v_mag / atm.speed_of_sound_ms;
                         double cd = getMachDependentDrag(mach, dragCoefficient);
-                        double f = 0.5 * atm.density_kgm3 * vel * vel * cd * area;
-                        return cons.gravity - (f / proj.total_mass);
+                        double f = 0.5 * atm.density_kgm3 * v_mag * v_mag * cd * area;
+                        DropDeriv d;
+                        if (v_mag > 0.0) {
+                            d.dv_x = -(f / proj.total_mass) * (vx / v_mag);
+                            d.dv_y = cons.gravity - (f / proj.total_mass) * (vy / v_mag);
+                        } else {
+                            d.dv_x = 0.0;
+                            d.dv_y = cons.gravity;
+                        }
+                        d.dy = -vy;
+                        return d;
                     };
 
-                    double k1_v = calc_accel(y_m, current_velocity);
-                    double k1_y = -current_velocity;
-
-                    double k2_v = calc_accel(y_m + 0.5 * dt_drop * k1_y,
-                                             current_velocity + 0.5 * dt_drop * k1_v);
-                    double k2_y = -(current_velocity + 0.5 * dt_drop * k1_v);
-
-                    double k3_v = calc_accel(y_m + 0.5 * dt_drop * k2_y,
-                                             current_velocity + 0.5 * dt_drop * k2_v);
-                    double k3_y = -(current_velocity + 0.5 * dt_drop * k2_v);
-
-                    double k4_v =
-                        calc_accel(y_m + dt_drop * k3_y, current_velocity + dt_drop * k3_v);
-                    double k4_y = -(current_velocity + dt_drop * k3_v);
+                    DropDeriv k1 = calc_derivs(y_m, current_vx, current_vy);
+                    DropDeriv k2 = calc_derivs(y_m + 0.5 * dt_drop * k1.dy,
+                                               current_vx + 0.5 * dt_drop * k1.dv_x,
+                                               current_vy + 0.5 * dt_drop * k1.dv_y);
+                    DropDeriv k3 = calc_derivs(y_m + 0.5 * dt_drop * k2.dy,
+                                               current_vx + 0.5 * dt_drop * k2.dv_x,
+                                               current_vy + 0.5 * dt_drop * k2.dv_y);
+                    DropDeriv k4 = calc_derivs(y_m + dt_drop * k3.dy,
+                                               current_vx + dt_drop * k3.dv_x,
+                                               current_vy + dt_drop * k3.dv_y);
 
                     double prev_y_m = y_m;
-                    double prev_vel = current_velocity;
+                    double prev_vx = current_vx;
+                    double prev_vy = current_vy;
 
-                    current_velocity += (dt_drop / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v);
-                    y_m += (dt_drop / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
+                    current_vx += (dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
+                    current_vy += (dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
+                    y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
+                    current_velocity = std::hypot(current_vx, current_vy);
 
                         if (y_m < 0.0) {
                             double fraction = prev_y_m / (prev_y_m - y_m);
-                            current_velocity = prev_vel + fraction * (current_velocity - prev_vel);
+                            current_vx = prev_vx + fraction * (current_vx - prev_vx);
+                            current_vy = prev_vy + fraction * (current_vy - prev_vy);
                             y_m = 0.0;
                             t_drop = t_drop - dt_drop + fraction * dt_drop;
+                            current_velocity = std::hypot(current_vx, current_vy);
                         }
 
                     current_altitude = y_m * 3.28084;
@@ -360,7 +376,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                         }
 
                         if (current_altitude <= next_print_altitude && current_altitude > 0.0) {
-                            double acceleration = calc_accel(y_m, current_velocity);
+                            double drag_force = 0.5 * current_atm.density_kgm3 * std::pow(current_velocity, 2) * getMachDependentDrag(current_velocity / current_atm.speed_of_sound_ms, dragCoefficient) * area;
+                            double acceleration = cons.gravity - (drag_force / proj.total_mass); // Approximation for printing magnitude
                             double g_force = acceleration / cons.gravity;
                             std::cout << "  [Drop T+ " << std::fixed << std::setprecision(1)
                                       << t_drop << "s] Alt: " << std::setprecision(0)
@@ -377,9 +394,14 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
             current_altitude = 0.0;
             std::cout << "  [Impact T+ " << std::fixed << std::setprecision(2) << t_drop
                       << "s] Alt: 0 ft | Impact Velocity: " << std::setprecision(1)
-                      << current_velocity << " m/s\n";
+                      << current_velocity << " m/s (Vx: " << current_vx << ", Vy: " << current_vy << ")\n";
             std::cout << "--------------------------------------------------------\n\n";
         }
+        
+    // Combine surface obliquity with the flight path angle at impact (gamma).
+    // The drop simulation uses standard atan2(vx, vy) for angle from vertical.
+    double impact_gamma_radians = std::atan2(current_vx, std::max(0.001, current_vy));
+    obliquity_radians = target_obliquity_radians + impact_gamma_radians;
 
     // Update result with final impact velocity (Mach referenced to sea-level speed of sound;
     // Mach number is not a standard concept once inside a solid target)
@@ -840,19 +862,13 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                              ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
                              : 0.02;
 
-    // ! ********************
-    // ! Rotation after drop
-    // ! ********************
+    res.time_scale_pen = (totalPenSimTime > 1.0e-9)
+                             ? std::clamp(desiredWallClockSeconds / totalPenSimTime, 0.01, 5000.0)
+                             : 0.02;
 
-    double horizontal_velocity = scenario.velocity;
-    double vertical_velocity = current_velocity;
-
-    // 2DOF Translation Dynamics: Computes horizontal and vertical accelerations
-    // based on drag force, mass, gravity, and current velocity vector.
-    double gamma = std::atan2(horizontal_velocity, vertical_velocity); // Flight path angle
-
-    res.x_acceleration = -(dragCoefficient * std::sin(gamma)) / proj.total_mass;
-    res.y_acceleration = cons.gravity - (dragCoefficient * std::cos(gamma)) / proj.total_mass;
+    // Reset dummy acceleration output at end state
+    res.x_acceleration = 0.0;
+    res.y_acceleration = 0.0;
 
     return res;
 }
