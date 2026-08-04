@@ -371,6 +371,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario)
                             frame.velocity = current_velocity;
                             frame.mach = current_velocity / current_atm.speed_of_sound_ms;
                             frame.is_sonic_boom = is_sonic_boom_frame;
+                            frame.pitch_rad = std::atan2(current_vx, std::max(0.001, current_vy));
                             res.drop_frames.push_back(frame);
                         }
 
@@ -1143,7 +1144,8 @@ void ImpactSimulator::generateHtml3DVisualizer(const std::vector<SimulationResul
                     const auto& f = r.drop_frames[j];
                     dropFramesJson << "{t:" << f.time << ",y:" << f.altitude << ",v:" << f.velocity
                                    << ",m:" << f.mach
-                                   << ",sb:" << (f.is_sonic_boom ? "true" : "false") << "}";
+                                   << ",sb:" << (f.is_sonic_boom ? "true" : "false")
+                                   << ",pr:" << f.pitch_rad << "}";
                     if (j + 1 < r.drop_frames.size())
                         dropFramesJson << ",";
                 }

@@ -1658,7 +1658,7 @@
               0,
               Math.min(1.0, 1.0 - frame.y / maxDropAlt),
             );
-            const pitchRad =
+            const pitchRad = frame.pr !== undefined ? frame.pr :
               (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
             projectile.rotation.z = pitchRad;
 

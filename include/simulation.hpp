@@ -116,6 +116,7 @@ struct TelemetryFrame
     bool is_sonic_boom = false;
     double heat = 0.0;
     double g_force = 0.0;
+    double pitch_rad = 0.0;
 
     // Penetration-phase physics telemetry (Phase 3/4 two-phase Forrestal + WAPM)
     bool is_eroding = false;       // true once the Walker-Anderson erosion regime is active
