@@ -183,6 +183,8 @@ private:
     Projectile proj;
     Target target;
     PhysicsConstants cons;
+    ImpactScenario scenario;
+
     // Helper for 2DOF
     std::pair<double, double> computeProjectileRotationInAir(double horizontal_velocity,
                                                              double vertical_velocity,
@@ -205,7 +207,10 @@ private:
                                           double S_p) const;
 
 public:
-    ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
+    ImpactSimulator(const Projectile& p,
+                    const Target& t,
+                    const PhysicsConstants& c,
+                    const ImpactScenario& s);
 
     SimulationResult simulate(const ImpactScenario& scenario);
 

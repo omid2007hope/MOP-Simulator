@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sim.exe",
-            "args": [],
+            "args": ["--accept-eula"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
