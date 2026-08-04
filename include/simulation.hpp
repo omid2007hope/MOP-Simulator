@@ -190,7 +190,10 @@ private:
                                           double S_p) const;
 
 public:
-    ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
+    ImpactSimulator(const Projectile& p,
+                    const Target& t,
+                    const PhysicsConstants& c,
+                    const ImpactSimulator& s);
     SimulationResult simulate(const ImpactScenario& scenario);
     void printAscii3DVisualizer(const SimulationResult& r);
     void printReport(const std::vector<SimulationResult>& results);
