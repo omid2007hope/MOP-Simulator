@@ -102,6 +102,13 @@ struct ImpactScenario
     double velocity = 0.0;        // m/s
     double obliquity_angle = 0.0; // Degrees (0 = perfectly perpendicular)
     double angle_of_attack = 0.0; // Degrees
+
+    double x_acceleration;
+    double y_acceleration;
+    double horizontal_velocity;
+    double vertical_velocity;
+    double gamma;
+    double dragCoefficient;
 };
 
 struct TelemetryFrame
@@ -176,6 +183,7 @@ private:
     Projectile proj;
     Target target;
     PhysicsConstants cons;
+    ImpactScenario scenario;
 
     double computeProjectileRotationInAir(double x_acceleration,
                                           double y_acceleration,
