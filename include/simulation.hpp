@@ -177,6 +177,8 @@ private:
     Target target;
     PhysicsConstants cons;
 
+    double computeProjectileRotationInAir(double x_acceleration, double y_acceleration) const;
+
     double getMachDependentDrag(double mach, double baseCd) const;
 
     AtmosphereState standardAtmosphere(double altitude_m) const;
