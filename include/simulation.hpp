@@ -92,9 +92,6 @@ struct Projectile
     double hugoniot_c0 = 4570.0;               // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
     double hugoniot_s = 1.49;                  // dimensionless (Hugoniot slope)
     double explosive_critical_energy = 3.0e15; // Pa^2*s (Walker-Wasley Ec, Comp-B-like)
-
-    double x_axis;
-    double y_axis;
 };
 
 // Scenario input definition
