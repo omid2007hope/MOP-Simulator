@@ -282,6 +282,11 @@ int main(int argc, char* argv[])
                              << " (Degrees, 0 for perpendicular): ";
                     double obliquity = getValidInput<double>(obliq_ss.str(), true);
 
+                    std::stringstream fpa_ss;
+                    fpa_ss << "  -> Enter Flight Path Angle #" << (i + 1)
+                           << " (Degrees, 0=horizontal, 90=vertical): ";
+                    double fpa = getValidInput<double>(fpa_ss.str(), true);
+
                     std::stringstream aoa_ss;
                     aoa_ss << "  -> Enter Angle of Attack #" << (i + 1) << " (Degrees): ";
                     double aoa = getValidInput<double>(aoa_ss.str(), true);
@@ -290,7 +295,7 @@ int main(int argc, char* argv[])
 
                     name_ss << "Custom Test #" << (i + 1) << " (" << dropAltitude_ft << " ft drop)";
                     scenarios.push_back(
-                        {name_ss.str(), dropAltitude_ft, initial_velocity, obliquity, aoa});
+                        {name_ss.str(), dropAltitude_ft, initial_velocity, fpa, obliquity, aoa});
                 }
         }
 
@@ -311,7 +316,7 @@ int main(int argc, char* argv[])
                 }
 
             scenarios = {
-                {"Orbital Strike", 3000000.0, 7800.0, 0.0, 0.0},
+                {"Orbital Strike", 3000000.0, 7800.0, 90.0, 0.0, 0.0},
             };
         }
 
@@ -367,7 +372,7 @@ int main(int argc, char* argv[])
                 } else {
                     name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
                 }
-                scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0});
+                scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
             }
         }
 
