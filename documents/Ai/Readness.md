@@ -1,8 +1,25 @@
 # Project Readiness & Coding Guidelines
 
+Universal coding standards, file structure conventions, and formatting guidelines for **JavaScript**, **Node.js**, **React**, **C++**, **C**, and **C#**.
+
+---
+
+## Table of Contents
+
+1. [Copyright Header](#1-copyright-header)
+2. [Include / Import / Require Conventions](#2-include--import--require-conventions)
+3. [Indentation & Spacing Rules](#3-indentation--spacing-rules)
+4. [Commenting Conventions](#4-commenting-conventions)
+5. [Function Spacing Rules](#5-function-spacing-rules)
+6. [Console I/O & Print Spacing Rules](#6-console-io--print-spacing-rules-cin-cout-print)
+7. [Comprehensive Master Example](#7-comprehensive-master-example)
+8. [AI Readiness & Code Review Checklist](#8-ai-readiness--code-review-checklist)
+
+---
+
 ## 1. Copyright Header
 
-Every source file **must** include the following copyright notice on **Line 1** at the very top:
+Every single source file **must** include the following exact copyright notice on **Line 1** at the very top:
 
 ```cpp
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
@@ -12,7 +29,7 @@ Every source file **must** include the following copyright notice on **Line 1** 
 
 ## 2. Include / Import / Require Conventions
 
-Always organize `#include`, `import`, `require`, and similar statements into explicit blocks for **packages/system libraries** and **local files**.
+Always organize `#include`, `import`, `require`, and similar header statements into two explicit, structured sections: **packages/system libraries** and **local project files**.
 
 ### Grouping & Spacing Rules
 
@@ -25,9 +42,11 @@ Always organize `#include`, `import`, `require`, and similar statements into exp
 ```cpp
 // packages
 #include <cctype>
+#include <iostream>
 
 // files
 #include "config_loader.hpp"
+#include "simulation.hpp"
 ```
 
 ---
@@ -36,14 +55,14 @@ Always organize `#include`, `import`, `require`, and similar statements into exp
 
 ### Indentation Guidelines
 
-- **0 Tabs**: Outer function declarations and top-level definitions.
-- **1 Tab**: Statements inside the function body (e.g., `if` conditions).
-- **2 Tabs**: Statements inside nested blocks (e.g., body of an `if` block).
+- **0 Tabs**: Outer function declarations, top-level definitions, and function closing braces.
+- **1 Tab**: Direct statements inside the function body (e.g., `if` condition statement).
+- **2 Tabs**: Statements inside nested blocks (e.g., body statements inside an `if` block).
 
 ### Line Break Rules
 
-- **Block Headers**: Always insert a newline (`enter`) at the top of a block body after the opening brace `{`.
-- **Block Separators**: Always insert a newline (`enter`) before major statements following a closed block `}`.
+- **Block Headers**: Always insert a newline (`enter`) at the top of a block body immediately after the opening brace `{`.
+- **Block Separators**: Always insert a newline (`enter`) before major statements following a closed block brace `}`.
 
 ---
 
@@ -53,8 +72,8 @@ Applicable languages: **JavaScript**, **Node.js**, **React**, **C++**, **C**, **
 
 ### Rules & Syntax
 
-- **Special Comments (`// !`)**: Use red special comments to describe what a function does at the top, and mark where the function ends (`// **** Ends Here ****`).
-- **Normal Comments (`//`)**: Use normal comments before block conditions (e.g., `if`) to explain **why** the logic exists.
+- **Special Comments (`// !`)**: Use red special comments at the top of a function to state **what the function does**, and at the end of the function body to mark its exit (`// **** Ends Here ****`).
+- **Normal Comments (`//`)**: Use standard comments before conditional blocks (e.g., `if`) to explain **why** the logic exists.
 
 ### Code Example
 
@@ -127,4 +146,69 @@ void displayEula() {
     // **** Ends Here **** -- ! red special comment
 }
 ```
+
+---
+
+## 7. Comprehensive Master Example
+
+This complete example combines all 6 coding rules into a single production-ready template:
+
+```cpp
+// Copyright (c) 2026 Omid Teimory. All Rights Reserved
+
+// packages
+#include <cctype>
+#include <iostream>
+#include <limits>
+
+// files
+#include "config_loader.hpp"
+#include "simulation.hpp"
+
+
+// ! Ensures input stream safety by clearing error flags and ignoring invalid characters
+void safeCin() {
+    // comment why if -- handle broken cin state before clearing buffer
+    if (!std::cin) {
+
+        std::cin.clear();
+    }
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    // **** Ends Here **** -- ! red special comment
+}
+
+
+
+
+// ! Displays software license agreement and legal disclaimers to user
+void displayEula() {
+
+
+    std::cout << "=================================================================================\n";
+    std::cout << "                 C++ IMPACT PHYSICS & PENETRATION SIMULATOR V2.8                 \n";
+    std::cout << "=================================================================================\n\n";
+    std::cout << "[!] END-USER LICENSE AGREEMENT (EULA) & TERMS OF SERVICE [!]\n";
+    std::cout << "WARNING: This software is a high-fidelity physics simulator.\n";
+    std::cout << "Usage is strictly restricted to educational and hobbyist purposes.\n\n";
+
+
+    // **** Ends Here **** -- ! red special comment
+}
+```
+
+---
+
+## 8. AI Readiness & Code Review Checklist
+
+Before committing code or submitting pull requests, verify that all guidelines are satisfied:
+
+- [ ] **Line 1 Copyright**: Is `// Copyright (c) 2026 Omid Teimory. All Rights Reserved` on Line 1?
+- [ ] **Imports / Includes**: Are imports split into `// packages` and `// files` with 1 empty line in between?
+- [ ] **Tab Indentation**: 0 tabs for functions, 1 tab inside functions, 2 tabs inside `if` block bodies?
+- [ ] **Block Line Breaks**: Is there an `enter` after opening brace `{` and before statements after `}`?
+- [ ] **Special Comments**: Does every function start with a `// !` description and end with `// **** Ends Here ****`?
+- [ ] **Function Separation**: Are there **4 empty lines** between consecutive top-level functions?
+- [ ] **Console Print Spacing**: Are there **2 empty lines** above and below `cin` / `cout` / `print` blocks?
+
 
