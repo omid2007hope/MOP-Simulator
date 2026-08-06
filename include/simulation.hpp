@@ -99,6 +99,8 @@ struct Aircraft {
 	double bomber_totalMass = 0.0;
 	double bomber_wingArea = 0.0;
 	double bomber_liftCurveSlope = 0.0;
+
+	double delta_alpha_deg = 0.0;
 };
 
 // Scenario input definition

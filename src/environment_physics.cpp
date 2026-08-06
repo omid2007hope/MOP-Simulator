@@ -264,5 +264,47 @@ double solveHugoniotInterfaceVelocity(
 	// **** Ends Here ****
 }
 
-} // namespace EnvironmentPhysics
 
+
+
+// ! physics-based Aircraft Flight Control & Trim system
+double flightControlTrim(const AtmosphereState& atmos,
+			 const ImpactScenario& scenario,
+			 const Projectile& proj,
+			 const Aircraft& bomber,
+			 const PhysicsConstants& cons) {
+
+	Aircraft spec;
+	spec.bomber_totalMass;
+	spec.bomber_wingArea;
+	spec.bomber_liftCurveSlope;
+
+	Projectile bomb;
+	bomb.total_mass;
+
+	ImpactScenario sce;
+	sce.velocity;
+	sce.flight_path_angle;
+
+	// Bombers velocity is as same as inital velocity
+	double bomberVelocity = sce.velocity;
+
+	AtmosphereState atm = standardAtmosphere(altitude_m, cons);
+	double density = atm.density_kgm3;
+
+	double fpa_rad = sce.flight_path_angle * cons.PI / 180.0;
+
+	double delta_lift = -(spec.total_mass * cons.gravity * std::cos(fpa_rad));
+
+	double dynamic_pressure = 0.5 * density * std::pow(bomberVelocity, 2);
+
+	// 6. Required Change in Lift Coefficient (Delta CL)
+	double delta_CL = delta_lift / (dynamic_pressure * spec.bomber_wingArea);
+
+	// 7. Required Trim Angle Change (Degrees)
+	spec.delta_alpha_deg = delta_CL / spec.bomber_liftCurveSlope;
+
+	return spec.delta_alpha_deg // This will be a negative number
+				    // (Nose Down)
+};
+} // namespace EnvironmentPhysics
