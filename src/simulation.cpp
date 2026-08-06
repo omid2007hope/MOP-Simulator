@@ -665,7 +665,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 
 	double dt = 1e-5;
 
-	simulateAtmosphericDrop(scenario, res, impact_velocity, impact_pitch, dt);
+	simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt);
 
 	simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 
