@@ -96,9 +96,9 @@ struct Projectile {
 
 
 struct Aircraft {
-	double bomber_totalMass;
-	double bomber_wingArea;
-	double bomber_liftCurveSlope;
+	double bomber_totalMass = 0.0;
+	double bomber_wingArea = 0.0;
+	double bomber_liftCurveSlope = 0.0;
 };
 
 // Scenario input definition
