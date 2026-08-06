@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <regex>
 
 // files
 #include "telemetry_exporter.hpp"
@@ -409,7 +410,11 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 	};
 
 	replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
-	replaceAll(html, "/*{{SCENARIOS_DATA}}*/", data.str());
+	
+	std::string dataStr = data.str();
+	dataStr = std::regex_replace(dataStr, std::regex("\\b(nan|NaN)\\b"), "null");
+	dataStr = std::regex_replace(dataStr, std::regex("\\b(inf|Infinity)\\b"), "null");
+	replaceAll(html, "/*{{SCENARIOS_DATA}}*/", dataStr);
 
 	out << html;
 	out.close();
