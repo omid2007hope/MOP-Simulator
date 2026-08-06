@@ -94,6 +94,13 @@ struct Projectile {
 	double explosive_critical_energy = 3.0e15; // Pa^2*s (Walker-Wasley Ec, Comp-B-like)
 };
 
+
+struct Aircraft {
+	double bomber_totalMass;
+	double bomber_wingArea;
+	double bomber_liftCurveSlope;
+};
+
 // Scenario input definition
 struct ImpactScenario {
 	std::string name;
