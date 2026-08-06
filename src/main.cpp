@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
+// packages
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
@@ -9,25 +10,35 @@
 #include <string>
 #include <vector>
 
+// files
 #include "config_loader.hpp"
 #include "default.hpp"
 #include "simulation.hpp"
 #include "telemetry_exporter.hpp"
 
+
+// ! Clears input stream errors and flushes invalid buffer characters
 void safeCin() {
+	// comment why if -- reset error state if stream is degraded
 	if (!std::cin) {
 		std::cin.clear();
 	}
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	// **** Ends Here ****
 }
 
-// Helper to safely read numeric input and re-prompt on failure
+
+
+
+// ! Reads and validates numeric input entries interactively from console stream
 template <typename T>
 T getValidInput(const std::string& prompt, bool allowZero = false) {
 	T valueEntry;
 	while (true) {
 		std::cout << prompt;
+		// comment why if -- parse value and validate positivity rules
 		if (std::cin >> valueEntry) {
+			// comment why if -- check bounds condition
 			if (valueEntry > 0 || (allowZero && valueEntry == 0)) {
 				safeCin();
 				return valueEntry;
@@ -41,17 +52,24 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 		safeCin();
 		std::cout << "Invalid Entry, please try again!\n";
 	}
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Main application entry point for launching impact physics simulations
 int main(int argc, char* argv[]) {
 	int choice = 2;
 
 	std::string basePath = ".";
+	// comment why if -- locate base asset path dynamically
 	if (argc > 0) {
 		std::error_code ec;
 		std::filesystem::path current =
 			std::filesystem::absolute(argv[0], ec).parent_path();
 		while (!current.empty() && current != current.root_path()) {
+			// comment why if -- check data directory existence
 			if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
 				basePath = current.string();
 				break;
@@ -66,6 +84,7 @@ int main(int argc, char* argv[]) {
 
 	// Default target
 	Target object = CONCRETE_DEFAULT;
+	// comment why if -- use target from JSON database if available
 	if (auto t = ConfigLoader::getTargetByName(targetsDb,
 						   "High-Quality Hardened Concrete Structure")) {
 		object = *t;
@@ -73,10 +92,12 @@ int main(int argc, char* argv[]) {
 
 	// Default projectile (GBU-57 MOP)
 	Projectile munition = MOP_DEFAULT;
+	// comment why if -- use projectile from JSON database if available
 	if (auto p = ConfigLoader::getProjectileByName(
 		    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
 		munition = *p;
 	}
+
 
 	std::cout
 		<< "================================================================================="
@@ -108,13 +129,18 @@ int main(int argc, char* argv[]) {
 		<< "By proceeding, you acknowledge that this tool is not certified for real-world "
 		   "engineering, defense analysis, or physical destructive testing.\n\n";
 
+
 	std::string tos_agree;
 	while (true) {
+
 		std::cout << "Do you agree to these terms? (Y/N): ";
+
+		// comment why if -- validate user agreement to legal terms
 		if (std::cin >> tos_agree) {
 			for (auto& c : tos_agree) {
 				c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 			}
+			// comment why if -- handle positive response
 			if (tos_agree == "Y" || tos_agree == "YES") {
 				safeCin();
 				std::cout << "\nTerms accepted. Proceeding to simulator...\n\n";
@@ -146,12 +172,16 @@ int main(int argc, char* argv[]) {
 		   "------------------\n";
 
 	while (true) {
+
 		std::cout << "Enter choice [1, 2 or 3]: ";
+
+		// comment why if -- check valid scenario selection range
 		if (std::cin >> choice && (choice >= 1 && choice <= 3)) {
 			std::cout << "Scenario: " << choice << " Confirmed!";
 			safeCin();
 			break;
 		}
+		// comment why if -- terminate on end-of-file signal
 		if (std::cin.eof())
 			exit(1);
 		safeCin();
@@ -160,11 +190,13 @@ int main(int argc, char* argv[]) {
 
 	std::vector<ImpactScenario> scenarios;
 
+	// comment why if -- evaluate chosen scenario mode
 	if (choice == 1) {
 		std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
 		std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
 		std::string projectileName;
 		getline(std::cin, projectileName);
+		// comment why if -- set default projectile name if omitted
 		if (projectileName.empty())
 			projectileName = "Undefined Projectile";
 
@@ -184,6 +216,7 @@ int main(int argc, char* argv[]) {
 		while (true) {
 			munition.explosive_mass =
 				getValidInput<double>("Enter Explosive Mass (kg): ", true);
+			// comment why if -- verify explosive mass constraint
 			if (munition.explosive_mass <= munition.total_mass)
 				break;
 			std::cout << "Error: Explosive mass (" << munition.explosive_mass
@@ -204,6 +237,7 @@ int main(int argc, char* argv[]) {
 
 		double modulus =
 			getValidInput<double>("Enter Elastic Modulus E (GPa) [e.g., 200]: ", true);
+		// comment why if -- set non-zero elastic modulus
 		if (modulus > 0)
 			munition.elastic_modulus = modulus * 1e9;
 
@@ -218,6 +252,7 @@ int main(int argc, char* argv[]) {
 
 		double ec = getValidInput<double>(
 			"Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ", true);
+		// comment why if -- set non-zero critical energy
 		if (ec > 0)
 			munition.explosive_critical_energy = ec * 1e15;
 
@@ -243,10 +278,12 @@ int main(int argc, char* argv[]) {
 
 		double tc0 = getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ",
 						   true);
+		// comment why if -- set target sound speed
 		if (tc0 > 0)
 			customLayer.hugoniot_c0 = tc0;
 
 		double ts = getValidInput<double>("Enter Target Hugoniot S [e.g., 1.9]: ", true);
+		// comment why if -- set target Hugoniot slope
 		if (ts > 0)
 			customLayer.hugoniot_s = ts;
 
@@ -254,7 +291,10 @@ int main(int argc, char* argv[]) {
 
 		int numScenarios = 1;
 		while (true) {
+
 			std::cout << "Enter number of custom impact velocities to test [1 to 5]: ";
+
+			// comment why if -- check valid scenario count
 			if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
 				safeCin();
 				break;
@@ -263,6 +303,7 @@ int main(int argc, char* argv[]) {
 				std::cout << "Invalid Entry, please try again!\n";
 			};
 
+			// comment why if -- exit safely on EOF
 			if (std::cin.eof()) {
 				std::cerr << "\n[!] EOF encountered. Exiting safely to prevent "
 					     "infinite loop.\n";
@@ -321,6 +362,7 @@ int main(int argc, char* argv[]) {
 			<< "\n[+] Loading Orbital Kinetic Strike Preset (\"Rods from God\" Tungsten "
 			   "Penetrators)...\n";
 
+		// comment why if -- load rods from god projectile configuration
 		if (auto p = ConfigLoader::getProjectileByName(
 			    projectilesDb, "Orbital Tungsten Kinetic Penetrator (Rods from God)")) {
 			munition = *p;
@@ -341,6 +383,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "\n[+] Loading Operation Midnight Hammer Preset (Fordow Subterranean "
 			     "Shaft Strike)\n";
 
+		// comment why if -- load MOP preset projectile configuration
 		if (auto p = ConfigLoader::getProjectileByName(
 			    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
 			munition = *p;
@@ -360,17 +403,22 @@ int main(int argc, char* argv[]) {
 			<< "  [3] 6-Bomb Maximum Salvo Strike (Maximum Subterranean Overpressure Wave)\n";
 		int hammerChoice = 1;
 		while (true) {
+
 			std::cout << "Selection (1-3): ";
+
+			// comment why if -- confirm salvo choice range
 			if (std::cin >> hammerChoice && hammerChoice >= 1 && hammerChoice <= 3) {
 				safeCin();
 				break;
 			}
+			// comment why if -- check EOF on salvo choice
 			if (std::cin.eof())
 				exit(1);
 			safeCin();
 			std::cout << "Invalid selection! Enter 1, 2, or 3.\n";
 		}
 
+		// comment why if -- set total bombs in salvo
 		if (hammerChoice == 1)
 			numBombs = 2;
 		else if (hammerChoice == 2)
@@ -380,6 +428,7 @@ int main(int argc, char* argv[]) {
 
 		for (int i = 0; i < numBombs; ++i) {
 			std::stringstream name_ss;
+			// comment why if -- format bomb name label
 			if (i == 0) {
 				name_ss << "Bomb #1 (Shaft Breaker)";
 			} else {
@@ -393,6 +442,7 @@ int main(int argc, char* argv[]) {
 	PhysicsConstants cons;
 	std::vector<SimulationResult> results;
 
+	// comment why if -- evaluate single vs sequential simulation modes
 	if (choice == 1 || choice == 2) {
 		// Independent tests get fresh targets
 		for (const auto& sc : scenarios) {
@@ -401,9 +451,7 @@ int main(int argc, char* argv[]) {
 		}
 		TelemetryExporter::printReport(results, munition, object);
 		TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
-	}
-
-	else {
+	} else {
 		// Sequential multi-bomb strikes use a persistent simulator instance to maintain
 		// cumulative shaft crater depth
 		ImpactSimulator simulator(munition, object, cons);
@@ -419,4 +467,6 @@ int main(int argc, char* argv[]) {
 	std::cin.get();
 
 	return 0;
+	// **** Ends Here ****
 }
+

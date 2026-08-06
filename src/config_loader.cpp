@@ -1,17 +1,21 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
-#include "config_loader.hpp"
-
+// packages
 #include <fstream>
 #include <iostream>
 
+// files
+#include "config_loader.hpp"
 #include "nlohmann/json.hpp"
+
 
 using json = nlohmann::json;
 
+// ! Loads target specifications from JSON configuration file
 std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
 	std::vector<Target> targets;
 	std::ifstream file(filepath);
+	// comment why if -- warn user and return fallback target list if config file is missing
 	if (!file.is_open()) {
 		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
 		return targets;
@@ -23,6 +27,7 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
 		for (const auto& item : j) {
 			Target t;
 			t.name = item.value("name", "Unknown Target");
+			// comment why if -- parse multi-layer array if present, otherwise build legacy single layer
 			if (item.contains("layers") && item["layers"].is_array()) {
 				for (const auto& l : item["layers"]) {
 					TargetLayer layer;
@@ -60,11 +65,17 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
 	}
 
 	return targets;
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Loads projectile specifications from JSON configuration file
 std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepath) {
 	std::vector<Projectile> projectiles;
 	std::ifstream file(filepath);
+	// comment why if -- handle missing projectile dataset file safely
 	if (!file.is_open()) {
 		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
 		return projectiles;
@@ -101,24 +112,38 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
 	}
 
 	return projectiles;
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Finds target by name string from target vector
 std::optional<Target> ConfigLoader::getTargetByName(const std::vector<Target>& targets,
 						    const std::string& name) {
 	for (const auto& t : targets) {
+		// comment why if -- match target name to request
 		if (t.name == name) {
 			return t;
 		}
 	}
 	return std::nullopt;
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Finds projectile by name string from projectile vector
 std::optional<Projectile> ConfigLoader::getProjectileByName(
 	const std::vector<Projectile>& projectiles, const std::string& name) {
 	for (const auto& p : projectiles) {
+		// comment why if -- match projectile name to request
 		if (p.name == name) {
 			return p;
 		}
 	}
 	return std::nullopt;
+	// **** Ends Here ****
 }
+

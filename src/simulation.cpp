@@ -1,16 +1,19 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
-#include "simulation.hpp"
-
+// packages
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 
+// files
 #include "environment_physics.hpp"
+#include "simulation.hpp"
+
 
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
     : proj(p), target(t), cons(c) {}
+
 
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      SimulationResult& res,

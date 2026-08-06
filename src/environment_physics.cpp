@@ -1,12 +1,16 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
-#include "environment_physics.hpp"
-
+// packages
 #include <algorithm>
 #include <cmath>
 
+// files
+#include "environment_physics.hpp"
+
+
 namespace EnvironmentPhysics {
 
+// ! Calculates Mach dependent aerodynamic drag coefficient based on G7 reference model
 double getMachDependentDrag(double mach,
 			    double baseCd,
 			    const Projectile& proj,
@@ -33,6 +37,7 @@ double getMachDependentDrag(double mach,
 	double clampedMach = std::clamp(mach, g7Mach[0], g7Mach[g7Points - 1]);
 	double g7Value = g7Cd[0];
 	for (size_t i = 0; i + 1 < g7Points; ++i) {
+		// comment why if -- locate current Mach interval in G7 drag table
 		if (clampedMach >= g7Mach[i] && clampedMach <= g7Mach[i + 1]) {
 			double t = (clampedMach - g7Mach[i]) / (g7Mach[i + 1] - g7Mach[i]);
 			g7Value = g7Cd[i] + t * (g7Cd[i + 1] - g7Cd[i]);
@@ -41,6 +46,7 @@ double getMachDependentDrag(double mach,
 	}
 	double cdFromTable = formFactor * g7Value;
 
+	// comment why if -- return standard tabular drag below Mach 5 boundary
 	if (mach <= 5.0) {
 		return cdFromTable;
 	}
@@ -53,6 +59,7 @@ double getMachDependentDrag(double mach,
 	double noseHalfAngle = std::atan((proj.diameter / 2.0) / std::max(1e-6, noseLength));
 	double cdNewtonian = 2.0 * std::pow(std::sin(noseHalfAngle), 2);
 
+	// comment why if -- use full Newtonian hypersonic drag above Mach 8
 	if (mach >= 8.0) {
 		return cdNewtonian;
 	}
@@ -60,8 +67,13 @@ double getMachDependentDrag(double mach,
 	// Smooth cosine blend from the G7 table's Mach-5 value into the hypersonic asymptote.
 	double blend = 0.5 * (1.0 - std::cos(cons.PI * (mach - 5.0) / 3.0));
 	return cdFromTable + blend * (cdNewtonian - cdFromTable);
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Evaluates standard US 1976 atmospheric properties based on geometric altitude
 AtmosphereState standardAtmosphere(double altitude_m, const PhysicsConstants& cons) {
 	// US Standard Atmosphere 1976: piecewise layers defined by geopotential height.
 	struct AtmosphereLayer {
@@ -88,6 +100,7 @@ AtmosphereState standardAtmosphere(double altitude_m, const PhysicsConstants& co
 
 	size_t idx = 0;
 	for (size_t i = 0; i < layerCount; ++i) {
+		// comment why if -- find active atmospheric layer boundary
 		if (h_eval >= layers[i].base_geopotential_m) {
 			idx = i;
 		}
@@ -96,6 +109,7 @@ AtmosphereState standardAtmosphere(double altitude_m, const PhysicsConstants& co
 
 	double g0M_over_R = (cons.gravity * cons.molarMassAir) / cons.universalGasConstant;
 	double T, P;
+	// comment why if -- calculate lapse rate temperature vs isothermal pressure
 	if (std::fabs(base.lapse_rate_Kpm) > 1e-12) {
 		T = base.base_temperature_K +
 		    base.lapse_rate_Kpm * (h_eval - base.base_geopotential_m);
@@ -110,6 +124,7 @@ AtmosphereState standardAtmosphere(double altitude_m, const PhysicsConstants& co
 	// Beyond the last defined layer (~85 km): continue isothermal exponential decay.
 	// This is the start of the thermosphere/free-molecular regime; density is already
 	// negligible for drag purposes, so a smooth continued extrapolation is adequate.
+	// comment why if -- decay pressure beyond thermosphere ceiling
 	if (h > topGeopotential_m) {
 		P *= std::exp(-g0M_over_R * (h - topGeopotential_m) / T);
 	}
@@ -121,8 +136,13 @@ AtmosphereState standardAtmosphere(double altitude_m, const PhysicsConstants& co
 	state.speed_of_sound_ms = std::sqrt(
 		(cons.adiabaticIndexAir * cons.universalGasConstant * T) / cons.molarMassAir);
 	return state;
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Computes CEB-FIP dynamic increase factor for target strength under high strain rate
 double computeDIF(double strain_rate_per_s, double fc_static_pa) {
 	// CEB-FIP Model Code 1990/2010 Dynamic Increase Factor for compressive strength.
 	constexpr double staticReferenceStrainRate = 30.0e-6; // 1/s
@@ -132,6 +152,7 @@ double computeDIF(double strain_rate_per_s, double fc_static_pa) {
 	double alpha = 1.0 / (5.0 + 9.0 * (fc_static / referenceStress_fco));
 	double strain_rate = std::max(strain_rate_per_s, staticReferenceStrainRate);
 
+	// comment why if -- evaluate low strain rate dynamic amplification curve
 	if (strain_rate <= 30.0) {
 		return std::pow(strain_rate / staticReferenceStrainRate, 1.026 * alpha);
 	}
@@ -139,8 +160,13 @@ double computeDIF(double strain_rate_per_s, double fc_static_pa) {
 	double logGamma = 6.156 * alpha - 2.0;
 	double gamma = std::pow(10.0, logGamma);
 	return gamma * std::pow(strain_rate / staticReferenceStrainRate, 1.0 / 3.0);
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Solves Tate-Bernoulli hydrodynamic interface erosion velocity
 double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt) {
 	// Tate-Bernoulli quasi-steady balance at the eroding interface:
 	//   0.5*rho_p*(v-u)^2 + Yp = 0.5*rho_t*u^2 + Rt
@@ -149,7 +175,9 @@ double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, d
 	double B = -rho_p * v;
 	double C = 0.5 * rho_p * v * v - (Rt - Yp);
 
+	// comment why if -- solve linear form when density match eliminates quadratic term
 	if (std::fabs(A) < 1.0e-6) {
+		// comment why if -- avoid div-by-zero on zero velocity
 		if (std::fabs(B) < 1.0e-9) {
 			return 0.0;
 		}
@@ -157,6 +185,7 @@ double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, d
 	}
 
 	double discriminant = B * B - 4.0 * A * C;
+	// comment why if -- zero interface speed if discriminant negative
 	if (discriminant < 0.0) {
 		return 0.0; // No physically valid erosion interface; treat as fully rigid this step
 	}
@@ -168,18 +197,26 @@ double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, d
 	bool root1Valid = (root1 >= 0.0 && root1 <= v);
 	bool root2Valid = (root2 >= 0.0 && root2 <= v);
 
+	// comment why if -- choose valid physical interface velocity root
 	if (root1Valid && root2Valid) {
 		return std::min(root1, root2);
 	}
+	// comment why if -- root 1 valid check
 	if (root1Valid) {
 		return root1;
 	}
+	// comment why if -- root 2 valid check
 	if (root2Valid) {
 		return root2;
 	}
 	return 0.0;
+	// **** Ends Here ****
 }
 
+
+
+
+// ! Solves Hugoniot shock impedance matching interface velocity
 double solveHugoniotInterfaceVelocity(
 	double v, double rho_t, double C0_t, double S_t, double rho_p, double C0_p, double S_p) {
 	// Shock impedance matching at the target/casing interface: continuity of pressure and
@@ -189,7 +226,9 @@ double solveHugoniotInterfaceVelocity(
 	double B = rho_t * C0_t + rho_p * C0_p + 2.0 * rho_p * S_p * v;
 	double C = -rho_p * v * (C0_p + S_p * v);
 
+	// comment why if -- handle matched Hugoniot linear solution limit
 	if (std::fabs(A) < 1.0e-6) {
+		// comment why if -- avoid div-by-zero on zero impact speed
 		if (std::fabs(B) < 1.0e-9) {
 			return 0.0;
 		}
@@ -197,6 +236,7 @@ double solveHugoniotInterfaceVelocity(
 	}
 
 	double discriminant = B * B - 4.0 * A * C;
+	// comment why if -- check real shock solution existence
 	if (discriminant < 0.0) {
 		return 0.0;
 	}
@@ -208,16 +248,21 @@ double solveHugoniotInterfaceVelocity(
 	bool root1Valid = (root1 >= 0.0 && root1 <= v);
 	bool root2Valid = (root2 >= 0.0 && root2 <= v);
 
+	// comment why if -- pick lower physical particle velocity root
 	if (root1Valid && root2Valid) {
 		return std::min(root1, root2);
 	}
+	// comment why if -- check root 1
 	if (root1Valid) {
 		return root1;
 	}
+	// comment why if -- check root 2
 	if (root2Valid) {
 		return root2;
 	}
 	return 0.0;
+	// **** Ends Here ****
 }
 
 } // namespace EnvironmentPhysics
+

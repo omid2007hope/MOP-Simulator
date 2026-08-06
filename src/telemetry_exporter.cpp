@@ -1,14 +1,18 @@
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
-#include "telemetry_exporter.hpp"
-
+// packages
 #include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
+// files
+#include "telemetry_exporter.hpp"
+
+
 namespace TelemetryExporter {
+
 
 void printAscii3DVisualizer(const SimulationResult& r,
 			    const Projectile& proj,
