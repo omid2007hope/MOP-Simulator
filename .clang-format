@@ -15,25 +15,7 @@ AlignOperands: Align
 AlignTrailingComments: true
 
 # --- Braces & Control Structures ---
-# Use Allman style for better scope visibility
-BreakBeforeBraces: Custom
-BraceWrapping:
-  AfterClass: true
-  AfterControlStatement: Never
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
-  AfterStruct: true
-  AfterUnion: true
-  AfterExternBlock: true
-  BeforeCatch: false
-  BeforeElse: true
-  BeforeLambdaBody: false
-  BeforeWhile: true
-  IndentBraces: true
-  SplitEmptyFunction: true
-  SplitEmptyRecord: true
-  SplitEmptyNamespace: true
+BreakBeforeBraces: Attach
 
 # --- Pointers & References ---
 # Attach '*' and '&' to the type, not the variable name
@@ -51,14 +33,12 @@ AllowAllParametersOfDeclarationOnNextLine: true
 
 # --- Includes ---
 SortIncludes: CaseInsensitive
-IncludeBlocks: Preserve
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^<.*\.h>'
-    Priority: 1
   - Regex: '^<.*>'
-    Priority: 2
+    Priority: 1
   - Regex: '.*'
-    Priority: 3
+    Priority: 2
 
 # --- Specific Formatting Rules ---
 SpaceAfterCStyleCast: false
@@ -83,6 +63,8 @@ ColumnLimit: 100
 ReflowComments: true
 SortUsingDeclarations: true
 ContinuationIndentWidth: 4
+MaxEmptyLinesToKeep: 4
+KeepEmptyLinesAtTheStartOfBlocks: true
 
 # --- Access Modifiers ---
 AccessModifierOffset: -4   
