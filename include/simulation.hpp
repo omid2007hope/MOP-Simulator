@@ -197,6 +197,7 @@ private:
 	PhysicsConstants cons;
 
 	void simulateAtmosphericDrop(const ImpactScenario& scenario,
+				     const Projectile& proj,
 				     SimulationResult& res,
 				     double& impact_velocity,
 				     double& impact_pitch,

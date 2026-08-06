@@ -17,8 +17,8 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 
 
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
+					      const Projectile& proj,
 					      SimulationResult& res,
-					      Projectile& proj,
 					      double& impact_velocity,
 					      double& impact_pitch,
 					      double dt) {
