@@ -55,14 +55,38 @@ Always organize `#include`, `import`, `require`, and similar header statements i
 
 ### Indentation Guidelines
 
-- **0 Tabs**: Outer function declarations, top-level definitions, and function closing braces.
-- **1 Tab**: Direct statements inside the function body (e.g., `if` condition statement).
-- **2 Tabs**: Statements inside nested blocks (e.g., body statements inside an `if` block).
+- **0 Tabs**: Template headers, top-level function declarations, and top-level closing braces.
+- **1 Tab**: Direct statements inside function body (`T valueEntry;`, `while` statement).
+- **2 Tabs**: Statements inside level 1 nested loops (`while`).
+- **3 Tabs**: Statements inside level 2 nested blocks (`if (std::cin >> valueEntry)`).
+- **4 Tabs**: Statements inside level 3 nested blocks (`if (valueEntry > 0 ...)`).
+- **5 Tabs**: Core statements inside deep nested blocks (`safeCin();`, `return valueEntry;`).
 
-### Line Break Rules
+> **Rule:** Every nested block level increases indentation by **1 Tab (+1 level deeper)**.
 
-- **Block Headers**: Always insert a newline (`enter`) at the top of a block body immediately after the opening brace `{`.
-- **Block Separators**: Always insert a newline (`enter`) before major statements following a closed block brace `}`.
+### Nested Indentation Example
+
+```cpp
+template <typename T>
+T getValidInput(const std::string& prompt, bool allowZero = false) {
+    T valueEntry;
+
+    while (true) {
+
+        std::cout << prompt;
+
+        if (std::cin >> valueEntry) {
+
+            if (valueEntry > 0 || (allowZero && valueEntry == 0)) {
+
+                safeCin();
+                return valueEntry;
+            }
+        }
+    }
+}
+```
+
 
 ---
 
@@ -210,5 +234,4 @@ Before committing code or submitting pull requests, verify that all guidelines a
 - [ ] **Special Comments**: Does every function start with a `// !` description and end with `// **** Ends Here ****`?
 - [ ] **Function Separation**: Are there **4 empty lines** between consecutive top-level functions?
 - [ ] **Console Print Spacing**: Are there **2 empty lines** above and below `cin` / `cout` / `print` blocks?
-
 
