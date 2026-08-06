@@ -18,6 +18,7 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      SimulationResult& res,
+					      Projectile& proj,
 					      double& impact_velocity,
 					      double& impact_pitch,
 					      double dt) {
@@ -28,10 +29,17 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 
 	double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
 
-	double fpa_rad_trim = EnvironmentPhysics::flightControlTrim(
-		scenario.flight_path_angle, B2_Sprit_Strategic_Bomber, atmos, cons);
+	double trim_deg = EnvironmentPhysics::flightControlTrim(
+		scenario.flight_path_angle,
+		scenario.velocity,
+		proj.total_mass,
+		B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope,
+		B2_Sprit_Strategic_Bomber.bomber_wingArea,
+		atmos.density_kgm3,
+		cons);
 
-	double fpa_rad_corrected = fpa_rad - fpa_rad_trim;
+	double trim_rad = trim_deg * cons.PI / 180.0;
+	double fpa_rad_corrected = fpa_rad - trim_rad;
 
 	double current_altitude = scenario.altitude_ft;
 	double current_vx = scenario.velocity * std::cos(fpa_rad_corrected);
