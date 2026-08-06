@@ -7,6 +7,7 @@
 #include <iostream>
 
 // files
+#include "default.hpp"
 #include "environment_physics.hpp"
 #include "simulation.hpp"
 
@@ -21,10 +22,20 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      double& impact_pitch,
 					      double dt) {
 	(void)dt; // Suppress unused parameter warning
-	double current_altitude = scenario.altitude_ft;
+
+	AtmosphereState atmos =
+		EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
+
 	double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
-	double current_vx = scenario.velocity * std::cos(fpa_rad);
-	double current_vy = scenario.velocity * std::sin(fpa_rad);
+
+	double fpa_rad_trim = EnvironmentPhysics::flightControlTrim(
+		scenario.flight_path_angle, B2_Sprit_Strategic_Bomber, atmos, cons);
+
+	double fpa_rad_corrected = fpa_rad - fpa_rad_trim;
+
+	double current_altitude = scenario.altitude_ft;
+	double current_vx = scenario.velocity * std::cos(fpa_rad_corrected);
+	double current_vy = scenario.velocity * std::sin(fpa_rad_corrected);
 	double current_velocity = scenario.velocity;
 
 	double area = cons.PI * std::pow(proj.diameter / 2.0, 2);

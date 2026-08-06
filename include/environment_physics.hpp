@@ -25,10 +25,12 @@ double solveHugoniotInterfaceVelocity(
 	double v, double rho_t, double C0_t, double S_t, double rho_p, double C0_p, double S_p);
 
 // Flight Controller Trim
-double flightControlTrim(const AtmosphereState& atmos,
-			 const ImpactScenario& scenario,
-			 const Projectile& proj,
-			 const Aircraft& bomber,
+double flightControlTrim(double fpa,
+			 double bomberVelocity,
+			 double bombMass,
+			 double CurveSlop,
+			 double wingArea,
+			 double airDensity,
 			 const PhysicsConstants& cons);
 
 } // namespace EnvironmentPhysics

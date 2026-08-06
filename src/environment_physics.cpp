@@ -268,32 +268,29 @@ double solveHugoniotInterfaceVelocity(
 
 
 // ! physics-based Aircraft Flight Control & Trim system
-double flightControlTrim(const AtmosphereState& atmos,
-			 const ImpactScenario& scenario,
-			 const Projectile& proj,
-			 const Aircraft& bomber,
+double flightControlTrim(double fpa,
+			 double bomberVelocity,
+			 double bombMass,
+			 double CurveSlop,
+			 double wingArea,
+			 double airDensity,
 			 const PhysicsConstants& cons) {
 
-	// 1. Bombers velocity is the same as initial bomb velocity
-	double bomberVelocity = scenario.velocity;
-
-	// 2. Air density at drop altitude
-	double density = atmos.density_kgm3;
-
 	// 3. FPA in Radians
-	double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
+	double fpa_rad = fpa * cons.PI / 180.0;
 
 	// 4. Required Lift Change (Based on the BOMB's mass that was just dropped)
-	double delta_lift = -(proj.total_mass * cons.gravity * std::cos(fpa_rad));
+	double delta_lift = -(bombMass * cons.gravity * std::cos(fpa_rad));
 
 	// 5. Dynamic pressure
 	double dynamic_pressure = 0.5 * density * std::pow(bomberVelocity, 2);
 
 	// 6. Required Change in Lift Coefficient (Delta CL)
-	double delta_CL = delta_lift / (dynamic_pressure * bomber.bomber_wingArea);
+	double delta_CL = delta_lift / (dynamic_pressure * wingArea);
 
-	// 7. Required Trim Angle Change (Degrees)
-	double delta_alpha_deg = delta_CL / bomber.bomber_liftCurveSlope;
+	// 7. Required Trim Angle Change (Convert from Radians to Degrees)
+	double delta_alpha_rad = delta_CL / CurveSlop;
+	double delta_alpha_deg = delta_alpha_rad * (180.0 / cons.PI);
 
 	return delta_alpha_deg; // This will be a negative number (Nose Down)
 }
