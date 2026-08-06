@@ -283,7 +283,7 @@ double flightControlTrim(double fpa,
 	double delta_lift = -(bombMass * cons.gravity * std::cos(fpa_rad));
 
 	// 5. Dynamic pressure
-	double dynamic_pressure = 0.5 * density * std::pow(bomberVelocity, 2);
+	double dynamic_pressure = 0.5 * airDensity * std::pow(bomberVelocity, 2);
 
 	// 6. Required Change in Lift Coefficient (Delta CL)
 	double delta_CL = delta_lift / (dynamic_pressure * wingArea);
