@@ -4,12 +4,13 @@ BasedOnStyle: Google
 Language: Cpp
 Standard: c++20
 
-# --- Indentation & Tabs ---
-IndentWidth: 4
-TabWidth: 4
+# --- Indentation & Tabs (Linus Torvalds 8-Char Tab Standard) ---
+IndentWidth: 8
+TabWidth: 8
 UseTab: Always
-ContinuationIndentWidth: 4
-AccessModifierOffset: -4
+ContinuationIndentWidth: 8
+AccessModifierOffset: -8
+IndentCaseLabels: true
 
 # --- Braces & Control Structures ---
 BreakBeforeBraces: Attach
@@ -18,7 +19,8 @@ KeepEmptyLinesAtTheStartOfBlocks: true
 # --- Line & Spacing Management ---
 MaxEmptyLinesToKeep: 4
 ColumnLimit: 100
-ReflowComments: true
+ReflowComments: false
+BreakStringLiterals: false
 SortUsingDeclarations: true
 
 # --- Includes & Header Grouping ---
@@ -48,6 +50,7 @@ AllowShortLoopsOnASingleLine: false
 BinPackArguments: false
 BinPackParameters: false
 AllowAllParametersOfDeclarationOnNextLine: true
+AlwaysBreakTemplateDeclarations: Yes
 
 # --- Specific Formatting Rules ---
 SpaceAfterCStyleCast: false

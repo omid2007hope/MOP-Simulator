@@ -12,8 +12,9 @@ Universal coding standards, file structure conventions, and formatting guideline
 4. [Commenting Conventions](#4-commenting-conventions)
 5. [Function Spacing Rules](#5-function-spacing-rules)
 6. [Console I/O & Print Spacing Rules](#6-console-io--print-spacing-rules-cin-cout-print)
-7. [Comprehensive Master Example](#7-comprehensive-master-example)
-8. [AI Readiness & Code Review Checklist](#8-ai-readiness--code-review-checklist)
+7. [Linus Torvalds Indentation & Column Limit Principles](#7-linus-torvalds-indentation--column-limit-principles)
+8. [Comprehensive Master Example](#8-comprehensive-master-example)
+9. [AI Readiness & Code Review Checklist](#9-ai-readiness--code-review-checklist)
 
 ---
 
@@ -173,9 +174,29 @@ void displayEula() {
 
 ---
 
-## 7. Comprehensive Master Example
+## 7. Linus Torvalds Indentation & Column Limit Principles
 
-This complete example combines all 6 coding rules into a single production-ready template:
+### The 8-Character Tab Rule
+
+The single most famous rule in Linus Torvalds' formatting philosophy is the use of **8-character tabs** for indentation.
+
+Torvalds defends this rule with the analogy that using smaller indents (like 2 spaces) is *"akin to trying to define the value of PI to be 3."* His rationale is strictly functional:
+
+- **Visual Clarity**: After staring at code for 20 hours, large 8-character steps make the block structure significantly easier to distinguish visually.
+- **Complexity Check**: The rule acts as a natural enforcement mechanism against deep nesting. If your code runs off the screen with only 3 levels of indentation (3 tabs = 24 columns), the function is too complex and must be refactored into smaller functions.
+
+### The Evolution of the Column Limit (80 vs. 100 Columns)
+
+Historically paired with the 8-character tab rule was the 80-column line length limit. Modern standards have evolved:
+
+- **Deprecated as Hard Limit**: In 2020, Torvalds officially deprecated the 80-column limit as a strict enforcement rule, arguing that *"excessive line breaks are bad"* and hinder search tools like `grep`.
+- **Current Standard (100 Columns)**: While 80 columns is still preferred for simple code readability, the soft limit is **100 characters**. Torvalds stated that developers with small terminal windows should not impose inconvenience on those with modern, high-resolution displays.
+
+---
+
+## 8. Comprehensive Master Example
+
+This complete example combines all coding rules into a single production-ready template:
 
 ```cpp
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
@@ -223,7 +244,7 @@ void displayEula() {
 
 ---
 
-## 8. AI Readiness & Code Review Checklist
+## 9. AI Readiness & Code Review Checklist
 
 Before committing code or submitting pull requests, verify that all guidelines are satisfied:
 
@@ -234,4 +255,6 @@ Before committing code or submitting pull requests, verify that all guidelines a
 - [ ] **Special Comments**: Does every function start with a `// !` description and end with `// **** Ends Here ****`?
 - [ ] **Function Separation**: Are there **4 empty lines** between consecutive top-level functions?
 - [ ] **Console Print Spacing**: Are there **2 empty lines** above and below `cin` / `cout` / `print` blocks?
+- [ ] **Column Limit**: Is code formatted within the **100-character column limit** (avoiding unnecessary 80-col line breaks)?
+
 
