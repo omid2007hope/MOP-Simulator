@@ -333,7 +333,7 @@ int main(int argc, char* argv[]) {
 
 			std::stringstream fpa_ss;
 			fpa_ss << "  -> Enter Flight Path Angle #" << (i + 1)
-			       << " (Degrees, 0=horizontal, 90=vertical): ";
+			       << " (Degrees, 0=horizontal, 90=down vertical, 270=up vertical): ";
 			double fpa = getValidInput<double>(fpa_ss.str(), true);
 
 			std::stringstream aoa_ss;
