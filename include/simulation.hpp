@@ -198,9 +198,15 @@ struct DropDeriv {
 
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
+
 private:
+	// ! proj payload comes from p (munition) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	Projectile proj;
+
+	// ! target payload comes from t (object) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	Target target;
+
+	// ! cons payload comes from c (cons) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	PhysicsConstants cons;
 
 	// ! scenario, proj, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 668
