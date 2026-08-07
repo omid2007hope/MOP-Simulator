@@ -1,3 +1,70 @@
+```mermaid
+---
+id: e3af7d57-9c89-4f14-afd8-05bbc4929335
+---
+mindmap
+  root((MOP Simulator V2.8))
+    Origins & Background
+    ::icon(fa fa-book)
+      High-Fidelity Penetration Physics
+      mop["MOP (GBU-57) & Kinetic Strike Modeling"]
+    Core Engine & Classes
+      ImpactSimulator
+        simulateAtmosphericDrop
+        simulateGroundPenetration
+        simulate
+      Physics Models
+        Atmospheric Phase
+          2DOF RK4 Integration
+          US Standard Atmosphere 1976
+          G7 Scaled + Hypersonic Newtonian Drag
+          B-2 Spirit Flight Control Trim
+          Guidance & Sonic Boom Detection
+        Penetration Phase
+          CEB-FIP 1990/2010 Dynamic Increase Factor
+          forrestal["Forrestal Deceleration (Crater & Tunnel)"]
+          Walker-Anderson Rod Erosion (WAPM)
+          Tate-Bernoulli Hydrodynamic Ratio
+          Walker-Wasley Shock Detonation Initiation
+          Hugoniot Shock Impedance Matching
+          Bending Moment & Thermal Ablation
+          Sequential Salvo Shaft Breaching
+    Data Structures
+      Projectile
+        Mass, Length, Casing, Yield Strength, Hugoniot C0/S
+      Target & TargetLayer
+        Thickness, Density, Compressive Strength, Rebar
+      ImpactScenario & TelemetryFrame
+      SimulationResult & AtmosphereState
+    Data Ingestion & Presets
+      ConfigLoader
+        targets.json Loader
+        projectiles.json Loader
+        nlohmann json Fallbacks
+      Presets (default.hpp)
+        GBU-57 MOP Preset
+        Rods from God Tungsten Rod
+        Fordow Hardened Mountain Target
+    Telemetry & Visualization
+      TelemetryExporter
+        ascii["ASCII 3D Cross-Section Renderer"]
+        Terminal Summary Reports
+        html["HTML WebGL 3D Visualizer (Three.js)"]
+    appmodes["Application Modes (main.cpp)"]
+      EULA & Terms of Service Verification
+      mode1["Mode 1: Interactive Custom Parameter Input"]
+      mode2["Mode 2: Orbital Kinetic Strike Preset"]
+      mode3["Mode 3: Operation Midnight Hammer Salvo (2/4/6 Bombs)"]
+    Testing & Validation
+      test_simulation.cpp
+        Subsonic Rigid Penetration Test
+        Hypervelocity Walker-Wasley Trigger Test
+        Orbital WAPM Rod Erosion Test
+        Dynamic Increase Factor (DIF)
+        Test
+        Oblique Impact & Ricochet Test
+```
+
 ```
   _________________________________________________________________________________________
  /                                                                                         \
