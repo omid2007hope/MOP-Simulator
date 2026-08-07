@@ -226,6 +226,8 @@ public:
 	SimulationResult simulate(const ImpactScenario& scenario);
 
 
+	// ! target payload comes from main.cpp - line 478 and 480
+	// ! TelemetryExporter::printReport(results, munition, simulator.getTarget());
 	const Target& getTarget() const {
 		return target;
 	}
