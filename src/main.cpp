@@ -61,29 +61,38 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 // ! Main application entry point for launching impact physics simulations
 int main(int argc, char* argv[]) {
 	int choice = 2;
-
 	std::string basePath = ".";
+
+
 	// comment why if -- locate base asset path dynamically
 	if (argc > 0) {
 		std::error_code ec;
 		std::filesystem::path current =
 			std::filesystem::absolute(argv[0], ec).parent_path();
+
 		while (!current.empty() && current != current.root_path()) {
 			// comment why if -- check data directory existence
 			if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
 				basePath = current.string();
 				break;
 			}
+
 			current = current.parent_path();
 		}
 	}
 
 	// Load databases
 	auto targetsDb = ConfigLoader::loadTargets(basePath + "/data/targets.json");
+
 	auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
+
+	// **********
+	// ! no load from JSON
+	// **********
 
 	// Default target
 	Target object = CONCRETE_DEFAULT;
+
 	// comment why if -- use target from JSON database if available
 	if (auto t = ConfigLoader::getTargetByName(targetsDb,
 						   "High-Quality Hardened Concrete Structure")) {
@@ -314,6 +323,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		for (int i = 0; i < numScenarios; ++i) {
+
 			std::stringstream prompt_ss;
 
 			prompt_ss << "  -> Enter Drop Altitude #" << (i + 1)
@@ -440,15 +450,22 @@ int main(int argc, char* argv[]) {
 
 	// Run simulations
 	PhysicsConstants cons;
+
 	std::vector<SimulationResult> results;
 
 	// comment why if -- evaluate single vs sequential simulation modes
 	if (choice == 1 || choice == 2) {
 		// Independent tests get fresh targets
+		// ! scenarios -> scenarios data e.g. inital velocity, altitude, etc
 		for (const auto& sc : scenarios) {
+			// ! cons -> physics constant e.g. gravity on earth
+			// ! object -> target data e.g. depth
+			// ! munition -> projectiles data e.g. explosive mass
 			ImpactSimulator simulator(munition, object, cons);
+
 			results.push_back(simulator.simulate(sc));
 		}
+
 		TelemetryExporter::printReport(results, munition, object);
 		TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
 	} else {
@@ -469,4 +486,3 @@ int main(int argc, char* argv[]) {
 	return 0;
 	// **** Ends Here ****
 }
-

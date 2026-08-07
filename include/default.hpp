@@ -11,26 +11,29 @@
 #include "simulation.hpp"
 
 
+
+
 inline const ImpactScenario Midnight_Hammer_Scenario = {
 	.name = "Midnight Hammer",
-	.altitude_ft = 0.0, // feet (surface impact)
-	.velocity =
-		420.0, // m/s (~Mach 1.2–1.3 typical estimates for high-altitude B-2 release from
-	// ~40–50 kft; kinetic energy critical for penetration)
-	.obliquity_angle =
-		0.0, // Degrees (0 = perfectly perpendicular; sequential shaft strikes aimed
-		     // for near-normal incidence)
-	.angle_of_attack = 0.0, // Degrees
+	.altitude_ft = 50000.0,
+	.velocity = 250.0,
+	.flight_path_angle = 357.5,
+	.obliquity_angle = 0.0,
+	.angle_of_attack = 0.0,
 };
 
+
+
+
 inline const AtmosphereState Midnight_Hammer_Atmosphere = {
-	.temperature_K =
-		288.15, // Standard sea-level reference (Fordow mountain ~900–1000 m elev. is
-			// close enough for modeling; minor density reduction possible)
+	.temperature_K = 288.15,
 	.pressure_Pa = 101325.0,
 	.density_kgm3 = 1.225,
 	.speed_of_sound_ms = 340.3,
 };
+
+
+
 
 inline const Aircraft B2_Sprit_Strategic_Bomber = {
 	.bomber_totalMass = 152634.0,
@@ -38,32 +41,30 @@ inline const Aircraft B2_Sprit_Strategic_Bomber = {
 	.bomber_liftCurveSlope = 5.74,
 };
 
+
+
+
 inline const Projectile Midnight_Hammer_projectile = {
 	.name = "GBU-57 Massive Ordnance Penetrator (MOP)",
-	.length = 6.2,	 // m (20.5 ft)
-	.diameter = 0.8, // m (31.5 in)
-	.curvature_noseReduce =
-		4.8, // Reasonable ogive/CRH-style factor for penetrator nose (kept; limited public detail)
-	.total_mass =
-		13600.0, // kg (~30,000 lb class; consistent with most references; BLU-127 body
-			 // often listed ~12,300 kg + guidance/tail kit)
-	.explosive_mass =
-		2423.0, // kg (Wiki/AFX-757 + PBXN-114 total ~5,342 lb; prior 2400 was close)
-	.casing_density = 7850.0, // kg/m³ (high-strength steel / Eglin-type alloy)
-	.yield_strength = 2.5e9,  // Pa (high-end specialty penetrator steel; plausible for designed
-				  // high-strength/toughness alloy)
-	.specific_heat = 460.0,	  // J/(kg·K) steel
-	.melting_point = 1800.0,  // K approximate
-	.heat_of_fusion = 272000.0, // J/kg approximate
-	.area_moment_inertia =
-		0.0201, // m⁴ (π r⁴/4 for solid circular ≈0.4 m radius; prior 0.02 was already excellent)
-	.elastic_modulus = 200.0e9,   // Pa (standard steel)
-	.casing_wall_thickness = 0.1, // m (thick-walled penetrator design)
-	.hugoniot_c0 = 4570.0,	      // m/s (steel/iron standard)
-	.hugoniot_s = 1.49,	      // dimensionless
-	.explosive_critical_energy =
-		3.0e15 // Kept (limited public data on exact initiation threshold)
-};
+	.length = 6.2,
+	.diameter = 0.8,
+	.curvature_noseReduce = 4.8,
+	.total_mass = 13600.0,
+	.explosive_mass = 2423.0,
+	.casing_density = 7850.0,
+	.yield_strength = 2.5e9,
+	.specific_heat = 460.0,
+	.melting_point = 1800.0,
+	.heat_of_fusion = 272000.0,
+	.area_moment_inertia = 0.0201,
+	.elastic_modulus = 200.0e9,
+	.casing_wall_thickness = 0.1,
+	.hugoniot_c0 = 4570.0,
+	.hugoniot_s = 1.49,
+	.explosive_critical_energy = 3.0e15};
+
+
+
 
 inline const Target Midnight_Hammer_Target = {
 	.name = "Fordow-like Hardened Mountain Facility (ventilation-shaft path approximation)",
