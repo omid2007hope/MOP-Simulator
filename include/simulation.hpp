@@ -198,7 +198,7 @@ struct DropDeriv {
 
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
-
+	// ! purpose: encapsulated simulation engine that binds projectile properties, target strata, and physics models to compute trajectory and penetration results.
 private:
 	// ! proj payload comes from p (munition) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	Projectile proj;
@@ -211,6 +211,7 @@ private:
 
 	// ! scenario, proj, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 668
 	// ! simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt);
+	// ! purpose : simulates atmospheric free-fall phase using 2DOF integration (drag, gravity, US Standard Atmosphere 1976) to calculate terminal impact velocity and pitch angle.
 	void simulateAtmosphericDrop(const ImpactScenario& scenario,
 				     const Projectile& proj,
 				     SimulationResult& res,
@@ -220,6 +221,7 @@ private:
 
 	// ! scenario, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 670
 	// ! simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
+	// ! purpose : simulates underground penetration phase into target layers using multi-phase physics (CEB-FIP DIF, Forrestal deceleration, WAPM rod erosion, Alekseevskii-Tate limits, and Walker-Wasley shock detonation assessment).
 	void simulateGroundPenetration(const ImpactScenario& scenario,
 				       SimulationResult& res,
 				       double impact_velocity,
@@ -229,15 +231,18 @@ private:
 public:
 	// ! p, t and c payloads come from main.cpp - line 464
 	// ! ImpactSimulator simulator(munition, object, cons);
+	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
 	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
 	// ! scenario payload comes from main.cpp - line 466.
 	// ! results.push_back(simulator.simulate(sc));
+	// ! purpose : executes the complete end-to-end simulation flow (atmospheric drop followed by ground penetration) for a given drop scenario and records telemetry frame data.
 	SimulationResult simulate(const ImpactScenario& scenario);
 
 
 	// ! target payload comes from main.cpp - line 478 and 480
 	// ! TelemetryExporter::printReport(results, munition, simulator.getTarget());
+	// ! purpose : provides read-only access to the internal target state, enabling reporting tools to inspect updated target layer properties (such as cumulative breach shaft depth after sequential strikes).
 	const Target& getTarget() const {
 		return target;
 	}
