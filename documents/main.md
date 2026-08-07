@@ -51,3 +51,24 @@ if (choice == 1 || choice == 2) {
     TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
 }
 ```
+
+Step-by-Step Flow:
+
+main.cpp: Line 464
+
+cpp
+ImpactSimulator simulator(munition, object, cons);
+What happens: main.cpp instantiates the ImpactSimulator object and passes munition, object, and cons as arguments.
+
+simulation.hpp: Line 235
+
+cpp
+ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
+What happens: The class header declares the constructor contract accepting references p, t, and c.
+
+simulation.cpp: Line 15–16
+
+cpp
+ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
+: proj(p), target(t), cons(c) {}
+What happens: The implementation executes the initializer list, copying p $\rightarrow$ proj, t $\rightarrow$ target, and c $\rightarrow$ cons into the simulator's private member variables.
