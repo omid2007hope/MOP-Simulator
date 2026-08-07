@@ -8,22 +8,35 @@
 #include <string>
 #include <vector>
 
-// files
+
 
 
 struct PhysicsConstants {
 	const double gravity = 9.81;
 	const double PI = std::numbers::pi;
-
-	// Engine behavior constants
 	const double frictionFactor = 0.1;
-
 	// US Standard Atmosphere 1976 constants (atmosphere/drag/speed-of-sound model)
 	const double universalGasConstant = 8.31432; // J/(mol*K)
 	const double molarMassAir = 0.0289644;	     // kg/mol
 	const double adiabaticIndexAir = 1.4;	     // dimensionless (gamma)
 	const double earthRadius = 6356766.0; // m (geopotential reference radius, 45 deg lat)
 };
+
+
+
+
+// Scenario input definition
+struct ImpactScenario {
+	std::string name;
+	double altitude_ft = 0.0;	// feet
+	double velocity = 0.0;		// m/s
+	double flight_path_angle = 0.0; // Degrees (0 = horizontal plane drop, 90 = vertical strike)
+	double obliquity_angle = 0.0;	// Degrees (0 = perfectly perpendicular to ground)
+	double angle_of_attack = 0.0;	// Degrees
+};
+
+
+
 
 // Atmospheric state at a given geometric altitude (US Standard Atmosphere 1976)
 struct AtmosphereState {
@@ -32,6 +45,42 @@ struct AtmosphereState {
 	double density_kgm3 = 1.225;
 	double speed_of_sound_ms = 340.3;
 };
+
+
+
+
+struct Aircraft {
+	double bomber_totalMass = 0.0;
+	double bomber_wingArea = 0.0;
+	double bomber_liftCurveSlope = 0.0;
+};
+
+
+
+
+// Projectile specification (e.g., GBU-57 MOP parameters)
+struct Projectile {
+	std::string name;
+	double length = 0.0;
+	double diameter = 0.0;
+	double curvature_noseReduce = 0.0;
+	double total_mass = 0.0;
+	double explosive_mass = 0.0;
+	double casing_density = 0.0;
+	double yield_strength = 0.0;
+	double specific_heat = 460.0;
+	double melting_point = 1800.0;
+	double heat_of_fusion = 272000.0;
+	double area_moment_inertia = 0.0;
+	double elastic_modulus = 0.0;
+	double casing_wall_thickness = 0.0;
+	double hugoniot_c0 = 0.0;
+	double hugoniot_s = 0.0;
+	double explosive_critical_energy = 0.0;
+};
+
+
+
 
 // Target layer specification
 struct TargetLayer {
@@ -66,50 +115,8 @@ struct Target {
 	}
 };
 
-// Projectile specification (e.g., GBU-57 MOP parameters)
-struct Projectile {
-	std::string name;
-	double length = 1.0;		   // meters
-	double diameter = 0.1;		   // meters
-	double curvature_noseReduce = 0.6; // meters
-	double total_mass = 100.0;	   // kg
-	double explosive_mass = 0.0;	   // kg
-	double casing_density = 7800.0;	   // kg/m^3
-	double yield_strength = 1.0e9;	   // Pascals (e.g., 2.0 GPa for Eglin steel)
-
-	// Thermal ablation properties
-	double specific_heat = 460.0;	  // J/(kg*K)
-	double melting_point = 1800.0;	  // Kelvin
-	double heat_of_fusion = 272000.0; // J/kg
-
-	// Structural properties
-	double area_moment_inertia = 0.02; // m^4 (for bending moment calculations)
-
-	// Walker-Anderson erosion & Walker-Wasley shock initiation properties
-	double elastic_modulus =
-		200.0e9; // Pascals (Young's modulus; bar wave speed c = sqrt(E/rho_p))
-	double casing_wall_thickness = 0.05; // meters (shock transit path into explosive fill)
-	double hugoniot_c0 = 4570.0;	     // m/s (Hugoniot bulk sound speed, Us = C0 + S*Up)
-	double hugoniot_s = 1.49;	     // dimensionless (Hugoniot slope)
-	double explosive_critical_energy = 3.0e15; // Pa^2*s (Walker-Wasley Ec, Comp-B-like)
-};
 
 
-struct Aircraft {
-	double bomber_totalMass = 0.0;
-	double bomber_wingArea = 0.0;
-	double bomber_liftCurveSlope = 0.0;
-};
-
-// Scenario input definition
-struct ImpactScenario {
-	std::string name;
-	double altitude_ft = 0.0;	// feet
-	double velocity = 0.0;		// m/s
-	double flight_path_angle = 0.0; // Degrees (0 = horizontal plane drop, 90 = vertical strike)
-	double obliquity_angle = 0.0;	// Degrees (0 = perfectly perpendicular to ground)
-	double angle_of_attack = 0.0;	// Degrees
-};
 
 struct TelemetryFrame {
 	double time = 0.0;
@@ -210,9 +217,14 @@ private:
 				       double dt);
 
 public:
+	// ! p, t and c payloads come from main.cpp - line 464
+	// ! ImpactSimulator simulator(munition, object, cons);
 	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
+	// ! scenario payload comes from main.cpp - line 466.
+	// ! results.push_back(simulator.simulate(sc));
 	SimulationResult simulate(const ImpactScenario& scenario);
+
 
 	const Target& getTarget() const {
 		return target;
