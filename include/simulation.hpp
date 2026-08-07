@@ -203,6 +203,8 @@ private:
 	Target target;
 	PhysicsConstants cons;
 
+	// ! scenario, proj, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 668
+	// ! simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt);
 	void simulateAtmosphericDrop(const ImpactScenario& scenario,
 				     const Projectile& proj,
 				     SimulationResult& res,
@@ -210,6 +212,8 @@ private:
 				     double& impact_pitch,
 				     double dt);
 
+	// ! scenario, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 670
+	// ! simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 	void simulateGroundPenetration(const ImpactScenario& scenario,
 				       SimulationResult& res,
 				       double impact_velocity,
