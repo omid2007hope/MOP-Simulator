@@ -233,6 +233,9 @@ int main(int argc, char* argv[]) {
 				  << " kg)!\n";
 		}
 
+		munition.explosive_energy_j_per_kg =
+			getValidInput<double>("Enter Explosive Energy (j/kg): ", true);
+
 		munition.casing_density =
 			getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
 
