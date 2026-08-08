@@ -200,6 +200,11 @@ private:
 	// ! cons payload comes from c (cons) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	PhysicsConstants cons;
 
+	void impactShockwave(const SimulationResult& res, const AtmosphereState& atoms);
+
+	void explosiveShockwave(const SimulationResult& res, const AtmosphereState& atoms);
+
+
 	// ! scenario, proj, res, impact_velocity, imp act_pitch and dt payloads come from simulation.cpp - line 668
 	// ! simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt);
 	// ! purpose : simulates atmospheric free-fall phase using 2DOF integration (drag, gravity, US Standard Atmosphere 1976) to calculate terminal impact velocity and pitch angle.
