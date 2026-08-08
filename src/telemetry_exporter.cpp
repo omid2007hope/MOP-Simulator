@@ -393,6 +393,10 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		     << ", cumulative_breach_depth: " << r.cumulative_breach_depth
 		     << ", kinetic_shock_joules: " << r.kinetic_shock_joules
 		     << ", total_explosive_yield: " << r.total_explosive_yield
+		     << ", altitude_ft: " << r.altitude_ft
+		     << ", premature_detonation: " << (r.premature_detonation ? "true" : "false")
+		     << ", x_acceleration: " << r.x_acceleration
+		     << ", y_acceleration: " << r.y_acceleration
 		     << ", target_layers: " << targetLayersJson.str()
 		     << ", drop_frames: " << dropFramesJson.str()
 		     << ", pen_frames: " << penFramesJson.str() << " }";
