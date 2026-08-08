@@ -347,7 +347,47 @@
           id="all-data-stats-container"
           class="text-[9px] font-bold tracking-wider text-slate-400 flex flex-col gap-1 max-h-[50vh] overflow-y-auto"
         >
-          <!-- JS injects here -->
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">name:</span><span id="stat-name" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">velocity:</span><span id="stat-velocity" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">mach:</span><span id="stat-mach" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">energy:</span><span id="stat-energy" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">pressure:</span><span id="stat-pressure" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">yield:</span><span id="stat-yield" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">depth:</span><span id="stat-depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">prev_strike_depth:</span><span id="stat-prev_strike_depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">rigid_depth:</span><span id="stat-rigid_depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">hydro_depth:</span><span id="stat-hydro_depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">fail:</span><span id="stat-fail" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">shock_prob:</span><span id="stat-shock_prob" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">exp_survives:</span><span id="stat-exp_survives" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">is_kinetic:</span><span id="stat-is_kinetic" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">regime:</span><span id="stat-regime" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">summary:</span><span id="stat-summary" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">proj_length:</span><span id="stat-proj_length" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">proj_diameter:</span><span id="stat-proj_diameter" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">proj_name:</span><span id="stat-proj_name" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">target_name:</span><span id="stat-target_name" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">explosive_mass:</span><span id="stat-explosive_mass" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">explosion_scale:</span><span id="stat-explosion_scale" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">crater_wide_radius:</span><span id="stat-crater_wide_radius" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">crater_narrow_radius:</span><span id="stat-crater_narrow_radius" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">camera_shake_magnitude:</span><span id="stat-camera_shake_magnitude" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">time_scale_pen:</span><span id="stat-time_scale_pen" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">erosion_occurred:</span><span id="stat-erosion_occurred" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">final_rod_length:</span><span id="stat-final_rod_length" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">erosion_length_lost:</span><span id="stat-erosion_length_lost" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">dynamic_increase_factor:</span><span id="stat-dynamic_increase_factor" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">bar_wave_speed:</span><span id="stat-bar_wave_speed" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">shock_pressure_gpa_peak:</span><span id="stat-shock_pressure_gpa_peak" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">shock_pulse_duration_us:</span><span id="stat-shock_pulse_duration_us" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">previous_strike_depth:</span><span id="stat-previous_strike_depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">cumulative_breach_depth:</span><span id="stat-cumulative_breach_depth" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">kinetic_shock_joules:</span><span id="stat-kinetic_shock_joules" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">total_explosive_yield:</span><span id="stat-total_explosive_yield" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">altitude_ft:</span><span id="stat-altitude_ft" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">premature_detonation:</span><span id="stat-premature_detonation" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">x_acceleration:</span><span id="stat-x_acceleration" class="text-slate-200 text-right break-all ml-2">-</span></div>
+          <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"><span class="text-cyan-600/70 lowercase">y_acceleration:</span><span id="stat-y_acceleration" class="text-slate-200 text-right break-all ml-2">-</span></div>
         </div>
       </div>
     </div>
@@ -1254,23 +1294,17 @@
         document.getElementById("hud-scenario").innerText = data.name;
 
         // --- INJECT ALL DATA INTO STATISTICS PANEL ---
-        const statsContainer = document.getElementById("all-data-stats-container");
-        if (statsContainer) {
-          statsContainer.innerHTML = "";
-          for (const key in data) {
-            if (key === "drop_frames" || key === "pen_frames" || key === "target_layers") continue;
-            
-            let val = data[key];
-            if (typeof val === 'number') {
-              val = val % 1 === 0 ? val.toString() : val.toFixed(4);
-            }
-            
-            statsContainer.innerHTML += `
-              <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1">
-                <span class="text-cyan-600/70 lowercase">\${key}:</span>
-                <span class="text-slate-200 text-right break-all ml-2">\${val}</span>
-              </div>
-            `;
+        for (const key in data) {
+          if (key === "drop_frames" || key === "pen_frames" || key === "target_layers") continue;
+          
+          let val = data[key];
+          if (typeof val === 'number') {
+            val = val % 1 === 0 ? val.toString() : val.toFixed(4);
+          }
+          
+          const el = document.getElementById("stat-" + key);
+          if (el) {
+            el.innerText = val;
           }
         }
         // ---------------------------------------------
