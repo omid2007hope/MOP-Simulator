@@ -60,6 +60,7 @@ inline const Projectile Midnight_Hammer_projectile = {
 	.hugoniot_c0 = 4570.0,
 	.hugoniot_s = 1.49,
 	.explosive_critical_energy = 3.0e15,
+	.explosive_energy_j_per_kg = 5.2e6,
 	// specific_heat determines how much the temperature changes for a given amount of energy.
 	.specific_heat = 460.0,
 	// The fixed temperature threshold where solid and liquid phases coexist in equilibrium. For water, this is 0°C, but it varies by material.
@@ -115,6 +116,7 @@ inline const Projectile MOP_DEFAULT = {.name = "GBU-57 Massive Ordnance Penetrat
 				       .hugoniot_c0 = 4570.0,
 				       .hugoniot_s = 1.49,
 				       .explosive_critical_energy = 3.0e15,
+				       .explosive_energy_j_per_kg = 5.2e6,
 				       .specific_heat = 460.0,
 				       .melting_point = 1800.0,
 				       .heat_of_fusion = 272000.0};
@@ -166,6 +168,7 @@ inline const Projectile RODS_FROM_GOD_DEFAULT = {
 	.hugoniot_c0 = 4030.0,
 	.hugoniot_s = 1.24,
 	.explosive_critical_energy = 3.0e15,
+	.explosive_energy_j_per_kg = 0.0,
 	.specific_heat = 134.0,
 	.melting_point = 3695.0,
 	.heat_of_fusion = 192000.0};
