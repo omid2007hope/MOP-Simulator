@@ -74,6 +74,7 @@ struct Projectile {
 	double hugoniot_c0 = 0.0;
 	double hugoniot_s = 0.0;
 	double explosive_critical_energy = 0.0;
+	double explosive_energy_j_per_kg = 0.0;
 	// specific_heat determines how much the temperature changes for a given amount of energy.
 	double specific_heat = 460.0;
 	// The fixed temperature threshold where solid and liquid phases coexist in equilibrium. For water, this is 0°C, but it varies by material.
