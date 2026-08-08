@@ -58,10 +58,10 @@ int main() {
 	std::cout << "         -> [PASS] Casing remained intact in Rigid Penetration regime.\n";
 	std::cout << "         -> [PASS] Crater/Tunnel Continuity confirmed.\n\n";
 
-	// Test 2: Hypervelocity Impact (Mach ~14.7, 1500 m/s) - Tests Walker-Wasley Triggering
+	// Test 2: Hypervelocity Impact (Mach ~14.7, 5000 m/s) - Tests Walker-Wasley Triggering
 	std::cout
-		<< "[Test 2] Testing Hypervelocity Impact (1500 m/s) for Walker-Wasley Shock Initiation...\n";
-	ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 1500.0, 90.0, 0.0, 0.0};
+		<< "[Test 2] Testing Hypervelocity Impact (5000 m/s) for Walker-Wasley Shock Initiation...\n";
+	ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 5000.0, 90.0, 0.0, 0.0};
 	SimulationResult resHyper = simulator.simulate(hyperScenario);
 
 	assert(resHyper.regime == "Shock Initiation (Walker-Wasley)");

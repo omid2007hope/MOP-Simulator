@@ -307,10 +307,19 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	double wall_thick = proj.casing_wall_thickness > 0 ? proj.casing_wall_thickness : 0.05;
 	double tau = (2.0 * wall_thick) / c0;
 
-	res.shock_pressure_gpa_peak = P_shock / 1.0e9;
+	// Set initial dynamic pressure on impact so it is never 0.00 GPa
+	max_dynamic_pressure = 0.5 * rho_t * current_velocity * current_velocity;
+	res.dynamic_pressure = max_dynamic_pressure;
+
+	// Approximate shock transmission coefficient from steel casing to explosive fill
+	// Z_steel = ~35 MRayls, Z_explosive = ~5 MRayls. T = 2*Z2/(Z1+Z2) =~ 0.25
+	double shock_transmission_coef = 0.25;
+	double transmitted_pressure = P_shock * shock_transmission_coef;
+
+	res.shock_pressure_gpa_peak = transmitted_pressure / 1.0e9;
 	res.shock_pulse_duration_us = tau * 1.0e6;
 
-	double shock_energy = P_shock * P_shock * tau;
+	double shock_energy = transmitted_pressure * transmitted_pressure * tau;
 	res.velocity = impact_velocity;
 	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
 
