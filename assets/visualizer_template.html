@@ -99,13 +99,17 @@
         const changeSpeed         = (speed)         => { if (window.setSimSpeed)      window.setSimSpeed(speed); };
 
         const renderStatRow = (key) => {
+          const isLinked = currentData[key] !== undefined;
           let val = currentData[key];
           if (typeof val === 'number') val = val % 1 === 0 ? val.toString() : val.toFixed(4);
-          if (val === undefined || val === null) val = "-";
+          if (!isLinked || val === null) val = "NULL";
+          
           return (
-            <div key={key} className="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1">
-              <span className="text-cyan-600/70 lowercase">{key}:</span>
-              <span className="text-slate-200 text-right break-all ml-2">{val.toString()}</span>
+            <div key={key} className={`flex justify-between items-center border-b pb-1 pt-1 ${isLinked ? 'border-emerald-900/40' : 'border-rose-900/40'}`}>
+              <span className={`text-[9px] uppercase tracking-wider ${isLinked ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>{key}</span>
+              <span className={`text-[10px] text-right font-mono font-bold break-all ml-2 ${isLinked ? 'text-emerald-300' : 'text-rose-400'}`}>
+                {val.toString()}
+              </span>
             </div>
           );
         };
@@ -221,10 +225,32 @@
             </div>
 
             {/* Bottom Right Data Statistics — all 41 STAT_KEYS from telemetry_exporter.cpp */}
-            <div className="absolute bottom-5 right-8 w-80 rounded-xl glass-panel p-5 pointer-events-auto">
+            <div className="absolute bottom-5 right-8 w-[600px] rounded-xl glass-panel p-5 pointer-events-auto shadow-[0_0_30px_rgba(0,0,0,0.8)]">
               <div className="unskew">
-                <h1 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Data Statistics</h1>
-                <div className="text-[9px] font-bold tracking-wider text-slate-400 flex flex-col gap-1 max-h-[50vh] overflow-y-auto">
+                <div className="flex justify-between items-end border-b border-slate-700/50 pb-2 mb-3">
+                  <div>
+                    <h1 className="text-[12px] font-black tracking-widest text-cyan-400 uppercase flex items-center gap-2">
+                       <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                       Telemetry QA Diagnostics
+                    </h1>
+                    <div className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">C++ Data Stream Insurance</div>
+                  </div>
+                  <div className="flex gap-4 text-[9px] font-black uppercase tracking-widest bg-slate-950/50 p-2 rounded border border-slate-800">
+                     <div className="flex items-center gap-2 text-emerald-400">
+                       <span className="relative flex h-2 w-2">
+                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                       </span>
+                       Linked (Sim)
+                     </div>
+                     <div className="flex items-center gap-2 text-rose-500">
+                       <span className="w-2 h-2 bg-rose-500 rounded-full"></span> 
+                       Null (HTML)
+                     </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 max-h-[50vh] overflow-y-auto pr-3">
                   {STAT_KEYS.map(key => renderStatRow(key))}
                 </div>
               </div>
