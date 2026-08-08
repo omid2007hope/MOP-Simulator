@@ -206,7 +206,6 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
 
 	double max_dynamic_pressure = 0.0;
-	double max_walker_wasley_product = 0.0;
 	bool erosion_active = false;
 	double bar_wave_speed = std::sqrt(proj.elastic_modulus / proj.casing_density);
 	res.bar_wave_speed = bar_wave_speed;
@@ -260,27 +259,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		return;
 	}
 
-	auto evaluateShockEvent = [&](double impactVel, const TargetLayer& lyr) {
-		double Up = EnvironmentPhysics::solveHugoniotInterfaceVelocity(impactVel,
-									       lyr.density,
-									       lyr.hugoniot_c0,
-									       lyr.hugoniot_s,
-									       proj.casing_density,
-									       proj.hugoniot_c0,
-									       proj.hugoniot_s);
-		double P = lyr.density * (lyr.hugoniot_c0 + lyr.hugoniot_s * Up) * Up;
-		double Us_casing = proj.hugoniot_c0 + proj.hugoniot_s * (impactVel - Up);
-		double tau = (Us_casing > 1.0) ? (proj.casing_wall_thickness / Us_casing) : 0.0;
-		double product = P * P * tau;
-		if (product > max_walker_wasley_product) {
-			max_walker_wasley_product = product;
-			res.shock_pressure_gpa_peak = P / 1.0e9;
-			res.shock_pulse_duration_us = tau * 1.0e6;
-		}
-	};
-	if (!target.layers.empty()) {
-		evaluateShockEvent(current_velocity, target.layers[0]);
-	}
+
 
 	const double groundSpeedOfSound =
 		EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
@@ -312,7 +291,6 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			last_layer_idx = current_layer_idx;
 			std::cout << "  [LAYER BREACH] Pierced into layer: "
 				  << target.layers[current_layer_idx].material_name << "\n";
-			evaluateShockEvent(current_velocity, target.layers[current_layer_idx]);
 		}
 
 		const auto& layer = target.layers[current_layer_idx];
@@ -594,29 +572,13 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			}
 		}
 		res.shock_damage_prob_percent = 0.0;
-		res.explosive_charge_survives = true;
-	} else {
 		if (res.casing_failure) {
 			res.explosive_charge_survives = false;
 			res.premature_detonation = true;
-			res.shock_damage_prob_percent = 100.0;
 		} else {
-			double criticalEnergy = std::max(1.0, proj.explosive_critical_energy);
-			res.shock_damage_prob_percent =
-				std::min(100.0, 100.0 * max_walker_wasley_product / criticalEnergy);
-			bool shockInitiates = max_walker_wasley_product >= criticalEnergy;
-
-			if (shockInitiates) {
-				res.explosive_charge_survives = false;
-				res.premature_detonation = true;
-				res.regime = "Shock Initiation (Walker-Wasley)";
-				res.outcome_summary =
-					"Transmitted shock exceeded the Walker-Wasley critical initiation energy (P^2*tau >= Ec).";
-			} else {
-				res.explosive_charge_survives = true;
-				if (res.erosion_occurred) {
-					res.regime = "Hypervelocity Erosion (Walker-Anderson)";
-				}
+			res.explosive_charge_survives = true;
+			if (res.erosion_occurred) {
+				res.regime = "Hypervelocity Erosion (Walker-Anderson)";
 			}
 		}
 	}

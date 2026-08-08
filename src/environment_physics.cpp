@@ -216,54 +216,6 @@ double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, d
 
 
 
-// ! Solves Hugoniot shock impedance matching interface velocity
-double solveHugoniotInterfaceVelocity(
-	double v, double rho_t, double C0_t, double S_t, double rho_p, double C0_p, double S_p) {
-	// Shock impedance matching at the target/casing interface: continuity of pressure and
-	// particle velocity between the target's Hugoniot (shocked from rest) and the projectile's
-	// Hugoniot (decelerated from v), solved analytically for the common interface velocity x.
-	double A = rho_t * S_t - rho_p * S_p;
-	double B = rho_t * C0_t + rho_p * C0_p + 2.0 * rho_p * S_p * v;
-	double C = -rho_p * v * (C0_p + S_p * v);
-
-	// comment why if -- handle matched Hugoniot linear solution limit
-	if (std::fabs(A) < 1.0e-6) {
-		// comment why if -- avoid div-by-zero on zero impact speed
-		if (std::fabs(B) < 1.0e-9) {
-			return 0.0;
-		}
-		return std::clamp(-C / B, 0.0, v);
-	}
-
-	double discriminant = B * B - 4.0 * A * C;
-	// comment why if -- check real shock solution existence
-	if (discriminant < 0.0) {
-		return 0.0;
-	}
-
-	double sqrtDisc = std::sqrt(discriminant);
-	double root1 = (-B + sqrtDisc) / (2.0 * A);
-	double root2 = (-B - sqrtDisc) / (2.0 * A);
-
-	bool root1Valid = (root1 >= 0.0 && root1 <= v);
-	bool root2Valid = (root2 >= 0.0 && root2 <= v);
-
-	// comment why if -- pick lower physical particle velocity root
-	if (root1Valid && root2Valid) {
-		return std::min(root1, root2);
-	}
-	// comment why if -- check root 1
-	if (root1Valid) {
-		return root1;
-	}
-	// comment why if -- check root 2
-	if (root2Valid) {
-		return root2;
-	}
-	return 0.0;
-	// **** Ends Here ****
-}
-
 
 
 

@@ -21,9 +21,6 @@ double computeDIF(double strain_rate_per_s, double fc_static_pa);
 
 double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, double Rt);
 
-double solveHugoniotInterfaceVelocity(
-	double v, double rho_t, double C0_t, double S_t, double rho_p, double C0_p, double S_p);
-
 // Flight Controller Trim
 double flightControlTrim(double flightPathAngle,
 			 double bomberVelocity,
