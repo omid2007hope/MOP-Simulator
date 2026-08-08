@@ -463,6 +463,7 @@ int main(int argc, char* argv[]) {
 			// ! munition -> projectiles data e.g. explosive mass
 			ImpactSimulator simulator(munition, object, cons);
 
+
 			results.push_back(simulator.simulate(sc));
 		}
 
