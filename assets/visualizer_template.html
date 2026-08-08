@@ -719,9 +719,11 @@
         telemetryChart.setOption({xAxis:{data:chartDataTime},series:[{data:chartDataVel}]});
       }
 
-      // ─── HUD UPDATE → ReactAPI bridge (unchanged) ─────────────────────
+      // ─── HUD UPDATE → ReactAPI bridge (Throttled) ─────────────────────
+      let _lastHudTime = 0, _lastChartTime = 0;
       function updateHUD(frame) {
-        if(window.ReactAPI){
+        const now = performance.now();
+        if(window.ReactAPI && now - _lastHudTime > 50){
           window.ReactAPI.setFrameData({
             velocity: frame.v!==undefined?frame.v:0,
             pressure: frame.p!==undefined?frame.p:0,
@@ -731,11 +733,17 @@
             length:   frame.rl!==undefined?frame.rl:0,
             phase:    frame.e?"ERODING (WAPM)":(animState==="DROPPING"?"FREEFALL":"RIGID")
           });
+          _lastHudTime = now;
         }
+        
         chartDataTime.push(frame.t!==undefined?frame.t.toFixed(2):"");
         chartDataVel.push(frame.v);
         if(chartDataTime.length>100){chartDataTime.shift();chartDataVel.shift();}
-        if(Math.random()>0.5)updateChart();
+        
+        if(now - _lastChartTime > 100){
+          updateChart();
+          _lastChartTime = now;
+        }
       }
 
       // ─── FINAL BADGES ─────────────────────────────────────────────────
@@ -746,13 +754,29 @@
         }
       }
 
-      // ─── FRAME INTERPOLATION (identical logic to Three.js version) ────
+      // ─── FRAME INTERPOLATION (Optimized with Binary Search) ───────────
       function getInterpolatedFrame(frames,t) {
-        if(frames.length===0)return null;
+        if(!frames || frames.length===0)return null;
         if(t<=frames[0].t)return frames[0];
         if(t>=frames[frames.length-1].t)return frames[frames.length-1];
-        let idx=frames.findIndex(f=>f.t>=t);
+        
+        let low = 0;
+        let high = frames.length - 1;
+        let idx = -1;
+        while(low <= high) {
+           let mid = Math.floor((low + high) / 2);
+           if (frames[mid].t === t) {
+               idx = mid;
+               break;
+           } else if (frames[mid].t < t) {
+               low = mid + 1;
+           } else {
+               high = mid - 1;
+           }
+        }
+        if (idx === -1) idx = low;
         if(idx===0)idx=1;
+        
         const f0=frames[idx-1],f1=frames[idx];
         const fac=(t-f0.t)/(f1.t-f0.t);
         const L=(a,b)=>(a!==undefined&&b!==undefined)?a+(b-a)*fac:undefined;
