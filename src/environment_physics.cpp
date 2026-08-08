@@ -268,7 +268,7 @@ double solveHugoniotInterfaceVelocity(
 
 
 // ! physics-based Aircraft Flight Control & Trim system
-double flightControlTrim(double fpa,
+double flightControlTrim(double flightPathAngle,
 			 double bomberVelocity,
 			 double bombMass,
 			 double CurveSlop,
@@ -277,7 +277,7 @@ double flightControlTrim(double fpa,
 			 const PhysicsConstants& cons) {
 
 	// 3. FPA in Radians
-	double fpa_rad = fpa * cons.PI / 180.0;
+	double fpa_rad = flightPathAngle * cons.PI / 180.0;
 
 	// 4. Required Lift Change (Based on the BOMB's mass that was just dropped)
 	double delta_lift = -(bombMass * cons.gravity * std::cos(fpa_rad));
