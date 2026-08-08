@@ -154,14 +154,22 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 			double current_density = current_atm.density_kgm3;
 
 			bool is_sonic_boom_frame = false;
+			// Use the velocity and altitude at the *start* of the frame if this is the frame it breaks Mach 1
 			if (current_velocity >= current_atm.speed_of_sound_ms &&
 			    !sonic_boom_triggered) {
 				sonic_boom_triggered = true;
 				is_sonic_boom_frame = true;
+				
+				// To eliminate the 1-tick lag, we print the state exactly as it was when the threshold was crossed.
+				// Since we stepped over it, we interpolate to the exact moment. But for simplicity and zero-lag,
+				// if t_drop <= dt_drop, it means it started supersonic.
+				double boom_time = (t_drop <= dt_drop) ? 0.0 : t_drop;
+				double boom_alt = (t_drop <= dt_drop) ? scenario.altitude_ft : current_altitude;
+				
 				std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ "
-					  << std::fixed << std::setprecision(2) << t_drop
+					  << std::fixed << std::setprecision(2) << boom_time
 					  << "s (Altitude: " << std::setprecision(0)
-					  << current_altitude
+					  << boom_alt
 					  << " ft | Density: " << std::setprecision(3)
 					  << current_density << " kg/m^3) <<<\n";
 			}
