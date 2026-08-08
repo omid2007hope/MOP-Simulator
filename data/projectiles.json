@@ -16,7 +16,8 @@
       "casing_wall_thickness": 0.1,
       "hugoniot_c0": 4570.0,
       "hugoniot_s": 1.49,
-      "explosive_critical_energy": 3.0e15
+      "explosive_critical_energy": 3.0e15,
+      "explosive_energy_j_per_kg": 5.2e6
     },
     {
       "name": "BLU-109",
@@ -35,7 +36,8 @@
       "casing_wall_thickness": 0.045,
       "hugoniot_c0": 4570.0,
       "hugoniot_s": 1.49,
-      "explosive_critical_energy": 3.0e15
+      "explosive_critical_energy": 3.0e15,
+      "explosive_energy_j_per_kg": 5.2e6
     },
     {
       "name": "Orbital Tungsten Kinetic Penetrator (Rods from God)",
@@ -54,6 +56,7 @@
       "casing_wall_thickness": 0.15,
       "hugoniot_c0": 4030.0,
       "hugoniot_s": 1.24,
-      "explosive_critical_energy": 3.0e15
+      "explosive_critical_energy": 3.0e15,
+      "explosive_energy_j_per_kg": 0.0
     }
 ]

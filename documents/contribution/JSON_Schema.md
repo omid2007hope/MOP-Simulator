@@ -80,5 +80,6 @@ Targets with no `layers` array are treated as legacy single-layer semi-infinite 
 | `hugoniot_c0` | m/s | 4570.0 | Casing Hugoniot bulk sound speed (Us = C0 + S*Up) |
 | `hugoniot_s` | - | 1.49 | Casing Hugoniot slope coefficient |
 | `explosive_critical_energy` | Pa^2*s | 3.0e15 | Walker-Wasley critical shock initiation energy Ec (P^2*tau >= Ec triggers detonation). Representative Comp-B-like default (calibrated so a few-hundred-m/s impact carries moderate risk, not a certainty), not explosive-certificate precision |
+| `explosive_energy_j_per_kg` | J/kg | 5.2e6 | Specific yield output per kg of explosive fill (e.g. 5.2e6 J/kg for AFX-757, 4.184e6 J/kg for TNT baseline, 0.0 for kinetic rods) |
 
-Note: `hugoniot_c0`/`hugoniot_s`/`explosive_critical_energy` are unused for kinetic rods (`explosive_mass == 0.0`).
+Note: `hugoniot_c0`/`hugoniot_s`/`explosive_critical_energy`/`explosive_energy_j_per_kg` are unused for kinetic rods (`explosive_mass == 0.0`).
