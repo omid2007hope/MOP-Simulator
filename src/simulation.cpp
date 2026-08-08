@@ -289,6 +289,33 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
 	res.mach_number = current_velocity / groundSpeedOfSound;
 
+	double rho_t = target.layers.empty() ? 2500.0 : target.layers[0].density;
+	double rho_p = proj.casing_density > 0 ? proj.casing_density : 7800.0;
+	double Up = current_velocity / (1.0 + std::sqrt(rho_t / rho_p));
+	double c0 = proj.hugoniot_c0 > 0 ? proj.hugoniot_c0 : 4570.0;
+	double s_coef = proj.hugoniot_s > 0 ? proj.hugoniot_s : 1.49;
+	double Us = c0 + s_coef * Up;
+	double P_shock = rho_p * Us * Up;
+	double wall_thick = proj.casing_wall_thickness > 0 ? proj.casing_wall_thickness : 0.05;
+	double tau = (2.0 * wall_thick) / c0;
+
+	res.shock_pressure_gpa_peak = P_shock / 1.0e9;
+	res.shock_pulse_duration_us = tau * 1.0e6;
+
+	double shock_energy = P_shock * P_shock * tau;
+	if (proj.explosive_mass > 0.0 && proj.explosive_critical_energy > 0.0) {
+		if (shock_energy >= proj.explosive_critical_energy) {
+			res.casing_failure = true;
+			res.explosive_charge_survives = false;
+			res.premature_detonation = true;
+			res.shock_damage_prob_percent = 100.0;
+			res.regime = "Shock Initiation (Walker-Wasley)";
+			res.outcome_summary = "Premature detonation triggered by Hugoniot impact shock.";
+			res.actual_penetration_depth = 0.0;
+			return;
+		}
+	}
+
 	double t = 0.0;
 
 	struct PenDeriv {
@@ -570,7 +597,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 	res.actual_penetration_depth = current_depth;
 	res.dynamic_pressure = max_dynamic_pressure;
-	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(res.velocity, 2);
+	res.velocity = impact_velocity;
+	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
 	res.rigid_penetration = current_depth;
 
 	double total_thickness = 0.0;

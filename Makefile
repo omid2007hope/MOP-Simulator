@@ -80,13 +80,25 @@ $(TEST_EXPLOSIVE_TARGET): $(TEST_EXPLOSIVE_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 test: $(TEST_TARGET) $(TEST_IMPACT_TARGET) $(TEST_EXPLOSIVE_TARGET)
-	@echo "Running unit tests..."
+	@echo "Running all unit tests..."
 	@$(TEST_TARGET)
 	@$(TEST_IMPACT_TARGET)
+	@$(TEST_EXPLOSIVE_TARGET)
+
+test-sim: $(TEST_TARGET)
+	@echo "Running simulation test suite..."
+	@$(TEST_TARGET)
+
+test-impact: $(TEST_IMPACT_TARGET)
+	@echo "Running impact shockwave test..."
+	@$(TEST_IMPACT_TARGET)
+
+test-explosive: $(TEST_EXPLOSIVE_TARGET)
+	@echo "Running explosive shockwave test..."
 	@$(TEST_EXPLOSIVE_TARGET)
 
 clean:
 	@echo "Cleaning build artifacts..."
 	@$(RM_CLEAN)
 
-.PHONY: all test clean
+.PHONY: all test test-sim test-impact test-explosive clean
