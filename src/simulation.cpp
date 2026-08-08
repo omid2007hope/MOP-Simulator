@@ -303,6 +303,9 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	res.shock_pulse_duration_us = tau * 1.0e6;
 
 	double shock_energy = P_shock * P_shock * tau;
+	res.velocity = impact_velocity;
+	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
+
 	if (proj.explosive_mass > 0.0 && proj.explosive_critical_energy > 0.0) {
 		if (shock_energy >= proj.explosive_critical_energy) {
 			res.casing_failure = true;
@@ -597,8 +600,6 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 	res.actual_penetration_depth = current_depth;
 	res.dynamic_pressure = max_dynamic_pressure;
-	res.velocity = impact_velocity;
-	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
 	res.rigid_penetration = current_depth;
 
 	double total_thickness = 0.0;

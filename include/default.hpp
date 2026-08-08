@@ -115,7 +115,7 @@ inline const Projectile MOP_DEFAULT = {.name = "GBU-57 Massive Ordnance Penetrat
 				       .casing_wall_thickness = 0.1,
 				       .hugoniot_c0 = 4570.0,
 				       .hugoniot_s = 1.49,
-				       .explosive_critical_energy = 3.0e15,
+				       .explosive_critical_energy = 6.0e16, // Walker-Wasley P^2*tau threshold for AFX-757 insensitive munition
 				       .explosive_energy_j_per_kg = 5.2e6,
 				       .specific_heat = 460.0,
 				       .melting_point = 1800.0,
