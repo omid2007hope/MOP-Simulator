@@ -101,688 +101,234 @@
   <body class="bg-slate-950 text-slate-100">
     <div id="canvas-container"></div>
 
-    <!-- HUD -->
-    <div
-      class="absolute top-6 left-6 z-10 w-[420px] rounded-xl glass-panel p-5 transition-all duration-300 pointer-events-auto"
-    >
-      <div class="unskew flex flex-col gap-3">
-        <!-- Header -->
-        <div
-          class="border-b border-cyan-500/30 pb-3 mb-2 flex justify-between items-start"
-        >
-          <div>
-            <h1
-              class="text-[10px] font-black tracking-widest text-cyan-500 uppercase flex items-center gap-2 mb-1"
-            >
-              <span
-                class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"
-              ></span>
-              High-Fidelity Physics Telemetry
-            </h1>
-            <div
-              class="text-xl font-bold text-white leading-tight uppercase tracking-wide"
-              id="hud-scenario"
-            >
-              -
-            </div>
-          </div>
-        </div>
+        <div id="react-root" class="pointer-events-none absolute inset-0 z-10 w-full h-full overflow-hidden"></div>
 
-        <!-- Meters -->
-        <div class="space-y-3 text-xs mono">
-          <!-- Velocity -->
-          <div class="flex flex-col gap-1">
-            <div class="flex justify-between text-slate-400">
-              <span>Velocity</span
-              ><span id="hud-velocity" class="text-cyan-300 font-bold"
-                >0.0 m/s</span
-              >
-            </div>
-            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                id="bar-velocity"
-                class="bg-cyan-400 h-full progress-bar"
-                style="width: 0%"
-              ></div>
-            </div>
-          </div>
-          <!-- Dynamic Pressure -->
-          <div class="flex flex-col gap-1">
-            <div class="flex justify-between text-slate-400">
-              <span>Dynamic Pressure</span
-              ><span id="hud-pressure" class="text-amber-400 font-bold"
-                >0.0 GPa</span
-              >
-            </div>
-            <div
-              class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden relative"
-            >
-              <div
-                id="bar-yield-mark"
-                class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
-                style="left: 80%"
-              ></div>
-              <div
-                id="bar-pressure"
-                class="bg-amber-400 h-full progress-bar"
-                style="width: 0%"
-              ></div>
-            </div>
-          </div>
+    <script type="text/babel">
+      const { useState, useEffect, useCallback, useMemo } = React;
 
-          <!-- Deceleration & Depth -->
-          <div
-            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
-          >
-            <div>
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Deceleration
-              </div>
-              <div class="text-rose-400 font-bold text-sm" id="hud-gforce">
-                0 G
+      // 41 fields for the stats panel
+      const STAT_KEYS = [
+        "name", "velocity", "mach", "energy", "pressure", "yield", "depth", "prev_strike_depth",
+        "rigid_depth", "hydro_depth", "fail", "shock_prob", "exp_survives", "is_kinetic", "regime",
+        "summary", "proj_length", "proj_diameter", "proj_name", "target_name", "explosive_mass",
+        "explosion_scale", "crater_wide_radius", "crater_narrow_radius", "camera_shake_magnitude",
+        "time_scale_pen", "erosion_occurred", "final_rod_length", "erosion_length_lost",
+        "dynamic_increase_factor", "bar_wave_speed", "shock_pressure_gpa_peak", "shock_pulse_duration_us",
+        "previous_strike_depth", "cumulative_breach_depth", "kinetic_shock_joules",
+        "total_explosive_yield", "altitude_ft", "premature_detonation", "x_acceleration", "y_acceleration"
+      ];
+
+      function App() {
+        const [activeScenarioIdx, setActiveScenarioIdx] = useState(0);
+        const [followCam, setFollowCam] = useState(false);
+        const [simSpeed, setSimSpeedState] = useState(1.0);
+        
+        // High frequency frame state
+        const [frameData, setFrameData] = useState({
+          velocity: 0,
+          pressure: 0,
+          gforce: 0,
+          depth: 0,
+          phase: "RIGID",
+          dif: 1.0,
+          length: 0
+        });
+
+        // Current Scenario Data
+        const currentData = scenarios[activeScenarioIdx] || {};
+
+        useEffect(() => {
+          // Expose to Vanilla JS
+          window.ReactAPI = {
+            setFrameData: (data) => setFrameData(prev => ({...prev, ...data})),
+            setActiveScenarioIdx: (idx) => setActiveScenarioIdx(idx),
+            setFollowCam: (val) => setFollowCam(val),
+            setSimSpeed: (val) => setSimSpeedState(val)
+          };
+        }, []);
+
+        const handleScenarioClick = (idx) => {
+          if (window.selectScenario) window.selectScenario(idx);
+        };
+
+        const handleCameraMove = (x,y,z, tx,ty,tz) => {
+          if (window.smoothCameraMove) window.smoothCameraMove(x,y,z, tx,ty,tz);
+        };
+
+        const toggleFollowCamBtn = () => {
+          if (window.toggleFollowCam) window.toggleFollowCam();
+        };
+
+        const changeSpeed = (speed) => {
+          if (window.setSimSpeed) window.setSimSpeed(speed);
+        };
+
+        const renderStatRow = (key) => {
+          let val = currentData[key];
+          if (typeof val === 'number') {
+            val = val % 1 === 0 ? val.toString() : val.toFixed(4);
+          }
+          if (val === undefined || val === null) val = "-";
+          
+          return (
+            <div key={key} className="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1">
+              <span className="text-cyan-600/70 lowercase">{key}:</span>
+              <span className="text-slate-200 text-right break-all ml-2">{val.toString()}</span>
+            </div>
+          );
+        };
+
+        let regimeText = currentData.is_kinetic ? "HYPERVELOCITY KINETIC ROD" : 
+                         (currentData.fail ? "CASING SHATTER" : (!currentData.exp_survives ? "FUZE FAILURE" : "WARHEAD DETONATED"));
+        if (!currentData.fail && currentData.exp_survives && !currentData.is_kinetic) regimeText = "AWAITING IMPACT";
+
+        return (
+          <div className="w-full h-full relative">
+            
+            {/* Top Left HUD */}
+            <div className="absolute top-6 left-6 w-[420px] rounded-xl glass-panel p-5 pointer-events-auto">
+              <div className="unskew flex flex-col gap-3">
+                <div className="border-b border-cyan-500/30 pb-3 mb-2 flex justify-between items-start">
+                  <div>
+                    <h1 className="text-[10px] font-black tracking-widest text-cyan-500 uppercase flex items-center gap-2 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                      High-Fidelity Physics Telemetry
+                    </h1>
+                    <div className="text-xl font-bold text-white leading-tight uppercase tracking-wide">
+                      {currentData.name || "-"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-xs mono">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Velocity</span><span className="text-cyan-300 font-bold">{frameData.velocity.toFixed(1)} m/s</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-cyan-400 h-full progress-bar" style={{width: Math.min(100, (frameData.velocity / 2000)*100) + '%'}}></div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Dynamic Pressure</span><span className="text-amber-400 font-bold">{frameData.pressure.toFixed(2)} GPa</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden relative">
+                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{left: (currentData.yield ? Math.min(100, (currentData.yield/2.0)*100) : 80) + '%'}}></div>
+                      <div className="bg-amber-400 h-full progress-bar" style={{width: Math.min(100, (frameData.pressure / 2.0)*100) + '%'}}></div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
+                    <div>
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Deceleration</div>
+                      <div className="text-rose-400 font-bold text-sm">{frameData.gforce.toFixed(0)} G</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">PENETRATION DEPTH</div>
+                      <div className="text-emerald-400 font-black text-base">{frameData.depth.toFixed(2)} m</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
+                    <div>
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Phase</div>
+                      <div className="text-cyan-300 font-bold text-sm">{frameData.phase}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Strain-Rate DIF</div>
+                      <div className="text-amber-300 font-bold text-sm">{frameData.dif.toFixed(2)}x</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Rod Length</div>
+                      <div className="text-emerald-300 font-bold text-sm">{frameData.length.toFixed(2)} m</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
+                    <div>
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Shock Pressure</div>
+                      <div className="text-orange-400 font-bold text-sm">{(currentData.shock_pressure_gpa_peak || 0).toFixed(2)} GPa</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Initiation Prob.</div>
+                      <div className="text-rose-400 font-bold text-sm">{Math.min(100, currentData.shock_prob || 0).toFixed(0)}%</div>
+                    </div>
+                  </div>
+
+                  <div id="telemetry-chart" className="mt-2 h-24 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden pointer-events-auto"></div>
+                </div>
+
+                <div className="mt-2 pt-3 border-t border-cyan-500/20 flex flex-col gap-2">
+                  <div className={`px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_15px_currentColor] ${currentData.is_kinetic ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50 pulse-active' : (currentData.fail || !currentData.exp_survives ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50 pulse-active' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50')}`}>
+                    {regimeText}
+                  </div>
+                  <div className="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all bg-slate-800/80 text-slate-300 border border-slate-700">
+                    {currentData.is_kinetic ? "PAYLOAD: ZERO EXPLOSIVE MASS" : "PAYLOAD: " + (currentData.explosive_mass || 0) + " kg"}
+                  </div>
+                  <div className="text-[10px] text-slate-400 text-center leading-tight px-1">
+                    {(currentData.regime || "-") + (currentData.summary ? " — " + currentData.summary : "")}
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="text-right">
-              <div
-                class="text-[9px] text-slate-500 uppercase tracking-wider"
-                id="hud-depth-label"
-              >
-                PENETRATION DEPTH
-              </div>
-              <div class="text-emerald-400 font-black text-base" id="hud-depth">
-                0.00 m
+
+            {/* Top Right Controls */}
+            <div className="absolute top-6 right-6 w-80 rounded-xl glass-panel p-5 pointer-events-auto">
+              <div className="unskew">
+                <h2 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Targeting & Viewport</h2>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <button onClick={() => handleCameraMove(45, 30, 60, 0, -15, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Isometric</button>
+                  <button onClick={() => handleCameraMove(80, -15, 0, 0, -15, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Side Profile</button>
+                  <button onClick={() => handleCameraMove(0, 100, 1, 0, 0, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Surface Top</button>
+                  <button onClick={toggleFollowCamBtn} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">
+                    Follow Cam: {followCam ? "ON" : "OFF"}
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  {[0.1, 1.0, 5.0].map(s => (
+                    <button key={s} onClick={() => changeSpeed(s)} className={`flex-1 py-1.5 border rounded text-xs transition ${simSpeed === s ? 'bg-cyan-900 border-cyan-500 text-cyan-200' : 'bg-slate-800 border-slate-600 hover:bg-slate-700 text-white'}`}>
+                      {s}x
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Penetration Phase / CEB-FIP DIF / WAPM Rod Length -->
-          <div
-            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
-          >
-            <div>
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Phase
-              </div>
-              <div class="text-cyan-300 font-bold text-sm" id="hud-phase">
-                RIGID
+            {/* Bottom Right Data Statistics */}
+            <div className="absolute bottom-5 right-8 w-80 rounded-xl glass-panel p-5 pointer-events-auto">
+              <div className="unskew">
+                <h1 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Data Statistics</h1>
+                <div className="text-[9px] font-bold tracking-wider text-slate-400 flex flex-col gap-1 max-h-[50vh] overflow-y-auto">
+                  {STAT_KEYS.map(key => renderStatRow(key))}
+                </div>
               </div>
             </div>
-            <div class="text-center">
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Strain-Rate DIF
-              </div>
-              <div class="text-amber-300 font-bold text-sm" id="hud-dif">
-                1.00x
+
+            {/* Scenarios Carousel */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto pointer-events-auto">
+              <div className="unskew flex gap-3 items-center">
+                {scenarios.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleScenarioClick(i)}
+                    className={`scenario-btn px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors duration-200 ${activeScenarioIdx === i ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.6)]' : 'bg-slate-800 text-slate-300 border border-slate-600 hover:bg-slate-700 hover:border-cyan-400/50'}`}
+                  >
+                    {s.name}
+                  </button>
+                ))}
               </div>
             </div>
-            <div class="text-right">
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Rod Length
-              </div>
-              <div class="text-emerald-300 font-bold text-sm" id="hud-length">
-                0.00 m
-              </div>
-            </div>
-          </div>
 
-          <!-- Walker-Wasley Shock Initiation Telemetry -->
-          <div
-            class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2"
-          >
-            <div>
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Shock Pressure
-              </div>
-              <div
-                class="text-orange-400 font-bold text-sm"
-                id="hud-shock-pressure"
-              >
-                0.00 GPa
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="text-[9px] text-slate-500 uppercase tracking-wider">
-                Initiation Prob.
-              </div>
-              <div class="text-rose-400 font-bold text-sm" id="hud-shock-ratio">
-                0%
-              </div>
-            </div>
           </div>
-          <!-- Graph Canvas (ECharts) -->
-          <div
-            id="telemetry-chart"
-            class="mt-2 h-24 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden"
-          ></div>
-        </div>
+        );
+      }
 
-        <!-- Badges -->
-        <div
-          class="mt-2 pt-3 border-t border-cyan-500/20 flex flex-col gap-2"
-          id="badges-container"
-        >
-          <div
-            id="hud-regime-badge"
-            class="px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_15px_currentColor]"
-          >
-            AWAITING IMPACT
-          </div>
-          <div
-            id="hud-exp-badge"
-            class="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all"
-          >
-            -
-          </div>
-          <div
-            id="hud-regime-text"
-            class="text-[10px] text-slate-400 text-center leading-tight px-1"
-          >
-            -
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Controls & Camera -->
-    <div class="absolute top-6 right-6 z-10 w-80 rounded-xl glass-panel p-5">
-      <div class="unskew">
-        <h2
-          class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3"
-        >
-          Targeting & Viewport
-        </h2>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-          <button
-            onclick="smoothCameraMove(45, 30, 60, 0, -15, 0)"
-            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
-          >
-            Isometric
-          </button>
-          <button
-            onclick="smoothCameraMove(80, -15, 0, 0, -15, 0)"
-            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
-          >
-            Side Profile
-          </button>
-          <button
-            onclick="smoothCameraMove(0, 100, 1, 0, 0, 0)"
-            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
-          >
-            Surface Top
-          </button>
-          <button
-            onclick="toggleFollowCam()"
-            id="btn-follow"
-            class="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition"
-          >
-            Follow Cam: OFF
-          </button>
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            onclick="setSimSpeed(0.1)"
-            class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700"
-          >
-            0.1x
-          </button>
-          <button
-            onclick="setSimSpeed(1.0)"
-            class="flex-1 py-1.5 bg-cyan-900 border border-cyan-500 text-cyan-200 rounded text-xs hover:bg-cyan-800"
-          >
-            1.0x
-          </button>
-          <button
-            onclick="setSimSpeed(5.0)"
-            class="flex-1 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs hover:bg-slate-700"
-          >
-            5.0x
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ! HERE HERE HERE -->
-    <div class="absolute bottom-5 right-8 z-10 w-80 rounded-xl glass-panel p-5">
-      <div class="unskew">
-        <h1
-          class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3"
-        >
-          Data Statistics
-        </h1>
-        <div
-          id="all-data-stats-container"
-          class="text-[9px] font-bold tracking-wider text-slate-400 flex flex-col gap-1 max-h-[50vh] overflow-y-auto"
-        >
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">name:</span
-            ><span
-              id="stat-name"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">velocity:</span
-            ><span
-              id="stat-velocity"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">mach:</span
-            ><span
-              id="stat-mach"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">energy:</span
-            ><span
-              id="stat-energy"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">pressure:</span
-            ><span
-              id="stat-pressure"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">yield:</span
-            ><span
-              id="stat-yield"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">depth:</span
-            ><span
-              id="stat-depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">prev_strike_depth:</span
-            ><span
-              id="stat-prev_strike_depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">rigid_depth:</span
-            ><span
-              id="stat-rigid_depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">hydro_depth:</span
-            ><span
-              id="stat-hydro_depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">fail:</span
-            ><span
-              id="stat-fail"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">shock_prob:</span
-            ><span
-              id="stat-shock_prob"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">exp_survives:</span
-            ><span
-              id="stat-exp_survives"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">is_kinetic:</span
-            ><span
-              id="stat-is_kinetic"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">regime:</span
-            ><span
-              id="stat-regime"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">summary:</span
-            ><span
-              id="stat-summary"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">proj_length:</span
-            ><span
-              id="stat-proj_length"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">proj_diameter:</span
-            ><span
-              id="stat-proj_diameter"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">proj_name:</span
-            ><span
-              id="stat-proj_name"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">target_name:</span
-            ><span
-              id="stat-target_name"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">explosive_mass:</span
-            ><span
-              id="stat-explosive_mass"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">explosion_scale:</span
-            ><span
-              id="stat-explosion_scale"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">crater_wide_radius:</span
-            ><span
-              id="stat-crater_wide_radius"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">crater_narrow_radius:</span
-            ><span
-              id="stat-crater_narrow_radius"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >camera_shake_magnitude:</span
-            ><span
-              id="stat-camera_shake_magnitude"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">time_scale_pen:</span
-            ><span
-              id="stat-time_scale_pen"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">erosion_occurred:</span
-            ><span
-              id="stat-erosion_occurred"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">final_rod_length:</span
-            ><span
-              id="stat-final_rod_length"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">erosion_length_lost:</span
-            ><span
-              id="stat-erosion_length_lost"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >dynamic_increase_factor:</span
-            ><span
-              id="stat-dynamic_increase_factor"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">bar_wave_speed:</span
-            ><span
-              id="stat-bar_wave_speed"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >shock_pressure_gpa_peak:</span
-            ><span
-              id="stat-shock_pressure_gpa_peak"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >shock_pulse_duration_us:</span
-            ><span
-              id="stat-shock_pulse_duration_us"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >previous_strike_depth:</span
-            ><span
-              id="stat-previous_strike_depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >cumulative_breach_depth:</span
-            ><span
-              id="stat-cumulative_breach_depth"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">kinetic_shock_joules:</span
-            ><span
-              id="stat-kinetic_shock_joules"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase"
-              >total_explosive_yield:</span
-            ><span
-              id="stat-total_explosive_yield"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">altitude_ft:</span
-            ><span
-              id="stat-altitude_ft"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">premature_detonation:</span
-            ><span
-              id="stat-premature_detonation"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">x_acceleration:</span
-            ><span
-              id="stat-x_acceleration"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-          <div
-            class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1"
-          >
-            <span class="text-cyan-600/70 lowercase">y_acceleration:</span
-            ><span
-              id="stat-y_acceleration"
-              class="text-slate-200 text-right break-all ml-2"
-              >-</span
-            >
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- ! HERE HERE HERE -->
-
-    <!-- Scenarios -->
-    <div
-      class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto"
-    >
-      <div class="unskew flex gap-3 items-center">{{SCENARIO_BUTTONS}}</div>
-    </div>
-
+      const root = ReactDOM.createRoot(document.getElementById("react-root"));
+      root.render(<App />);
+    </script>
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -1524,11 +1070,9 @@
 
       function toggleFollowCam() {
         followCam = !followCam;
-        const btn = document.getElementById("btn-follow");
-        btn.innerText = followCam ? "Follow Cam: ON" : "Follow Cam: OFF";
-        btn.className = followCam
-          ? "px-2 py-2 rounded bg-emerald-900/80 hover:bg-emerald-500 hover:text-black font-semibold text-xs border border-emerald-500 transition"
-          : "px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition";
+        if (window.ReactAPI) {
+          window.ReactAPI.setFollowCam(followCam);
+        }
       }
 
       function setSimSpeed(speed) {
@@ -1599,61 +1143,22 @@
         });
       }
 
-      function tweenNumber(elId, newVal, formatFn) {
-        const el = document.getElementById(elId);
-        const oldVal = parseFloat(el.getAttribute("data-val") || 0);
-        new TWEEN.Tween({ val: oldVal })
-          .to({ val: newVal }, 100)
-          .onUpdate(function (obj) {
-            el.innerText = formatFn(obj.val);
-            el.setAttribute("data-val", obj.val);
-          })
-          .start();
+            function tweenNumber(elId, newVal, formatFn) {
+        // Obsolete in React paradigm, kept for compatibility if needed elsewhere
       }
 
       function updateHUD(frame) {
-        tweenNumber("hud-velocity", frame.v, (v) => v.toFixed(1) + " m/s");
-
-        if (frame.p !== undefined) {
-          tweenNumber("hud-pressure", frame.p, (p) => p.toFixed(2) + " GPa");
-          const yieldLim = currentData.yield || 2.0; // fallback
-          const pPct = Math.min(100, (frame.p / yieldLim) * 100);
-          document.getElementById("bar-pressure").style.width = pPct + "%";
-
-          if (frame.p > yieldLim)
-            document.getElementById("bar-pressure").className =
-              "bg-rose-500 h-full progress-bar";
-          else if (pPct > 80)
-            document.getElementById("bar-pressure").className =
-              "bg-amber-400 h-full progress-bar";
-          else
-            document.getElementById("bar-pressure").className =
-              "bg-cyan-400 h-full progress-bar";
-        }
-
-        tweenNumber("hud-depth", Math.abs(frame.y), (y) => y.toFixed(2) + " m");
-        document.getElementById("hud-depth-label").innerText =
-          animState === "DROPPING" ? "ALTITUDE" : "PENETRATION DEPTH";
-
-        if (animState === "PENETRATING") {
-          tweenNumber("hud-gforce", frame.g ?? 0, (g) => g.toFixed(0) + " G");
-
-          // Thermal heat glow mapping is handled in the main render loop for the 3D mesh
-        }
-
-        // CEB-FIP DIF / WAPM erosion phase telemetry (penetration-phase only)
-        if (frame.dif !== undefined) {
-          tweenNumber("hud-dif", frame.dif, (d) => d.toFixed(2) + "x");
-        }
-        if (frame.rl !== undefined) {
-          tweenNumber("hud-length", frame.rl, (l) => l.toFixed(2) + " m");
-        }
-        if (frame.e !== undefined) {
-          const phaseEl = document.getElementById("hud-phase");
-          phaseEl.innerText = frame.e ? "ERODING (WAPM)" : "RIGID";
-          phaseEl.className = frame.e
-            ? "text-purple-300 font-bold text-sm"
-            : "text-cyan-300 font-bold text-sm";
+        // Send state to React
+        if (window.ReactAPI) {
+            window.ReactAPI.setFrameData({
+                velocity: frame.v !== undefined ? frame.v : 0,
+                pressure: frame.p !== undefined ? frame.p : 0,
+                depth: frame.y !== undefined ? Math.abs(frame.y) : 0,
+                gforce: frame.g !== undefined ? frame.g : 0,
+                dif: frame.dif !== undefined ? frame.dif : 1.0,
+                length: frame.rl !== undefined ? frame.rl : 0,
+                phase: frame.e ? "ERODING (WAPM)" : (animState === "DROPPING" ? "FREEFALL" : "RIGID")
+            });
         }
 
         // Update ECharts
@@ -1666,94 +1171,26 @@
         }
 
         // Throttle chart updates slightly to prevent layout thrashing on fast sims
-        if (Math.random() > 0.5) {
+        if (Math.random() > 0.5 && typeof updateChart === 'function') {
           updateChart();
         }
       }
 
       function buildFinalBadges(data) {
-        const regimeBadge = document.getElementById("hud-regime-badge");
-        const expBadge = document.getElementById("hud-exp-badge");
-        document.getElementById("hud-scenario").innerText = data.name;
-
-        // --- INJECT ALL DATA INTO STATISTICS PANEL ---
-        for (const key in data) {
-          if (
-            key === "drop_frames" ||
-            key === "pen_frames" ||
-            key === "target_layers"
-          )
-            continue;
-
-          let val = data[key];
-          if (typeof val === "number") {
-            val = val % 1 === 0 ? val.toString() : val.toFixed(4);
-          }
-
-          const el = document.getElementById("stat-" + key);
-          if (el) {
-            el.innerText = val;
-          }
-        }
-        // ---------------------------------------------
-
-        // Reset yield mark
-        document.getElementById("bar-yield-mark").style.left = "100%"; // Assuming bar max is yield * 1.2
-
-        // Walker-Wasley shock initiation telemetry (peak values, static per scenario)
-        document.getElementById("hud-shock-pressure").innerText =
-          (data.shock_pressure_gpa_peak || 0).toFixed(2) + " GPa";
-        document.getElementById("hud-shock-ratio").innerText =
-          Math.min(100, data.shock_prob || 0).toFixed(0) + "%";
-
-        // Regime / outcome text straight from the C++ physics engine (previously computed but
-        // never surfaced in the UI)
-        document.getElementById("hud-regime-text").innerText =
-          (data.regime || "-") +
-          (data.summary ? " \u2014 " + data.summary : "");
-
-        // Reset phase/DIF/rod-length displays for the newly selected scenario
-        document.getElementById("hud-phase").innerText = data.is_kinetic
-          ? "KINETIC APPROACH"
-          : "RIGID";
-        document.getElementById("hud-dif").innerText = "1.00x";
-        document.getElementById("hud-length").innerText =
-          (data.proj_length || 0).toFixed(2) + " m";
-
+        // We only handle 3D mesh swapping here, React handles the UI
         if (data.is_kinetic) {
-          regimeBadge.innerText = "HYPERVELOCITY KINETIC ROD";
-          regimeBadge.className =
-            "px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-purple-500/20 text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.5)] pulse-active";
-          expBadge.innerText = "PAYLOAD: ZERO EXPLOSIVE MASS";
-          expBadge.className =
-            "px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-slate-800/80 text-slate-300 border border-slate-700";
-
-          // Swap geometry
-          projectile.geometry.dispose();
-          let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = createGBU57Geometry(
-            pRadius,
-            currentData.proj_length,
-          );
-          projectile.material.metalness = 0.5;
-          projectile.material.color.setHex(0xa855f7);
-        } else if (data.fail || !data.exp_survives) {
-          regimeBadge.innerText = data.fail ? "CASING SHATTER" : "FUZE FAILURE";
-          regimeBadge.className =
-            "px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-400 border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.5)] pulse-active";
-          expBadge.innerText = data.fail
-            ? "PAYLOAD DESTROYED"
-            : "EXPLOSIVE CHARGE FAILED";
-          expBadge.className =
-            "px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-rose-950/60 text-rose-300 border border-rose-800/60";
-        } else {
-          regimeBadge.innerText = "RIGID DRILL PENETRATION";
-          regimeBadge.className =
-            "px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.5)] pulse-active";
-          expBadge.innerText = "PAYLOAD SURVIVED";
-          expBadge.className =
-            "px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-emerald-950/60 text-emerald-300 border border-emerald-800/60";
+          if (projectile && projectile.geometry) {
+            projectile.geometry.dispose();
+            let pRadius = currentData.proj_diameter / 2.0;
+            projectile.geometry = createGBU57Geometry(
+              pRadius,
+              currentData.proj_length
+            );
+            projectile.material.metalness = 0.5;
+            projectile.material.color.setHex(0xa855f7);
+          }
         }
+        // Non-kinetic projectile appearance is handled by selectScenario
       }
 
       function clearGroup(group) {
@@ -1789,15 +1226,9 @@
         stopAnthem(); // Stop any running national anthem sound
 
         currentData = scenarios[index];
-        document.querySelectorAll(".scenario-btn").forEach((btn, i) => {
-          if (i === index) {
-            btn.className =
-              "scenario-btn px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.6)] scale-105";
-          } else {
-            btn.className =
-              "scenario-btn px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-slate-800/80 hover:bg-cyan-500/20 hover:text-cyan-300 text-slate-300 border border-slate-700/60";
-          }
-        });
+        if (window.ReactAPI) {
+            window.ReactAPI.setActiveScenarioIdx(index);
+        }
 
         let maxAlt = 0;
         if (currentData.drop_frames && currentData.drop_frames.length > 0) {
