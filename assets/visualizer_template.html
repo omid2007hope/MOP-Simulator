@@ -63,16 +63,26 @@
     <script type="text/babel">
       const { useState, useEffect, useCallback, useMemo } = React;
 
-      // 41 fields exported by telemetry_exporter.cpp — must not change
+      // Complete fields exported by telemetry_exporter.cpp
       const STAT_KEYS = [
         "name", "velocity", "mach", "energy", "pressure", "yield", "depth", "prev_strike_depth",
         "rigid_depth", "hydro_depth", "fail", "shock_prob", "exp_survives", "is_kinetic", "regime",
-        "summary", "proj_length", "proj_diameter", "proj_name", "target_name", "explosive_mass",
-        "explosion_scale", "crater_wide_radius", "crater_narrow_radius", "camera_shake_magnitude",
-        "time_scale_pen", "erosion_occurred", "final_rod_length", "erosion_length_lost",
-        "dynamic_increase_factor", "bar_wave_speed", "shock_pressure_gpa_peak", "shock_pulse_duration_us",
-        "previous_strike_depth", "cumulative_breach_depth", "kinetic_shock_joules",
-        "total_explosive_yield", "altitude_ft", "premature_detonation", "x_acceleration", "y_acceleration"
+        "summary", "proj_length", "proj_diameter", "proj_name", "target_name", "proj_total_mass",
+        "proj_curvature_noseReduce", "proj_casing_density", "proj_casing_wall_thickness",
+        "proj_area_moment_inertia", "proj_elastic_modulus", "proj_hugoniot_c0", "proj_hugoniot_s",
+        "proj_explosive_critical_energy", "proj_explosive_energy_j_per_kg", "proj_specific_heat",
+        "proj_melting_point", "proj_heat_of_fusion", "flight_path_angle", "obliquity_angle",
+        "angle_of_attack", "cons_gravity", "cons_pi", "cons_friction_factor", "cons_speed_of_sound",
+        "explosive_mass", "explosion_scale", "crater_wide_radius", "crater_narrow_radius",
+        "camera_shake_magnitude", "time_scale_pen", "erosion_occurred", "final_rod_length",
+        "erosion_length_lost", "dynamic_increase_factor", "bar_wave_speed", "shock_pressure_gpa_peak",
+        "shock_pulse_duration_us", "previous_strike_depth", "cumulative_breach_depth",
+        "kinetic_shock_joules", "total_explosive_yield", "altitude_ft", "premature_detonation",
+        "x_acceleration", "y_acceleration", "trim_deg", "trim_rad", "fpa_rad_corrected", "area",
+        "boom_time", "boom_alt", "impact_velocity", "impact_pitch", "initial_shaft_depth",
+        "critical_angle_threshold", "average_density", "aircraft_bomber_totalMass",
+        "aircraft_bomber_wingArea", "aircraft_bomber_liftCurveSlope", "cons_universalGasConstant",
+        "cons_molarMassAir", "cons_adiabaticIndexAir", "cons_earthRadius", "layer_bottom_depths"
       ];
 
       function App() {
@@ -108,6 +118,26 @@
             <div key={key} className={`flex justify-between items-center border-b pb-1 pt-1 ${isLinked ? 'border-emerald-900/40' : 'border-rose-900/40'}`}>
               <span className={`text-[9px] uppercase tracking-wider ${isLinked ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>{key}</span>
               <span className={`text-[10px] text-right font-mono font-bold break-all ml-2 ${isLinked ? 'text-emerald-300' : 'text-rose-400'}`}>
+                {val.toString()}
+              </span>
+            </div>
+          );
+        };
+
+        const TRANSIENT_KEYS = [
+          "cvx", "cvy", "up", "us", "ps", "tp", "se", "af", "bm", "mbs", 
+          "sr", "es", "tf", "iev", "hr", "eh", "ml", "eld", "dc", "df", "gp"
+        ];
+        
+        const renderTransientRow = (key) => {
+          let val = frameData[key];
+          if (val === undefined || val === null) val = "NULL";
+          else if (typeof val === 'number') val = val % 1 === 0 ? val.toString() : val.toFixed(4);
+          const isLinked = val !== "NULL";
+          return (
+            <div key={key} className={`flex justify-between items-center border-b pb-1 pt-1 ${isLinked ? 'border-cyan-900/40' : 'border-rose-900/40'}`}>
+              <span className={`text-[9px] uppercase tracking-wider ${isLinked ? 'text-cyan-500/80' : 'text-rose-500/80'}`}>{key}</span>
+              <span className={`text-[10px] text-right font-mono font-bold break-all ml-2 ${isLinked ? 'text-cyan-300' : 'text-rose-400'}`}>
                 {val.toString()}
               </span>
             </div>
@@ -224,7 +254,7 @@
               </div>
             </div>
 
-            {/* Bottom Right Data Statistics — all 41 STAT_KEYS from telemetry_exporter.cpp */}
+            {/* Bottom Right Data Statistics — all STAT_KEYS and TRANSIENT_KEYS from telemetry_exporter.cpp */}
             <div className="absolute bottom-5 right-8 w-[600px] rounded-xl glass-panel p-5 pointer-events-auto shadow-[0_0_30px_rgba(0,0,0,0.8)]">
               <div className="unskew">
                 <div className="flex justify-between items-end border-b border-slate-700/50 pb-2 mb-3">
@@ -251,7 +281,10 @@
                 </div>
                 
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1 max-h-[50vh] overflow-y-auto pr-3">
+                  <div className="col-span-2 text-[10px] font-black text-slate-400 border-b border-slate-700 mt-2 mb-1">STATIC SCENARIO DATA</div>
                   {STAT_KEYS.map(key => renderStatRow(key))}
+                  <div className="col-span-2 text-[10px] font-black text-cyan-400/70 border-b border-slate-700 mt-4 mb-1">LIVE TRANSIENT FRAME DATA</div>
+                  {TRANSIENT_KEYS.map(key => renderTransientRow(key))}
                 </div>
               </div>
             </div>
@@ -776,7 +809,11 @@
             gforce:   frame.g!==undefined?frame.g:0,
             dif:      frame.dif!==undefined?frame.dif:1.0,
             length:   frame.rl!==undefined?frame.rl:0,
-            phase:    frame.e?"ERODING (WAPM)":(animState==="DROPPING"?"FREEFALL":"RIGID")
+            phase:    frame.e?"ERODING (WAPM)":(animState==="DROPPING"?"FREEFALL":"RIGID"),
+            cvx: frame.cvx, cvy: frame.cvy, up: frame.up, us: frame.us, ps: frame.ps,
+            tp: frame.tp, se: frame.se, af: frame.af, bm: frame.bm, mbs: frame.mbs, sr: frame.sr,
+            es: frame.es, tf: frame.tf, iev: frame.iev, hr: frame.hr, eh: frame.eh, ml: frame.ml, eld: frame.eld,
+            dc: frame.dc, df: frame.df, gp: frame.gp
           });
           _lastHudTime = now;
         }
@@ -832,7 +869,11 @@
           dif:L(f0.dif,f1.dif),rl:L(f0.rl,f1.rl),ob:L(f0.ob,f1.ob),
           obliquity_deg:f0.obliquity_deg!==undefined?L(f0.obliquity_deg,f1.obliquity_deg):(f0.ob!==undefined?L(f0.ob,f1.ob):undefined),
           aoa_deg:L(f0.aoa_deg,f1.aoa_deg),pr:L(f0.pr,f1.pr),
-          sb:fac<0.5?f0.sb:f1.sb, e:fac<0.5?f0.e:f1.e
+          sb:fac<0.5?f0.sb:f1.sb, e:fac<0.5?f0.e:f1.e,
+          cvx:L(f0.cvx,f1.cvx), cvy:L(f0.cvy,f1.cvy), up:L(f0.up,f1.up), us:L(f0.us,f1.us), ps:L(f0.ps,f1.ps),
+          tp:L(f0.tp,f1.tp), se:L(f0.se,f1.se), af:L(f0.af,f1.af), bm:L(f0.bm,f1.bm), mbs:L(f0.mbs,f1.mbs),
+          sr:L(f0.sr,f1.sr), es:L(f0.es,f1.es), tf:L(f0.tf,f1.tf), iev:L(f0.iev,f1.iev), hr:L(f0.hr,f1.hr),
+          eh:L(f0.eh,f1.eh), ml:L(f0.ml,f1.ml), eld:L(f0.eld,f1.eld), dc:L(f0.dc,f1.dc), df:L(f0.df,f1.df), gp:L(f0.gp,f1.gp)
         };
       }
 

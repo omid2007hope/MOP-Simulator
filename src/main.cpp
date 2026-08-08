@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
 	// comment why if -- use target from JSON database if available
 	if (auto t = ConfigLoader::getTargetByName(targetsDb,
-						   "High-Quality Hardened Concrete Structure")) {
+						   "High-Quality Hardened Concrete")) {
 		object = *t;
 	}
 

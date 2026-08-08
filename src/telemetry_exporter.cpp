@@ -5,8 +5,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <regex>
+#include <sstream>
 
 // files
 #include "telemetry_exporter.hpp"
@@ -40,6 +40,12 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		<< "---------------------------------------------------------------------------------"
 		   "------------------\n\n";
 
+	auto leftPad = [](const std::string& str, int width) {
+		std::stringstream ss;
+		ss << std::left << std::setw(width) << str;
+		return ss.str();
+	};
+
 	if (r.is_kinetic_rod) {
 		std::cout << "        AIR / SPACE             |  KINETIC STRIKE ROD APPROACH (Mach "
 			  << std::setprecision(1) << r.mach_number << ")\n";
@@ -57,22 +63,31 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		std::cout
 			<< "     *    *   *  *  *  *  *  *  |       ||       ||   << HYPERVELOCITY "
 			   "KINETIC EROSION >>       |\n";
-		std::cout << "    *   [ KINETIC CRATERING ] * |       ||       ||   P_dyn = "
-			  << std::setprecision(2) << (r.dynamic_pressure / 1e9)
-			  << " GPa                  |\n";
+		
+		std::stringstream ss_pdyn; 
+		ss_pdyn << "P_dyn = " << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa";
+		std::cout << "    *   [ KINETIC CRATERING ] * |       ||       ||   "
+			  << leftPad(ss_pdyn.str(), 35) << "|\n";
+			  
 		std::cout
 			<< "     *    *   *  *  *  *  *  *  |       ||=======||   (Penetrating via "
 			   "hydrodynamic ratio)      |\n";
 		std::cout << "    "
 			     ".~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\\.~.~.~./"
 			     ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Deep Kinetic Channel]\n";
+			     
 		double target_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
-		std::cout
-			<< "    .   Concrete Target         |         \\     /     Max Penetration: "
-			<< std::setprecision(1) << r.actual_penetration_depth << " meters    |\n";
-		std::cout << "    .   (Density: " << target_density
-			  << " kg/m^3) |          \\___/      ("
-			  << r.actual_penetration_depth * 3.28084 << " feet deep into target) |\n";
+		
+		std::stringstream ss_maxpen;
+		ss_maxpen << "Max Penetration: " << std::fixed << std::setprecision(1) << r.actual_penetration_depth << " meters";
+		std::cout << "    .   Concrete Target         |         \\     /     "
+			  << leftPad(ss_maxpen.str(), 29) << "|\n";
+			  
+		std::stringstream ss_dens; ss_dens << "(Density: " << target_density << " kg/m^3)";
+		std::stringstream ss_depth_ft; ss_depth_ft << "(" << std::fixed << std::setprecision(1) << (r.actual_penetration_depth * 3.28084) << " feet deep into target)";
+		std::cout << "    .   " << leftPad(ss_dens.str(), 24) << "|          \\___/      "
+			  << leftPad(ss_depth_ft.str(), 28) << "|\n";
+			  
 		std::cout
 			<< "    .                           |              *                         "
 			   "       |\n";
@@ -97,12 +112,13 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		std::cout
 			<< "     *    *   *  *  *  *  *  *  |   << IMPACT SHOCK / FAILURE ZONE >>    "
 			   "     |\n";
-		std::cout << "    *  ["
-			  << (r.casing_failure ? "SURFACE DETONATION!" : "SHOCK FUZE FAILURE!")
-			  << "] * |   (P_dyn = " << std::setprecision(1)
-			  << (r.dynamic_pressure / 1e9)
-			  << " GPa, Shock Damage = " << std::setprecision(0)
-			  << r.shock_damage_prob_percent << "%)     |\n";
+			   
+		std::stringstream ss_shock; 
+		ss_shock << "(P_dyn = " << std::fixed << std::setprecision(1) << (r.dynamic_pressure / 1e9) << " GPa, Shock Damage = " << std::setprecision(0) << r.shock_damage_prob_percent << "%)";
+		std::string fail_msg = (r.casing_failure ? "SURFACE DETONATION!" : "SHOCK FUZE FAILURE!");
+		std::cout << "    *  [" << fail_msg << "] * |   "
+			  << leftPad(ss_shock.str(), 37) << "|\n";
+			  
 		std::cout
 			<< "     *    *   *  *  *  *  *  *  |                                        "
 			   "     |\n";
@@ -113,13 +129,15 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		std::cout
 			<< "    .   Concrete Target         |   Casing/Payload damaged upon impact.  "
 			   "     |\n";
+			   
 		double target_density2 = target.layers.empty() ? 2500.0 : target.layers[0].density;
-		std::cout << "    .   (Density: " << target_density2
-			  << " kg/m^3) |   Max Penetration Depth:                    |\n";
-		std::cout << "    .                           |   D = " << std::setprecision(2)
-			  << r.actual_penetration_depth << " m ("
-			  << r.actual_penetration_depth * 3.28084
-			  << " ft)                         |\n";
+		
+		std::stringstream ss_dens2; ss_dens2 << "(Density: " << target_density2 << " kg/m^3)";
+		std::cout << "    .   " << leftPad(ss_dens2.str(), 24) << "|   Max Penetration Depth:                    |\n";
+		
+		std::stringstream ss_d2; ss_d2 << "D = " << std::fixed << std::setprecision(2) << r.actual_penetration_depth << " m (" << (r.actual_penetration_depth * 3.28084) << " ft)";
+		std::cout << "    .                           |   " << leftPad(ss_d2.str(), 41) << "|\n";
+		
 		std::cout
 			<< "    "
 			   ".~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~"
@@ -145,28 +163,41 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		std::cout
 			<< "                                |       ||       ||                      "
 			   "     |\n";
-		std::cout << "     [ RIGID PENETRATION ]      |       ||       ||   P_dyn = "
-			  << std::setprecision(2) << (r.dynamic_pressure / 1e9)
-			  << " GPa           |\n";
-		std::cout << "     (Casing intact & payload   |       ||   *   ||   (Shock Damage: "
-			  << std::setprecision(1) << r.shock_damage_prob_percent << "%)      |\n";
+			   
+		std::stringstream ss_pdyn3; ss_pdyn3 << "P_dyn = " << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa";
+		std::cout << "     [ RIGID PENETRATION ]      |       ||       ||   "
+			  << leftPad(ss_pdyn3.str(), 35) << "|\n";
+			  
+		std::stringstream ss_sd3; ss_sd3 << "(Shock Damage: " << std::fixed << std::setprecision(1) << r.shock_damage_prob_percent << "%)";
+		std::cout << "     (Casing intact & payload   |       ||   *   ||   "
+			  << leftPad(ss_sd3.str(), 35) << "|\n";
+			  
 		std::cout
 			<< "      survives impact shock)    |       ||=======||                      "
 			   "         |\n";
-		std::cout << "                                |       ||   v   ||   Rigid Depth: "
-			  << std::setprecision(1) << r.rigid_penetration << " m          |\n";
+			   
+		std::stringstream ss_rd3; ss_rd3 << "Rigid Depth: " << std::fixed << std::setprecision(1) << r.rigid_penetration << " m";
+		std::cout << "                                |       ||   v   ||   "
+			  << leftPad(ss_rd3.str(), 35) << "|\n";
+			  
 		std::cout << "    "
 			     ".~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~\\.~.~.~./"
 			     ".~.~.~.~.~.~.~.~.~.~.~.~.~.~. [Drilling Deep into Rock]\n";
 		std::cout
 			<< "    .   Concrete Target         |         \\     /                       "
 			   "      |\n";
+			   
 		double target_density3 = target.layers.empty() ? 2500.0 : target.layers[0].density;
-		std::cout << "    .   (Density: " << target_density3
-			  << " kg/m^3) |          \\___/  <-- Reaches " << std::setprecision(1)
-			  << r.actual_penetration_depth << " meters    |\n";
-		std::cout << "    .                           |              *      ("
-			  << r.actual_penetration_depth * 3.28084 << " feet underground) |\n";
+		
+		std::stringstream ss_dens3; ss_dens3 << "(Density: " << target_density3 << " kg/m^3)";
+		std::stringstream ss_reaches3; ss_reaches3 << "<-- Reaches " << std::fixed << std::setprecision(1) << r.actual_penetration_depth << " meters";
+		std::cout << "    .   " << leftPad(ss_dens3.str(), 24) << "|          \\___/  "
+			  << leftPad(ss_reaches3.str(), 28) << "|\n";
+			  
+		std::stringstream ss_ft3; ss_ft3 << "(" << std::fixed << std::setprecision(1) << (r.actual_penetration_depth * 3.28084) << " feet underground)";
+		std::cout << "    .                           |              *      "
+			  << leftPad(ss_ft3.str(), 28) << "|\n";
+			  
 		std::cout
 			<< "    "
 			   ".~.~.~.~.~.~.~.~.~.~.~.~.~.~+.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~"
@@ -227,28 +258,33 @@ void printReport(const std::vector<SimulationResult>& results,
 		   "==================\n\n";
 
 	// Print Summary Table
-	std::cout << std::left << std::setw(20) << "Scenario" << std::right << std::setw(12)
-		  << "Velocity" << std::right << std::setw(9) << "Mach" << std::right
-		  << std::setw(14) << "Dyn.Press" << std::right << std::setw(12) << "Depth (m)"
-		  << std::right << std::setw(12) << "Shock Dmg"
-		  << "  " << std::left << std::setw(30) << "Regime" << std::left << std::setw(20)
-		  << "Outcome" << "\n";
-	std::cout << std::string(130, '-') << "\n";
+	std::cout << std::left << std::setw(20) << "Scenario" 
+		  << std::right << std::setw(14) << "Velocity" 
+		  << std::right << std::setw(10) << "Mach" 
+		  << std::right << std::setw(15) << "Dyn.Press" 
+		  << std::right << std::setw(14) << "Depth (m)" 
+		  << std::right << std::setw(12) << "Shock Dmg" 
+		  << "  " << std::left << std::setw(30) << "Regime" 
+		  << std::left << std::setw(20) << "Outcome" << "\n";
+	std::cout << std::string(135, '-') << "\n";
 
 	for (const auto& r : results) {
-		std::cout << std::left << std::setw(20) << r.scenario_name << std::right
-			  << std::setw(8) << std::fixed << std::setprecision(1) << r.velocity
-			  << " m/s" << std::right << std::setw(6) << std::fixed
-			  << std::setprecision(1) << r.mach_number << "x" << std::right
-			  << std::setw(9) << std::fixed << std::setprecision(2)
-			  << (r.dynamic_pressure / 1e9) << " GPa" << std::right << std::setw(9)
-			  << std::fixed << std::setprecision(1) << r.actual_penetration_depth
-			  << " m" << std::right << std::setw(10) << std::fixed
-			  << std::setprecision(0) << r.shock_damage_prob_percent << "%"
-			  << "  " << std::left << std::setw(30) << r.regime << std::left
-			  << std::setw(20) << r.outcome_summary << "\n";
+		std::stringstream vel_ss; vel_ss << std::fixed << std::setprecision(1) << r.velocity << " m/s";
+		std::stringstream mach_ss; mach_ss << std::fixed << std::setprecision(1) << r.mach_number << "x";
+		std::stringstream dyn_ss; dyn_ss << std::fixed << std::setprecision(2) << (r.dynamic_pressure / 1e9) << " GPa";
+		std::stringstream dep_ss; dep_ss << std::fixed << std::setprecision(1) << r.actual_penetration_depth << " m";
+		std::stringstream shk_ss; shk_ss << std::fixed << std::setprecision(0) << r.shock_damage_prob_percent << "%";
+
+		std::cout << std::left << std::setw(20) << r.scenario_name 
+			  << std::right << std::setw(14) << vel_ss.str() 
+			  << std::right << std::setw(10) << mach_ss.str() 
+			  << std::right << std::setw(15) << dyn_ss.str() 
+			  << std::right << std::setw(14) << dep_ss.str() 
+			  << std::right << std::setw(12) << shk_ss.str() 
+			  << "  " << std::left << std::setw(30) << r.regime 
+			  << std::left << std::setw(20) << r.outcome_summary << "\n";
 	}
-	std::cout << std::string(130, '-') << "\n\n";
+	std::cout << std::string(135, '-') << "\n\n";
 
 	// Print ASCII 3D cross sections for all simulated scenarios
 	for (const auto& r : results) {
@@ -322,10 +358,12 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		dropFramesJson << "[";
 		for (size_t j = 0; j < r.drop_frames.size(); ++j) {
 			const auto& f = r.drop_frames[j];
-			dropFramesJson << "{t:" << f.time << ",y:" << f.altitude
-				       << ",v:" << f.velocity << ",m:" << f.mach
-				       << ",sb:" << (f.is_sonic_boom ? "true" : "false")
-				       << ",pr:" << f.pitch_rad << "}";
+			dropFramesJson
+				<< "{t:" << f.time << ",y:" << f.altitude << ",v:" << f.velocity
+				<< ",m:" << f.mach << ",sb:" << (f.is_sonic_boom ? "true" : "false")
+				<< ",pr:" << f.pitch_rad << ",cvx:" << f.current_vx
+				<< ",cvy:" << f.current_vy << ",dc:" << f.drag_coefficient
+				<< ",df:" << f.drag_force << ",gp:" << f.guidance_pull << "}";
 			if (j + 1 < r.drop_frames.size())
 				dropFramesJson << ",";
 		}
@@ -335,12 +373,21 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		penFramesJson << "[";
 		for (size_t j = 0; j < r.penetration_frames.size(); ++j) {
 			const auto& f = r.penetration_frames[j];
-			penFramesJson << "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
-				      << ",m:" << f.mach << ",p:" << (f.dynamic_pressure / 1.0e9)
-				      << ",g:" << f.g_force << ",h:" << f.heat
-				      << ",e:" << (f.is_eroding ? "true" : "false")
-				      << ",dif:" << f.dif << ",rl:" << f.remaining_length
-				      << ",ob:" << f.obliquity_deg << "}";
+			penFramesJson
+				<< "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
+				<< ",m:" << f.mach << ",p:" << (f.dynamic_pressure / 1.0e9)
+				<< ",g:" << f.g_force << ",h:" << f.heat
+				<< ",e:" << (f.is_eroding ? "true" : "false") << ",dif:" << f.dif
+				<< ",rl:" << f.remaining_length << ",ob:" << f.obliquity_deg
+				<< ",cvx:" << f.current_vx << ",cvy:" << f.current_vy
+				<< ",up:" << f.Up << ",us:" << f.Us << ",ps:" << f.P_shock
+				<< ",tp:" << f.transmitted_pressure << ",se:" << f.shock_energy
+				<< ",af:" << f.asymmetric_force << ",bm:" << f.bending_moment
+				<< ",mbs:" << f.max_bending_stress << ",sr:" << f.strain_rate
+				<< ",es:" << f.effective_strength << ",tf:" << f.tunnel_force
+				<< ",iev:" << f.interface_erosion_velocity << ",hr:" << f.heat_rate
+				<< ",eh:" << f.excess_heat << ",ml:" << f.mass_loss
+				<< ",eld:" << f.effective_linear_density << "}";
 			if (j + 1 < r.penetration_frames.size())
 				penFramesJson << ",";
 		}
@@ -352,7 +399,13 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 			const auto& lay = target.layers[k];
 			targetLayersJson << "{name:\"" << escapeJSON(lay.material_name)
 					 << "\",thickness:" << lay.thickness
-					 << ",density:" << lay.density << "}";
+					 << ",density:" << lay.density
+					 << ",compressive_strength:" << lay.compressive_strength
+					 << ",rebar_volume_fraction:" << lay.rebar_volume_fraction
+					 << ",rebar_yield_strength:" << lay.rebar_yield_strength
+					 << ",pulverized_depth:" << lay.pulverized_depth
+					 << ",hugoniot_c0:" << lay.hugoniot_c0
+					 << ",hugoniot_s:" << lay.hugoniot_s << "}";
 			if (k + 1 < target.layers.size())
 				targetLayersJson << ",";
 		}
@@ -361,21 +414,33 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		data << "            { name: \"" << escapeJSON(r.scenario_name)
 		     << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
 		     << ", energy: " << (r.kinetic_energy / 1e9)
-		     << ", pressure: " << (r.dynamic_pressure / 1e9)
-		     << ", yield: " << (proj.yield_strength / 1e9)
-		     << ", depth: " << r.actual_penetration_depth
-		     << ", prev_strike_depth: " << r.previous_strike_depth
-		     << ", rigid_depth: " << r.rigid_penetration
-		     << ", hydro_depth: " << r.hydro_penetration
-		     << ", fail: " << (r.casing_failure ? "true" : "false")
-		     << ", shock_prob: " << r.shock_damage_prob_percent
-		     << ", exp_survives: " << (r.explosive_charge_survives ? "true" : "false")
+		     << ", pressurvives: " << (r.explosive_charge_survives ? "true" : "false")
 		     << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
 		     << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary)
 		     << "\""
 		     << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
 		     << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
 		     << escapeJSON(target.name) << "\""
+		     << ", proj_total_mass: " << proj.total_mass
+		     << ", proj_curvature_noseReduce: " << proj.curvature_noseReduce
+		     << ", proj_casing_density: " << proj.casing_density
+		     << ", proj_casing_wall_thickness: " << proj.casing_wall_thickness
+		     << ", proj_area_moment_inertia: " << proj.area_moment_inertia
+		     << ", proj_elastic_modulus: " << proj.elastic_modulus
+		     << ", proj_hugoniot_c0: " << proj.hugoniot_c0
+		     << ", proj_hugoniot_s: " << proj.hugoniot_s
+		     << ", proj_explosive_critical_energy: " << proj.explosive_critical_energy
+		     << ", proj_explosive_energy_j_per_kg: " << proj.explosive_energy_j_per_kg
+		     << ", proj_specific_heat: " << proj.specific_heat
+		     << ", proj_melting_point: " << proj.melting_point
+		     << ", proj_heat_of_fusion: " << proj.heat_of_fusion
+		     << ", flight_path_angle: " << r.flight_path_angle
+		     << ", obliquity_angle: " << r.obliquity_angle
+		     << ", angle_of_attack: " << r.angle_of_attack
+		     << ", cons_gravity: " << PhysicsConstants {}.gravity
+		     << ", cons_pi: " << PhysicsConstants {}.PI
+		     << ", cons_friction_factor: " << PhysicsConstants {}.frictionFactor
+		     << ", cons_speed_of_sound: " << PhysicsConstants {}.SpeedOfSound
 		     << ", explosive_mass: " << r.explosive_mass
 		     << ", explosion_scale: " << r.explosion_scale
 		     << ", crater_wide_radius: " << r.crater_wide_radius
@@ -396,8 +461,29 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		     << ", altitude_ft: " << r.altitude_ft
 		     << ", premature_detonation: " << (r.premature_detonation ? "true" : "false")
 		     << ", x_acceleration: " << r.x_acceleration
-		     << ", y_acceleration: " << r.y_acceleration
-		     << ", target_layers: " << targetLayersJson.str()
+		     << ", y_acceleration: " << r.y_acceleration << ", trim_deg: " << r.trim_deg
+		     << ", trim_rad: " << r.trim_rad
+		     << ", fpa_rad_corrected: " << r.fpa_rad_corrected << ", area: " << r.area
+		     << ", boom_time: " << r.boom_time << ", boom_alt: " << r.boom_alt
+		     << ", impact_velocity: " << r.impact_velocity
+		     << ", impact_pitch: " << r.impact_pitch
+		     << ", initial_shaft_depth: " << r.initial_shaft_depth
+		     << ", critical_angle_threshold: " << r.critical_angle_threshold
+		     << ", average_density: " << r.average_density
+		     << ", aircraft_bomber_totalMass: " << r.aircraft_bomber_totalMass
+		     << ", aircraft_bomber_wingArea: " << r.aircraft_bomber_wingArea
+		     << ", aircraft_bomber_liftCurveSlope: " << r.aircraft_bomber_liftCurveSlope
+		     << ", cons_universalGasConstant: " << r.cons_universalGasConstant
+		     << ", cons_molarMassAir: " << r.cons_molarMassAir
+		     << ", cons_adiabaticIndexAir: " << r.cons_adiabaticIndexAir
+		     << ", cons_earthRadius: " << r.cons_earthRadius
+		     << ", target_layers: " << targetLayersJson.str() << ", layer_bottom_depths: [";
+		for (size_t k = 0; k < r.layer_bottom_depths.size(); ++k) {
+			data << r.layer_bottom_depths[k];
+			if (k + 1 < r.layer_bottom_depths.size())
+				data << ",";
+		}
+		data << "]"
 		     << ", drop_frames: " << dropFramesJson.str()
 		     << ", pen_frames: " << penFramesJson.str() << " }";
 		if (i + 1 < results.size())
@@ -408,15 +494,15 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 	auto replaceAll = [](std::string& str, const std::string& from, const std::string& to) {
 		if (from.empty())
 			return;
-		size_t start_pos = 0;
-		while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-			str.replace(start_pos, from.length(), to);
-			start_pos += to.length();
-		}
-	};
+			size_t start_pos = 0;
+			while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+				str.replace(start_pos, from.length(), to);
+				start_pos += to.length();
+			}
+		};
 
 	replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
-	
+
 	std::string dataStr = data.str();
 	dataStr = std::regex_replace(dataStr, std::regex("\\b(nan|NaN)\\b"), "null");
 	dataStr = std::regex_replace(dataStr, std::regex("\\b(inf|Infinity)\\b"), "null");

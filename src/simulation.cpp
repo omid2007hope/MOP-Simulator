@@ -174,7 +174,8 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					  << current_density << " kg/m^3) <<<\n";
 			}
 
-			if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame) {
+			if (drop_frame_counter++ % 10 == 0 || is_sonic_boom_frame ||
+			    current_altitude <= 0.0) {
 				TelemetryFrame frame;
 				frame.time = t_drop;
 				frame.altitude = current_altitude / 3.28084;
@@ -184,6 +185,19 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 				frame.is_sonic_boom = is_sonic_boom_frame;
 				frame.pitch_rad =
 					std::atan2(current_vx, std::max(0.001, current_vy));
+				
+				frame.current_vx = current_vx;
+				frame.current_vy = current_vy;
+				frame.drag_coefficient = EnvironmentPhysics::getMachDependentDrag(
+					frame.mach, dragCoefficient, proj, cons);
+				frame.drag_force = 0.5 * current_atm.density_kgm3 *
+						    std::pow(current_velocity, 2) * frame.drag_coefficient * area;
+				
+				double guidance_pull_val = 1.5 * cons.gravity;
+				double guidance_accel = (current_vx > 0.0) ? -guidance_pull_val : guidance_pull_val;
+				if (std::abs(current_vx) < 5.0) { guidance_accel = -current_vx * 1.5; }
+				frame.guidance_pull = guidance_accel;
+
 				res.drop_frames.push_back(frame);
 			}
 
@@ -219,6 +233,20 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 
 	impact_velocity = current_velocity;
 	impact_pitch = std::atan2(current_vx, std::max(0.001, current_vy));
+	
+	res.trim_deg = trim_deg;
+	res.trim_rad = trim_rad;
+	res.fpa_rad_corrected = fpa_rad_corrected;
+	res.area = area;
+	res.impact_velocity = impact_velocity;
+	res.impact_pitch = impact_pitch;
+	res.aircraft_bomber_totalMass = B2_Sprit_Strategic_Bomber.bomber_totalMass;
+	res.aircraft_bomber_wingArea = B2_Sprit_Strategic_Bomber.bomber_wingArea;
+	res.aircraft_bomber_liftCurveSlope = B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope;
+	res.cons_universalGasConstant = cons.universalGasConstant;
+	res.cons_molarMassAir = cons.molarMassAir;
+	res.cons_adiabaticIndexAir = cons.adiabaticIndexAir;
+	res.cons_earthRadius = cons.earthRadius;
 }
 
 void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
@@ -256,16 +284,17 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			<< initial_shaft_depth << " m\n";
 	}
 
-	std::vector<double> layer_bottom_depths;
+	std::vector<double> layer_bottom_depths_local;
 	double fullDepth = 0.0;
 	for (const auto& layer : target.layers) {
 		fullDepth += layer.thickness;
-		layer_bottom_depths.push_back(fullDepth);
+		layer_bottom_depths_local.push_back(fullDepth);
 	}
+	res.layer_bottom_depths = layer_bottom_depths_local;
 
 	size_t current_layer_idx = 0;
-	while (current_layer_idx < layer_bottom_depths.size() &&
-	       current_depth >= layer_bottom_depths[current_layer_idx]) {
+	while (current_layer_idx < layer_bottom_depths_local.size() &&
+	       current_depth >= layer_bottom_depths_local[current_layer_idx]) {
 		current_layer_idx++;
 	}
 	size_t last_layer_idx = current_layer_idx;
@@ -282,6 +311,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	if (current_velocity < 200.0) {
 		critical_angle_threshold = 50.0 * cons.PI / 180.0;
 	}
+	res.critical_angle_threshold = critical_angle_threshold;
 
 	if ((obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
 		res.casing_failure = true;
@@ -347,8 +377,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	};
 
 	while (current_velocity > 0.0 && !res.casing_failure && current_depth < fullDepth) {
-		while (current_layer_idx < layer_bottom_depths.size() &&
-		       current_depth >= layer_bottom_depths[current_layer_idx]) {
+		while (current_layer_idx < layer_bottom_depths_local.size() &&
+		       current_depth >= layer_bottom_depths_local[current_layer_idx]) {
 			current_layer_idx++;
 		}
 
@@ -366,7 +396,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 		const auto& layer = target.layers[current_layer_idx];
 		double layerEntryDepth =
-			(current_layer_idx == 0) ? 0.0 : layer_bottom_depths[current_layer_idx - 1];
+			(current_layer_idx == 0) ? 0.0 : layer_bottom_depths_local[current_layer_idx - 1];
 
 		double squaredVelocity = current_velocity * current_velocity;
 		double baseStrength = layer.compressive_strength +
@@ -394,12 +424,13 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		}
 
 		double asymmetric_force = 0.0;
+		double bending_moment = 0.0;
+		double max_bending_stress = 0.0;
 		if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
 			asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
 					   std::sin(obliquity_radians + angleOfAttack_radians);
-			double bending_moment = asymmetric_force * (proj.length / 2.0);
+			bending_moment = asymmetric_force * (proj.length / 2.0);
 
-			double max_bending_stress = 0.0;
 			if (proj.area_moment_inertia > 0) {
 				max_bending_stress = (bending_moment * (proj.diameter / 2.0)) /
 						     proj.area_moment_inertia;
@@ -592,6 +623,39 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			frame.dif = res.dynamic_increase_factor;
 			frame.remaining_length = erosion_active ? current_length : proj.length;
 			frame.obliquity_deg = obliquity_radians * 180.0 / cons.PI;
+			
+			frame.current_vx = 0.0;
+			frame.current_vy = current_velocity;
+			frame.Up = Up;
+			frame.Us = Us;
+			frame.P_shock = P_shock;
+			frame.transmitted_pressure = transmitted_pressure;
+			frame.shock_energy = shock_energy;
+			
+			frame.asymmetric_force = asymmetric_force; 
+			frame.bending_moment = bending_moment;
+			frame.max_bending_stress = max_bending_stress; 
+			
+			frame.strain_rate = std::fabs(current_velocity) / std::max(0.01, proj.diameter);
+			frame.effective_strength = baseStrength * res.dynamic_increase_factor;
+			
+			double fc_mpa = std::max(0.001, frame.effective_strength / 1.0e6);
+			double S = 82.6 * std::pow(fc_mpa, -0.544);
+			double CRH_val = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
+			double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) / (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
+			frame.tunnel_force = area * (S * frame.effective_strength + dragCoef * baseDensity * current_velocity * current_velocity);
+			
+			frame.interface_erosion_velocity = erosion_active ? 
+				(current_velocity * std::sqrt(baseDensity / std::max(1.0, proj.casing_density))) : 0.0;
+			
+			frame.heat_rate = (current_temperature > proj.melting_point) ? (current_temperature - proj.melting_point) : 0.0;
+			frame.excess_heat = (current_temperature > proj.melting_point) ? 
+				((current_temperature - proj.melting_point) * current_mass * proj.specific_heat) : 0.0;
+			frame.mass_loss = (proj.heat_of_fusion > 0 && frame.excess_heat > 0) ? 
+				(frame.excess_heat / proj.heat_of_fusion) : 0.0;
+			frame.effective_linear_density = erosion_active ? 
+				(proj.total_mass / proj.length) : (current_mass / std::max(0.01, current_length));
+
 			res.penetration_frames.push_back(frame);
 		}
 
@@ -684,6 +748,9 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 	res.scenario_name = scenario.name;
 	res.altitude_ft = scenario.altitude_ft;
 	res.velocity = scenario.velocity;
+	res.flight_path_angle = scenario.flight_path_angle;
+	res.obliquity_angle = scenario.obliquity_angle;
+	res.angle_of_attack = scenario.angle_of_attack;
 
 	res.mach_number = scenario.velocity / EnvironmentPhysics::standardAtmosphere(
 						      scenario.altitude_ft / 3.28084, cons)
