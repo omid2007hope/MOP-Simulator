@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Impact Physics & Penetration WebGL Visualizer</title>
-    
-    <!-- Tailwind CSS (Already installed via CDN) -->
+    <title>3D Impact Physics &amp; Penetration WebGL Visualizer</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel (To compile JSX in the browser) -->
+    <!-- Babel (JSX in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <link
@@ -19,94 +19,51 @@
       rel="stylesheet"
     />
     <style>
-      :root {
-        --hud-glow: rgba(56, 189, 248, 0.2);
+      :root { --hud-glow: rgba(56, 189, 248, 0.2); }
+      body { margin: 0; overflow: hidden; background-color: #05080f; font-family: "Inter", sans-serif; color: #f1f5f9; user-select: none; }
+      .mono { font-family: "JetBrains Mono", monospace; }
+      #renderCanvas {
+        width: 100vw; height: 100vh;
+        position: absolute; top: 0; left: 0; z-index: 1;
+        touch-action: none; outline: none;
       }
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #05080f;
-        font-family: "Inter", sans-serif;
-        color: #f1f5f9;
-        user-select: none;
-      }
-      .mono {
-        font-family: "JetBrains Mono", monospace;
-      }
-      #canvas-container {
-        width: 100vw;
-        height: 100vh;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 1;
-      }
-
-      /* Advanced Glassmorphism & Skew */
       .glass-panel {
-        background: rgba(9, 14, 23, 0.75);
-        backdrop-filter: blur(24px);
+        background: rgba(9, 14, 23, 0.75); backdrop-filter: blur(24px);
         border: 1px solid rgba(56, 189, 248, 0.25);
-        box-shadow:
-          inset 0 0 20px var(--hud-glow),
-          0 20px 50px rgba(0, 0, 0, 0.7);
+        box-shadow: inset 0 0 20px var(--hud-glow), 0 20px 50px rgba(0,0,0,0.7);
         transform: skewX(-2deg);
-        transition:
-          border-color 0.3s ease,
-          box-shadow 0.3s ease;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
       }
       .glass-panel:hover {
         border-color: rgba(56, 189, 248, 0.65);
-        box-shadow:
-          inset 0 0 30px rgba(56, 189, 248, 0.35),
-          0 20px 50px rgba(0, 0, 0, 0.85);
+        box-shadow: inset 0 0 30px rgba(56,189,248,0.35), 0 20px 50px rgba(0,0,0,0.85);
       }
-      .unskew {
-        transform: skewX(2deg);
-      } /* Unskew content inside */
-
-      .progress-bar {
-        transition: width 0.1s linear;
-      }
-
-      /* Custom scrollbar for scenarios */
-      ::-webkit-scrollbar {
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #0ea5e9;
-        border-radius: 10px;
-      }
-
-      .pulse-active {
-        animation: pulseGlow 1.5s infinite;
-      }
+      .unskew { transform: skewX(2deg); }
+      .progress-bar { transition: width 0.1s linear; }
+      ::-webkit-scrollbar { height: 6px; }
+      ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 10px; }
+      .pulse-active { animation: pulseGlow 1.5s infinite; }
       @keyframes pulseGlow {
-        0% {
-          box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
-        }
-        50% {
-          box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
-        }
-        100% {
-          box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
-        }
+        0%   { box-shadow: 0 0 10px rgba(6,182,212,0.4); }
+        50%  { box-shadow: 0 0 25px rgba(6,182,212,0.8); }
+        100% { box-shadow: 0 0 10px rgba(6,182,212,0.4); }
       }
     </style>
   </head>
   <body class="bg-slate-950 text-slate-100">
-    <div id="canvas-container"></div>
 
-        <div id="react-root" class="pointer-events-none absolute inset-0 z-10 w-full h-full overflow-hidden"></div>
+    <!-- Babylon.js renders directly to this canvas -->
+    <canvas id="renderCanvas"></canvas>
 
+    <!-- React UI overlay -->
+    <div id="react-root" class="pointer-events-none absolute inset-0 z-10 w-full h-full overflow-hidden"></div>
+
+    <!-- REACT UI LAYER — identical contract to previous Three.js version -->
     <script type="text/babel">
       const { useState, useEffect, useCallback, useMemo } = React;
 
-      // 41 fields for the stats panel
+      // 41 fields exported by telemetry_exporter.cpp — must not change
       const STAT_KEYS = [
         "name", "velocity", "mach", "energy", "pressure", "yield", "depth", "prev_strike_depth",
         "rigid_depth", "hydro_depth", "fail", "shock_prob", "exp_survives", "is_kinetic", "regime",
@@ -122,54 +79,29 @@
         const [activeScenarioIdx, setActiveScenarioIdx] = useState(0);
         const [followCam, setFollowCam] = useState(false);
         const [simSpeed, setSimSpeedState] = useState(1.0);
-        
-        // High frequency frame state
         const [frameData, setFrameData] = useState({
-          velocity: 0,
-          pressure: 0,
-          gforce: 0,
-          depth: 0,
-          phase: "RIGID",
-          dif: 1.0,
-          length: 0
+          velocity: 0, pressure: 0, gforce: 0, depth: 0, phase: "RIGID", dif: 1.0, length: 0
         });
-
-        // Current Scenario Data
         const currentData = scenarios[activeScenarioIdx] || {};
 
         useEffect(() => {
-          // Expose to Vanilla JS
           window.ReactAPI = {
-            setFrameData: (data) => setFrameData(prev => ({...prev, ...data})),
-            setActiveScenarioIdx: (idx) => setActiveScenarioIdx(idx),
-            setFollowCam: (val) => setFollowCam(val),
-            setSimSpeed: (val) => setSimSpeedState(val)
+            setFrameData:         (data) => setFrameData(prev => ({...prev, ...data})),
+            setActiveScenarioIdx: (idx)  => setActiveScenarioIdx(idx),
+            setFollowCam:         (val)  => setFollowCam(val),
+            setSimSpeed:          (val)  => setSimSpeedState(val)
           };
         }, []);
 
-        const handleScenarioClick = (idx) => {
-          if (window.selectScenario) window.selectScenario(idx);
-        };
-
-        const handleCameraMove = (x,y,z, tx,ty,tz) => {
-          if (window.smoothCameraMove) window.smoothCameraMove(x,y,z, tx,ty,tz);
-        };
-
-        const toggleFollowCamBtn = () => {
-          if (window.toggleFollowCam) window.toggleFollowCam();
-        };
-
-        const changeSpeed = (speed) => {
-          if (window.setSimSpeed) window.setSimSpeed(speed);
-        };
+        const handleScenarioClick = (idx)          => { if (window.selectScenario)   window.selectScenario(idx); };
+        const handleCameraMove    = (x,y,z,tx,ty,tz) => { if (window.smoothCameraMove) window.smoothCameraMove(x,y,z,tx,ty,tz); };
+        const toggleFollowCamBtn  = ()              => { if (window.toggleFollowCam)  window.toggleFollowCam(); };
+        const changeSpeed         = (speed)         => { if (window.setSimSpeed)      window.setSimSpeed(speed); };
 
         const renderStatRow = (key) => {
           let val = currentData[key];
-          if (typeof val === 'number') {
-            val = val % 1 === 0 ? val.toString() : val.toFixed(4);
-          }
+          if (typeof val === 'number') val = val % 1 === 0 ? val.toString() : val.toFixed(4);
           if (val === undefined || val === null) val = "-";
-          
           return (
             <div key={key} className="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1">
               <span className="text-cyan-600/70 lowercase">{key}:</span>
@@ -178,13 +110,13 @@
           );
         };
 
-        let regimeText = currentData.is_kinetic ? "HYPERVELOCITY KINETIC ROD" : 
+        let regimeText = currentData.is_kinetic ? "HYPERVELOCITY KINETIC ROD" :
                          (currentData.fail ? "CASING SHATTER" : (!currentData.exp_survives ? "FUZE FAILURE" : "WARHEAD DETONATED"));
         if (!currentData.fail && currentData.exp_survives && !currentData.is_kinetic) regimeText = "AWAITING IMPACT";
 
         return (
           <div className="w-full h-full relative">
-            
+
             {/* Top Left HUD */}
             <div className="absolute top-6 left-6 w-[420px] rounded-xl glass-panel p-5 pointer-events-auto">
               <div className="unskew flex flex-col gap-3">
@@ -194,32 +126,27 @@
                       <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                       High-Fidelity Physics Telemetry
                     </h1>
-                    <div className="text-xl font-bold text-white leading-tight uppercase tracking-wide">
-                      {currentData.name || "-"}
-                    </div>
+                    <div className="text-xl font-bold text-white leading-tight uppercase tracking-wide">{currentData.name || "-"}</div>
                   </div>
                 </div>
-
                 <div className="space-y-3 text-xs mono">
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between text-slate-400">
                       <span>Velocity</span><span className="text-cyan-300 font-bold">{frameData.velocity.toFixed(1)} m/s</span>
                     </div>
                     <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-cyan-400 h-full progress-bar" style={{width: Math.min(100, (frameData.velocity / 2000)*100) + '%'}}></div>
+                      <div className="bg-cyan-400 h-full progress-bar" style={{width: Math.min(100,(frameData.velocity/2000)*100)+'%'}}></div>
                     </div>
                   </div>
-
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between text-slate-400">
                       <span>Dynamic Pressure</span><span className="text-amber-400 font-bold">{frameData.pressure.toFixed(2)} GPa</span>
                     </div>
                     <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden relative">
-                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{left: (currentData.yield ? Math.min(100, (currentData.yield/2.0)*100) : 80) + '%'}}></div>
-                      <div className="bg-amber-400 h-full progress-bar" style={{width: Math.min(100, (frameData.pressure / 2.0)*100) + '%'}}></div>
+                      <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style={{left: (currentData.yield ? Math.min(100,(currentData.yield/2.0)*100) : 80)+'%'}}></div>
+                      <div className="bg-amber-400 h-full progress-bar" style={{width: Math.min(100,(frameData.pressure/2.0)*100)+'%'}}></div>
                     </div>
                   </div>
-
                   <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
                     <div>
                       <div className="text-[9px] text-slate-500 uppercase tracking-wider">Deceleration</div>
@@ -230,7 +157,6 @@
                       <div className="text-emerald-400 font-black text-base">{frameData.depth.toFixed(2)} m</div>
                     </div>
                   </div>
-
                   <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
                     <div>
                       <div className="text-[9px] text-slate-500 uppercase tracking-wider">Phase</div>
@@ -245,26 +171,23 @@
                       <div className="text-emerald-300 font-bold text-sm">{frameData.length.toFixed(2)} m</div>
                     </div>
                   </div>
-
                   <div className="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 mt-2">
                     <div>
                       <div className="text-[9px] text-slate-500 uppercase tracking-wider">Shock Pressure</div>
-                      <div className="text-orange-400 font-bold text-sm">{(currentData.shock_pressure_gpa_peak || 0).toFixed(2)} GPa</div>
+                      <div className="text-orange-400 font-bold text-sm">{(currentData.shock_pressure_gpa_peak||0).toFixed(2)} GPa</div>
                     </div>
                     <div className="text-right">
                       <div className="text-[9px] text-slate-500 uppercase tracking-wider">Initiation Prob.</div>
-                      <div className="text-rose-400 font-bold text-sm">{Math.min(100, currentData.shock_prob || 0).toFixed(0)}%</div>
+                      <div className="text-rose-400 font-bold text-sm">{Math.min(100,currentData.shock_prob||0).toFixed(0)}%</div>
                     </div>
                   </div>
-
                   <div id="telemetry-chart" className="mt-2 h-24 w-full bg-slate-900/80 rounded border border-slate-700/50 relative overflow-hidden pointer-events-auto"></div>
                 </div>
-
                 <div className="mt-2 pt-3 border-t border-cyan-500/20 flex flex-col gap-2">
                   <div className={`px-3 py-2 rounded text-center text-[11px] font-black tracking-widest uppercase transition-all shadow-[0_0_15px_currentColor] ${currentData.is_kinetic ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50 pulse-active' : (currentData.fail || !currentData.exp_survives ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50 pulse-active' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50')}`}>
                     {regimeText}
                   </div>
-                  <div className="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest transition-all bg-slate-800/80 text-slate-300 border border-slate-700">
+                  <div className="px-3 py-1.5 rounded text-center text-[10px] font-bold tracking-widest bg-slate-800/80 text-slate-300 border border-slate-700">
                     {currentData.is_kinetic ? "PAYLOAD: ZERO EXPLOSIVE MASS" : "PAYLOAD: " + (currentData.explosive_mass || 0) + " kg"}
                   </div>
                   <div className="text-[10px] text-slate-400 text-center leading-tight px-1">
@@ -277,19 +200,19 @@
             {/* Top Right Controls */}
             <div className="absolute top-6 right-6 w-80 rounded-xl glass-panel p-5 pointer-events-auto">
               <div className="unskew">
-                <h2 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Targeting & Viewport</h2>
+                <h2 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Targeting &amp; Viewport</h2>
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  <button onClick={() => handleCameraMove(45, 30, 60, 0, -15, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Isometric</button>
-                  <button onClick={() => handleCameraMove(80, -15, 0, 0, -15, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Side Profile</button>
-                  <button onClick={() => handleCameraMove(0, 100, 1, 0, 0, 0)} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Surface Top</button>
-                  <button onClick={toggleFollowCamBtn} className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">
+                  <button onClick={() => handleCameraMove(45,30,60,0,-15,0)}  className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Isometric</button>
+                  <button onClick={() => handleCameraMove(80,-15,0,0,-15,0)}  className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Side Profile</button>
+                  <button onClick={() => handleCameraMove(0,100,1,0,0,0)}     className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">Surface Top</button>
+                  <button onClick={toggleFollowCamBtn}                         className="px-2 py-2 rounded bg-slate-800/80 hover:bg-cyan-500 hover:text-black font-semibold text-xs border border-slate-600 transition">
                     Follow Cam: {followCam ? "ON" : "OFF"}
                   </button>
                 </div>
-
                 <div className="flex gap-2">
                   {[0.1, 1.0, 5.0].map(s => (
-                    <button key={s} onClick={() => changeSpeed(s)} className={`flex-1 py-1.5 border rounded text-xs transition ${simSpeed === s ? 'bg-cyan-900 border-cyan-500 text-cyan-200' : 'bg-slate-800 border-slate-600 hover:bg-slate-700 text-white'}`}>
+                    <button key={s} onClick={() => changeSpeed(s)}
+                      className={`flex-1 py-1.5 border rounded text-xs transition ${simSpeed === s ? 'bg-cyan-900 border-cyan-500 text-cyan-200' : 'bg-slate-800 border-slate-600 hover:bg-slate-700 text-white'}`}>
                       {s}x
                     </button>
                   ))}
@@ -297,7 +220,7 @@
               </div>
             </div>
 
-            {/* Bottom Right Data Statistics */}
+            {/* Bottom Right Data Statistics — all 41 STAT_KEYS from telemetry_exporter.cpp */}
             <div className="absolute bottom-5 right-8 w-80 rounded-xl glass-panel p-5 pointer-events-auto">
               <div className="unskew">
                 <h1 className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3">Data Statistics</h1>
@@ -307,7 +230,7 @@
               </div>
             </div>
 
-            {/* Scenarios Carousel */}
+            {/* Scenarios Carousel — buttons injected by {{SCENARIO_BUTTONS}} logic, handled via React */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto pointer-events-auto">
               <div className="unskew flex gap-3 items-center">
                 {scenarios.map((s, i) => (
@@ -329,1562 +252,823 @@
       const root = ReactDOM.createRoot(document.getElementById("react-root"));
       root.render(<App />);
     </script>
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    <!-- Post Processing via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <!-- BABYLON.JS — replaces Three.js + OrbitControls + EffectComposer + UnrealBloomPass + TWEEN (7 scripts -> 1) -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
 
-    <!-- Tween for camera interpolation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-
-    <!-- ECharts for Telemetry -->
+    <!-- ECharts (unchanged) -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 
+    <!-- SCENARIO DATA — injected by telemetry_exporter.cpp: replaceAll(html, "/*{{SCENARIOS_DATA}}*/", data) -->
     <script>
       const scenarios = [
         /*{{SCENARIOS_DATA}}*/
       ];
 
-      // Debug function to list all scenarios to the console
+      // Debug: log all C++ exported fields to console
       function listAllData() {
-        scenarios.forEach((data, index) => {
-          console.log(`Scenario ${index}:`, data);
-        });
+        scenarios.forEach((d, i) => console.log("Scenario " + i + ":", d));
       }
       listAllData();
 
-      let scene, camera, renderer, composer, controls;
-      let targetLayersGroup, cratersGroup, airGroup, rulerGroup;
-      let projectile, shockwave, explosionSphere, boomRing, machCone, airBox;
-      let currentData = scenarios[0];
-      let activeCrater = null;
-      let dustParticles;
-      let ambientDustParticles;
+      // ─── Engine & Scene Globals ───────────────────────────────────────
+      let engine, scene, camera, pipeline;
 
-      let animState = "IDLE";
-      let clock = new THREE.Clock();
-      let simTime = 0;
-      let prevFrame = null;
-      let followCam = false;
-      let simSpeedMultiplier = 1.0;
-      let explosionTriggered = false;
-      let cameraShake = 0;
-      let boomRingGrowthRate = 15.0; // physics-derived from Mach number at the boom instant
+      // 3D objects
+      let projectile, shockwave, explosionSphere, boomRing, machCone;
+      let activeCrater         = null;
+      let dustSPS              = null;   // SolidParticleSystem: 1000 impact dust fragments
+      let ambientDustMesh      = null;   // custom updatable points mesh
+      let ambientDustPositions = null;   // Float32Array — updated every frame in animationLoop
+      let ambientDustMaxH      = 90;
+      let ambientDustScaleK    = 2.2 / 90;
 
-      // Telemetry Graph
+      // Mesh tracking arrays (replaces THREE.Group children lists)
+      let targetLayerMeshes = [];
+      let airMeshes         = [];
+      let rulerMeshes       = [];
+
+      // Animation state — same variable names as Three.js version
+      let currentData          = scenarios[0];
+      let animState            = "IDLE";
+      let simTime              = 0;
+      let prevFrame            = null;
+      let followCam            = false;
+      let simSpeedMultiplier   = 1.0;
+      let explosionTriggered   = false;
+      let cameraShake          = 0;
+      let boomRingGrowthRate   = 15.0;
+
+      // ECharts telemetry
       let telemetryChart;
       let chartDataTime = [];
-      let chartDataVel = [];
+      let chartDataVel  = [];
 
+      // Camera animation handles (replaces TWEEN tweens)
+      let cameraAnimatables = [];
+
+      // Camera shake scratch offset — reverted in afterRender
+      let _shakeOX = 0, _shakeOY = 0;
+
+      // ─── Helper: BABYLON.Color3 from 0xRRGGBB hex ────────────────────
+      function c3(hex) {
+        return new BABYLON.Color3(
+          ((hex >> 16) & 0xff) / 255,
+          ((hex >>  8) & 0xff) / 255,
+          ( hex        & 0xff) / 255
+        );
+      }
+
+      // ─── INIT ─────────────────────────────────────────────────────────
       function init() {
-        const container = document.getElementById("canvas-container");
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x05080f);
-        scene.fog = new THREE.Fog(0x05080f, 300, 2000); // Linear fog pushed far back to prevent obscuring zoom
+        const canvas = document.getElementById("renderCanvas");
 
-        camera = new THREE.PerspectiveCamera(
-          50,
-          window.innerWidth / window.innerHeight,
-          0.1,
-          5000,
-        );
-        camera.position.set(45, 30, 60);
+        // Engine — antialias=false matches original
+        engine = new BABYLON.Engine(canvas, false, { powerPreference: "high-performance" }, true);
 
-        renderer = new THREE.WebGLRenderer({
-          antialias: false,
-          powerPreference: "high-performance",
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
-        renderer.physicallyCorrectLights = true;
-        container.appendChild(renderer.domElement);
+        scene = new BABYLON.Scene(engine);
+        scene.clearColor = new BABYLON.Color4(5/255, 8/255, 15/255, 1);
+        scene.fogMode    = BABYLON.Scene.FOGMODE_LINEAR;
+        scene.fogColor   = new BABYLON.Color3(5/255, 8/255, 15/255);
+        scene.fogStart   = 300;
+        scene.fogEnd     = 2000;
 
-        // Post Processing Bloom
-        const renderScene = new THREE.RenderPass(scene, camera);
-        const bloomPass = new THREE.UnrealBloomPass(
-          new THREE.Vector2(window.innerWidth, window.innerHeight),
-          1.5,
-          0.4,
-          0.85,
-        );
-        bloomPass.threshold = 0.2;
-        bloomPass.strength = 1.2; // Glowing effect
-        bloomPass.radius = 0.5;
+        // ArcRotateCamera — replaces PerspectiveCamera + OrbitControls + TWEEN
+        // Derive initial spherical coords from desired Cartesian pos (45,30,60)
+        // relative to target (0,-15,0):  dx=45, dy=45, dz=60
+        const dx0 = 45, dy0 = 45, dz0 = 60;
+        const r0   = Math.sqrt(dx0*dx0 + dy0*dy0 + dz0*dz0);
+        const b0   = Math.acos(dy0 / r0);
+        const a0   = Math.atan2(dz0, dx0);
 
-        composer = new THREE.EffectComposer(renderer);
-        composer.addPass(renderScene);
-        composer.addPass(bloomPass);
+        camera = new BABYLON.ArcRotateCamera("cam", a0, b0, r0,
+                   new BABYLON.Vector3(0, -15, 0), scene);
+        camera.lowerRadiusLimit = 5;
+        camera.upperRadiusLimit = 350;
+        camera.upperBetaLimit   = Math.PI / 2 + 0.1;
+        camera.inertia          = 0.9;  // smooth orbital damping
+        camera.wheelPrecision   = 5;
+        camera.attachControl(canvas, true);
 
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.target.set(0, -15, 0);
-        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Restrict underground camera flip
-        controls.minDistance = 5;
-        controls.maxDistance = 350;
+        // Bloom post-processing — replaces EffectComposer + 5 post-processing scripts
+        pipeline = new BABYLON.DefaultRenderingPipeline("pp", true, scene, [camera]);
+        pipeline.bloomEnabled   = true;
+        pipeline.bloomThreshold = 0.2;
+        pipeline.bloomWeight    = 1.2;
+        pipeline.bloomKernel    = 64;
+        pipeline.bloomScale     = 0.5;
 
         setupLighting();
         setupEnvironment();
-
-        targetLayersGroup = new THREE.Group();
-        scene.add(targetLayersGroup);
-        cratersGroup = new THREE.Group();
-        scene.add(cratersGroup);
-        rulerGroup = new THREE.Group();
-        scene.add(rulerGroup);
-
         setupProjectile();
         setupEffects();
-
         initECharts();
 
-        window.addEventListener("resize", onWindowResize);
-        if (scenarios.length > 0) {
-          selectScenario(0);
-        }
-        animate(0);
-      }
+        window.addEventListener("resize", () => engine.resize());
 
-      function setupLighting() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Increased base light
-        scene.add(ambientLight);
-
-        const hemiLight = new THREE.HemisphereLight(0x0f172a, 0x0f172a, 0.4); // Sky color, ground color
-        scene.add(hemiLight);
-
-        const dirLight = new THREE.DirectionalLight(0xfff0dd, 2.5); // Warmer, brighter sun
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 500;
-        const d = 80;
-        dirLight.shadow.camera.left = -d;
-        dirLight.shadow.camera.right = d;
-        dirLight.shadow.camera.top = d;
-        dirLight.shadow.camera.bottom = -d;
-        scene.add(dirLight);
-
-        const fillLight = new THREE.PointLight(0x38bdf8, 1.0, 100); // Cool fill light
-        fillLight.position.set(-30, 20, -30);
-        scene.add(fillLight);
-      }
-
-      function createTextSprite(message, color) {
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        canvas.width = 256;
-        canvas.height = 128;
-        context.font = "Bold 36px 'JetBrains Mono', monospace";
-        context.fillStyle = color;
-        context.fillText(message, 10, 50);
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMaterial = new THREE.SpriteMaterial({
-          map: texture,
-          transparent: true,
+        // Per-frame animation logic — replaces requestAnimationFrame loop
+        scene.registerBeforeRender(animationLoop);
+        // Revert camera shake after each render
+        scene.registerAfterRender(() => {
+          if (_shakeOX !== 0 || _shakeOY !== 0) {
+            camera.target.x -= _shakeOX;
+            camera.target.y -= _shakeOY;
+            _shakeOX = _shakeOY = 0;
+          }
         });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(20, 10, 1);
-        return sprite;
+
+        engine.runRenderLoop(() => scene.render());
+        if (scenarios.length > 0) selectScenario(0);
       }
 
+      // ─── LIGHTING ─────────────────────────────────────────────────────
+      function setupLighting() {
+        // Ambient
+        const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0), scene);
+        hemi.intensity   = 0.6;
+        hemi.groundColor = c3(0x0f172a);
+
+        // Directional sun with PCF soft shadows
+        const dir = new BABYLON.DirectionalLight("dir",
+          new BABYLON.Vector3(-50,-100,-50).normalize(), scene);
+        dir.intensity = 2.5;
+        dir.diffuse   = c3(0xfff0dd);
+
+        const sg = new BABYLON.ShadowGenerator(2048, dir);
+        sg.usePoissonSampling = true;
+        window._shadowGen = sg;
+
+        // Fill point light
+        const fill = new BABYLON.PointLight("fill", new BABYLON.Vector3(-30,20,-30), scene);
+        fill.intensity = 1.0;
+        fill.diffuse   = c3(0x38bdf8);
+        fill.range     = 100;
+      }
+
+      // ─── ENVIRONMENT (ground grid) ────────────────────────────────────
       function setupEnvironment() {
-        // Ground Grid with glow
-        const gridHelper = new THREE.GridHelper(200, 100, 0x0ea5e9, 0x1e293b);
-        gridHelper.position.y = 0.1;
-        scene.add(gridHelper);
-
-        // Ground Zero Decal removed per user request
-
-        // Volumetric Air Box Container
-        airGroup = new THREE.Group();
-        scene.add(airGroup);
+        const half = 100, divs = 100, step = (half*2)/divs;
+        for (let i = 0; i <= divs; i++) {
+          const p = -half + i*step;
+          const major = i % 10 === 0;
+          const col = major ? new BABYLON.Color4(0.06,0.65,0.91,0.5)
+                            : new BABYLON.Color4(0.12,0.16,0.24,0.5);
+          BABYLON.MeshBuilder.CreateLines("gH"+i, {
+            points:[new BABYLON.Vector3(-half,0.1,p), new BABYLON.Vector3(half,0.1,p)],
+            colors:[col,col]
+          }, scene);
+          BABYLON.MeshBuilder.CreateLines("gV"+i, {
+            points:[new BABYLON.Vector3(p,0.1,-half), new BABYLON.Vector3(p,0.1,half)],
+            colors:[col,col]
+          }, scene);
+        }
       }
 
+      // ─── TEXT SPRITE (replaces THREE.Sprite + CanvasTexture) ─────────
+      function createTextSprite(msg, colorHex) {
+        const uid = Math.random().toString(36).slice(2);
+        const dt  = new BABYLON.DynamicTexture("dt"+uid, {width:256,height:128}, scene, false);
+        const ctx = dt.getContext();
+        ctx.font      = "Bold 36px 'JetBrains Mono', monospace";
+        ctx.fillStyle = colorHex;
+        ctx.fillText(msg, 10, 50);
+        dt.update();
+        const plane = BABYLON.MeshBuilder.CreatePlane("lbl"+uid, {width:20,height:10}, scene);
+        const mat   = new BABYLON.StandardMaterial("lblm"+uid, scene);
+        mat.diffuseTexture = dt; mat.emissiveTexture = dt;
+        mat.disableLighting = true; mat.backFaceCulling = false;
+        mat.useAlphaFromDiffuseTexture = true;
+        plane.material      = mat;
+        plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+        return plane;
+      }
+
+      // ─── RULERS ───────────────────────────────────────────────────────
       function rebuildRulers(maxAlt) {
-        while (rulerGroup.children.length > 0)
-          rulerGroup.remove(rulerGroup.children[0]);
+        rulerMeshes.forEach(m => { if (!m.isDisposed()) { if(m.material) m.material.dispose(); m.dispose(); } });
+        rulerMeshes = [];
 
-        // 1. Underground Depth Ruler (0m to 150m with 1m/5m/10m school ruler sub-divisions)
-        const depthLine = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(14, 0, 14),
-            new THREE.Vector3(14, -150, 14),
-          ]),
-          new THREE.LineBasicMaterial({
-            color: 0x38bdf8,
-            transparent: true,
-            opacity: 0.6,
-          }),
-        );
-        rulerGroup.add(depthLine);
+        // Underground depth ruler (0-150 m)
+        const dL = BABYLON.MeshBuilder.CreateLines("dLine",{
+          points:[new BABYLON.Vector3(14,0,14), new BABYLON.Vector3(14,-150,14)]
+        }, scene);
+        dL.color = c3(0x38bdf8);
+        rulerMeshes.push(dL);
 
-        for (let depthY = 0; depthY <= 150; depthY++) {
-          let tickLen = 0.8; // 1m minor tick
-          let tickRadius = 0.08;
-          let isMajor = depthY % 10 === 0;
-          let isMedium = depthY % 5 === 0 && !isMajor;
-
-          if (isMajor) {
-            tickLen = 3.5;
-            tickRadius = 0.2;
-          } else if (isMedium) {
-            tickLen = 2.0;
-            tickRadius = 0.12;
-          }
-
-          let tColor = 0x38bdf8;
-          if (depthY > 30) tColor = 0xfacc15;
-          if (depthY > 80) tColor = 0xf87171;
-
-          const tickGeom = new THREE.CylinderGeometry(
-            tickRadius,
-            tickRadius,
-            tickLen,
-          );
-          tickGeom.rotateZ(Math.PI / 2);
-          const tMat = new THREE.MeshBasicMaterial({ color: tColor });
-          const tick = new THREE.Mesh(tickGeom, tMat);
-
-          tick.position.set(14 + tickLen / 2, -depthY, 14);
-          rulerGroup.add(tick);
-
-          if (isMajor) {
-            const sprite = createTextSprite(
-              depthY + "m",
-              "#" + tColor.toString(16).padStart(6, "0"),
-            );
-            sprite.position.set(14 + tickLen + 3.0, -depthY, 14);
-            rulerGroup.add(sprite);
+        for (let d = 0; d <= 150; d++) {
+          const major = d%10===0, medium = d%5===0 && !major;
+          let len = 0.8, rad = 0.08;
+          if (major) { len=3.5; rad=0.2; } else if (medium) { len=2.0; rad=0.12; }
+          let tHex = 0x38bdf8;
+          if (d>30) tHex=0xfacc15; if (d>80) tHex=0xf87171;
+          const tk = BABYLON.MeshBuilder.CreateCylinder("td"+d,{diameter:rad*2,height:len,tessellation:6},scene);
+          tk.rotation.z=Math.PI/2;
+          tk.position=new BABYLON.Vector3(14+len/2,-d,14);
+          const tm=new BABYLON.StandardMaterial("tdm"+d,scene);
+          tm.emissiveColor=c3(tHex); tm.disableLighting=true;
+          tk.material=tm; rulerMeshes.push(tk);
+          if (major) {
+            const sp=createTextSprite(d+"m","#"+tHex.toString(16).padStart(6,"0"));
+            sp.position=new BABYLON.Vector3(14+len+3,-d,14); rulerMeshes.push(sp);
           }
         }
 
-        // 2. Air Altitude Ruler (0m to altLimit with 1m/5m/10m school ruler sub-divisions)
-        let altLimit = Math.max(
-          50,
-          Math.ceil((maxAlt > 0 ? maxAlt : 50) / 10) * 10,
-        );
-        const airLine = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-15, 0, -15),
-            new THREE.Vector3(-15, altLimit, -15),
-          ]),
-          new THREE.LineBasicMaterial({
-            color: 0x0ea5e9,
-            transparent: true,
-            opacity: 0.6,
-          }),
-        );
-        rulerGroup.add(airLine);
+        // Air altitude ruler
+        const altLim = Math.max(50, Math.ceil((maxAlt>0?maxAlt:50)/10)*10);
+        const aL = BABYLON.MeshBuilder.CreateLines("aLine",{
+          points:[new BABYLON.Vector3(-15,0,-15), new BABYLON.Vector3(-15,altLim,-15)]
+        }, scene);
+        aL.color=c3(0x0ea5e9); rulerMeshes.push(aL);
 
-        for (let altY = 0; altY <= altLimit; altY++) {
-          let tickLen = 0.8; // 1m minor tick
-          let tickRadius = 0.08;
-          let isMajor = altY % 10 === 0;
-          let isMedium = altY % 5 === 0 && !isMajor;
-
-          if (isMajor) {
-            tickLen = 3.5;
-            tickRadius = 0.2;
-          } else if (isMedium) {
-            tickLen = 2.0;
-            tickRadius = 0.12;
-          }
-
-          const tickGeom = new THREE.CylinderGeometry(
-            tickRadius,
-            tickRadius,
-            tickLen,
-          );
-          tickGeom.rotateZ(Math.PI / 2);
-          const tMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
-          const tick = new THREE.Mesh(tickGeom, tMat);
-
-          tick.position.set(-15 - tickLen / 2, altY, -15);
-          rulerGroup.add(tick);
-
-          if (isMajor && altY > 0) {
-            const sprite = createTextSprite(altY + "m", "#0ea5e9");
-            sprite.position.set(-15 - tickLen - 3.0, altY, -15);
-            rulerGroup.add(sprite);
+        for (let a = 0; a <= altLim; a++) {
+          const major=a%10===0, medium=a%5===0&&!major;
+          let len=0.8,rad=0.08;
+          if (major){len=3.5;rad=0.2;} else if(medium){len=2.0;rad=0.12;}
+          const tk=BABYLON.MeshBuilder.CreateCylinder("ta"+a,{diameter:rad*2,height:len,tessellation:6},scene);
+          tk.rotation.z=Math.PI/2;
+          tk.position=new BABYLON.Vector3(-15-len/2,a,-15);
+          const tm=new BABYLON.StandardMaterial("tam"+a,scene);
+          tm.emissiveColor=c3(0x0ea5e9); tm.disableLighting=true;
+          tk.material=tm; rulerMeshes.push(tk);
+          if (major&&a>0){
+            const sp=createTextSprite(a+"m","#0ea5e9");
+            sp.position=new BABYLON.Vector3(-15-len-3,a,-15); rulerMeshes.push(sp);
           }
         }
       }
 
-      // USA National Anthem (The Star-Spangled Banner) Web Audio Synthesizer
-      let audioCtx = null;
-      let anthemNodes = [];
-
-      // Resume audio context on first user interaction if suspended
-      ["click", "keydown", "pointerdown"].forEach((evt) => {
-        window.addEventListener(
-          evt,
-          () => {
-            if (audioCtx && audioCtx.state === "suspended") {
-              audioCtx.resume().catch(() => {});
-            }
-          },
-          { passive: true },
-        );
-      });
-
+      // ─── WEB AUDIO ANTHEM (unchanged) ─────────────────────────────────
+      let audioCtx=null, anthemNodes=[];
+      ["click","keydown","pointerdown"].forEach(e =>
+        window.addEventListener(e,()=>{if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});},{passive:true})
+      );
       function playAnthem() {
         stopAnthem();
         try {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === "suspended") {
-            audioCtx.resume().catch(() => {});
-          }
-
-          // Star-Spangled Banner Anthem Notes (Frequency in Hz, Duration in Seconds)
-          const notes = [
-            { f: 392.0, d: 0.35 }, // G4 (Oh)
-            { f: 329.63, d: 0.35 }, // E4 (say)
-            { f: 261.63, d: 0.6 }, // C4 (can)
-            { f: 329.63, d: 0.6 }, // E4 (you)
-            { f: 392.0, d: 0.6 }, // G4 (see)
-            { f: 523.25, d: 1.1 }, // C5 (by)
-
-            { f: 659.25, d: 0.7 }, // E5 (the)
-            { f: 587.33, d: 0.35 }, // D5 (dawn's)
-            { f: 523.25, d: 0.6 }, // C5 (ear-)
-            { f: 329.63, d: 0.6 }, // E4 (ly)
-            { f: 370.0, d: 0.6 }, // F#4 (light)
-            { f: 392.0, d: 1.1 }, // G4 (what)
-
-            { f: 392.0, d: 0.35 }, // G4 (so)
-            { f: 392.0, d: 0.35 }, // G4 (proud-)
-            { f: 659.25, d: 0.7 }, // E5 (ly)
-            { f: 587.33, d: 0.35 }, // D5 (we)
-            { f: 523.25, d: 0.6 }, // C5 (hailed)
-            { f: 493.88, d: 0.6 }, // B4 (at)
-            { f: 440.0, d: 0.6 }, // A4 (the)
-            { f: 493.88, d: 0.6 }, // B4 (twilight's)
-            { f: 523.25, d: 1.2 }, // C5 (last)
-
-            { f: 523.25, d: 0.35 }, // C5 (gleaming?)
-            { f: 523.25, d: 0.35 }, // C5 (Whose)
-            { f: 659.25, d: 0.6 }, // E5 (broad)
-            { f: 698.46, d: 0.6 }, // F5 (stripes)
-            { f: 783.99, d: 1.0 }, // G5 (and)
-            { f: 783.99, d: 0.6 }, // G5 (bright)
-            { f: 659.25, d: 0.35 }, // E5 (stars)
-            { f: 587.33, d: 0.6 }, // D5 (through)
-            { f: 523.25, d: 0.6 }, // C5 (the)
-            { f: 587.33, d: 1.2 }, // D5 (perilous)
-
-            { f: 659.25, d: 0.6 }, // E5 (fight)
-            { f: 659.25, d: 0.35 }, // E5 (O'er)
-            { f: 587.33, d: 0.35 }, // D5 (the)
-            { f: 523.25, d: 0.6 }, // C5 (ramparts)
-            { f: 493.88, d: 0.6 }, // B4 (we)
-            { f: 440.0, d: 0.6 }, // A4 (watched)
-            { f: 493.88, d: 0.6 }, // B4 (were)
-            { f: 523.25, d: 1.4 }, // C5 (so)
-
-            { f: 523.25, d: 0.35 }, // C5 (gal-)
-            { f: 523.25, d: 0.35 }, // C5 (lant-)
-            { f: 392.0, d: 0.6 }, // G4 (ly)
-            { f: 329.63, d: 0.6 }, // E4 (stream-)
-            { f: 392.0, d: 0.6 }, // G4 (ing?)
-            { f: 523.25, d: 1.4 }, // C5 (!!!)
+          audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+          if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+          const notes=[
+            {f:392.0,d:0.35},{f:329.63,d:0.35},{f:261.63,d:0.6},{f:329.63,d:0.6},{f:392.0,d:0.6},{f:523.25,d:1.1},
+            {f:659.25,d:0.7},{f:587.33,d:0.35},{f:523.25,d:0.6},{f:329.63,d:0.6},{f:370.0,d:0.6},{f:392.0,d:1.1},
+            {f:392.0,d:0.35},{f:392.0,d:0.35},{f:659.25,d:0.7},{f:587.33,d:0.35},{f:523.25,d:0.6},
+            {f:493.88,d:0.6},{f:440.0,d:0.6},{f:493.88,d:0.6},{f:523.25,d:1.2},
+            {f:523.25,d:0.35},{f:523.25,d:0.35},{f:659.25,d:0.6},{f:698.46,d:0.6},{f:783.99,d:1.0},
+            {f:783.99,d:0.6},{f:659.25,d:0.35},{f:587.33,d:0.6},{f:523.25,d:0.6},{f:587.33,d:1.2},
+            {f:659.25,d:0.6},{f:659.25,d:0.35},{f:587.33,d:0.35},{f:523.25,d:0.6},{f:493.88,d:0.6},
+            {f:440.0,d:0.6},{f:493.88,d:0.6},{f:523.25,d:1.4},
+            {f:523.25,d:0.35},{f:523.25,d:0.35},{f:392.0,d:0.6},{f:329.63,d:0.6},{f:392.0,d:0.6},{f:523.25,d:1.4}
           ];
-
-          let currentTime = audioCtx.currentTime + 0.05;
-          const masterGain = audioCtx.createGain();
-          masterGain.gain.setValueAtTime(0.18, currentTime);
-          masterGain.connect(audioCtx.destination);
-          anthemNodes.push(masterGain);
-
-          notes.forEach((n) => {
-            const osc = audioCtx.createOscillator();
-            const noteGain = audioCtx.createGain();
-
-            // Sawtooth + Brass timbre
-            osc.type = "sawtooth";
-            osc.frequency.setValueAtTime(n.f, currentTime);
-
-            noteGain.gain.setValueAtTime(0.001, currentTime);
-            noteGain.gain.linearRampToValueAtTime(0.2, currentTime + 0.04);
-            noteGain.gain.exponentialRampToValueAtTime(
-              0.001,
-              currentTime + n.d * 0.95,
-            );
-
-            osc.connect(noteGain);
-            noteGain.connect(masterGain);
-
-            osc.start(currentTime);
-            osc.stop(currentTime + n.d);
-
-            anthemNodes.push(osc);
-            anthemNodes.push(noteGain);
-
-            currentTime += n.d;
+          let t=audioCtx.currentTime+0.05;
+          const mg=audioCtx.createGain(); mg.gain.setValueAtTime(0.18,t); mg.connect(audioCtx.destination); anthemNodes.push(mg);
+          notes.forEach(n=>{
+            const osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+            osc.type="sawtooth"; osc.frequency.setValueAtTime(n.f,t);
+            g.gain.setValueAtTime(0.001,t); g.gain.linearRampToValueAtTime(0.2,t+0.04);
+            g.gain.exponentialRampToValueAtTime(0.001,t+n.d*0.95);
+            osc.connect(g); g.connect(mg); osc.start(t); osc.stop(t+n.d);
+            anthemNodes.push(osc,g); t+=n.d;
           });
-        } catch (e) {
-          console.log("AudioContext initialized on user gesture:", e);
-        }
+        } catch(e){console.log("AudioCtx:",e);}
       }
-
       function stopAnthem() {
-        anthemNodes.forEach((node) => {
-          try {
-            if (node.stop) node.stop();
-            if (node.disconnect) node.disconnect();
-          } catch (e) {}
-        });
-        anthemNodes = [];
-        if (audioCtx && audioCtx.state !== "closed") {
-          try {
-            audioCtx.close();
-          } catch (e) {}
-        }
+        anthemNodes.forEach(n=>{try{if(n.stop)n.stop();if(n.disconnect)n.disconnect();}catch(e){}});
+        anthemNodes=[];
+        if(audioCtx&&audioCtx.state!=="closed"){try{audioCtx.close();}catch(e){}}
       }
 
-      function computePlanckBlackbodyColor(tempKelvin, baseColorHex) {
-        // Converts Temperature (Kelvin) to Planck blackbody radiation RGB emission
-        // < 500 K: Base metal finish
-        // 500 K - 900 K: Incipient red heat (0x7f1d1d to 0xd97706)
-        // 900 K - 1500 K: Cherry red to bright orange (0xf97316)
-        // 1500 K - 2200 K: Incandescent yellow-white (0xfffbeb)
-        // > 2200 K: Radiant plasma white-blue (0xe0f2fe)
-        const baseColor = new THREE.Color(baseColorHex);
-        const radColor = new THREE.Color();
-
-        if (tempKelvin < 500) {
-          radColor.copy(baseColor);
-        } else if (tempKelvin < 900) {
-          const t = (tempKelvin - 500) / 400;
-          radColor.lerpColors(baseColor, new THREE.Color(0xd97706), t);
-        } else if (tempKelvin < 1500) {
-          const t = (tempKelvin - 900) / 600;
-          radColor.lerpColors(
-            new THREE.Color(0xd97706),
-            new THREE.Color(0xf97316),
-            t,
-          );
-        } else if (tempKelvin < 2200) {
-          const t = (tempKelvin - 1500) / 700;
-          radColor.lerpColors(
-            new THREE.Color(0xf97316),
-            new THREE.Color(0xfffbeb),
-            t,
-          );
-        } else {
-          const t = Math.min(1.0, (tempKelvin - 2200) / 1000);
-          radColor.lerpColors(
-            new THREE.Color(0xfffbeb),
-            new THREE.Color(0xe0f2fe),
-            t,
-          );
-        }
-        return radColor;
+      // ─── PLANCK BLACKBODY COLOR (adapted for BABYLON.Color3) ──────────
+      function computePlanckBlackbodyColor(tempK, baseHex) {
+        const base=c3(baseHex);
+        if(tempK<500)  return base;
+        if(tempK<900)  return BABYLON.Color3.Lerp(base,           c3(0xd97706),(tempK-500)/400);
+        if(tempK<1500) return BABYLON.Color3.Lerp(c3(0xd97706),   c3(0xf97316),(tempK-900)/600);
+        if(tempK<2200) return BABYLON.Color3.Lerp(c3(0xf97316),   c3(0xfffbeb),(tempK-1500)/700);
+        return              BABYLON.Color3.Lerp(c3(0xfffbeb),   c3(0xe0f2fe),Math.min(1.0,(tempK-2200)/1000));
       }
 
-      function mergeGeometriesSimple(geometries) {
-        let totalVerts = 0;
-        const nonIndexed = geometries.map((g) =>
-          g.index ? g.toNonIndexed() : g,
-        );
-        nonIndexed.forEach((g) => {
-          totalVerts += g.attributes.position.count;
-        });
-
-        const positions = new Float32Array(totalVerts * 3);
-        const normals = new Float32Array(totalVerts * 3);
-        const uvs = new Float32Array(totalVerts * 2);
-
-        let offsetPos = 0;
-        let offsetUv = 0;
-
-        nonIndexed.forEach((g) => {
-          const p = g.attributes.position.array;
-          positions.set(p, offsetPos);
-
-          if (g.attributes.normal) {
-            normals.set(g.attributes.normal.array, offsetPos);
-          }
-          if (g.attributes.uv) {
-            uvs.set(g.attributes.uv.array, offsetUv);
-          }
-
-          offsetPos += p.length;
-          if (g.attributes.uv) offsetUv += g.attributes.uv.array.length;
-        });
-
-        const merged = new THREE.BufferGeometry();
-        merged.setAttribute(
-          "position",
-          new THREE.BufferAttribute(positions, 3),
-        );
-        merged.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
-        merged.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-        merged.computeVertexNormals();
-        return merged;
+      // ─── GBU-57 MESH (replaces mergeGeometriesSimple + createGBU57Geometry) ─
+      function createGBU57Mesh(pRadius, pLength) {
+        const nL=pLength*0.25, bL=pLength*0.55, tL=pLength*0.2;
+        const hL=pLength/2, yN=-hL, yBs=yN+nL, yBe=yBs+bL, yTe=hL;
+        const pts=[new BABYLON.Vector3(0,yN,0)];
+        for(let i=1;i<=12;i++){
+          const t=i/12;
+          pts.push(new BABYLON.Vector3(pRadius*Math.sin(t*Math.PI*0.5), yN+t*nL, 0));
+        }
+        pts.push(new BABYLON.Vector3(pRadius,    yBs,0));
+        pts.push(new BABYLON.Vector3(pRadius,    yBe*0.5,0));
+        pts.push(new BABYLON.Vector3(pRadius*1.03,yBe*0.52,0));
+        pts.push(new BABYLON.Vector3(pRadius*1.03,yBe*0.55,0));
+        pts.push(new BABYLON.Vector3(pRadius,    yBe*0.57,0));
+        pts.push(new BABYLON.Vector3(pRadius,    yBe,0));
+        pts.push(new BABYLON.Vector3(pRadius*0.7,yTe-tL*0.2,0));
+        pts.push(new BABYLON.Vector3(pRadius*0.5,yTe,0));
+        pts.push(new BABYLON.Vector3(0,          yTe,0));
+        const body=BABYLON.MeshBuilder.CreateLathe("body",{shape:pts,tessellation:32,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);
+        const parts=[body];
+        const fW=pRadius*1.8,fH=tL*0.8,fT=pRadius*0.12;
+        for(let a=0;a<4;a++){
+          const ang=(a*Math.PI)/2;
+          const f=BABYLON.MeshBuilder.CreateBox("fin"+a,{width:fT,height:fH,depth:fW},scene);
+          f.rotation.y=-ang;
+          f.position.x=Math.cos(ang)*(pRadius*0.5+fW/2);
+          f.position.z=Math.sin(ang)*(pRadius*0.5+fW/2);
+          f.position.y=yBe+fH*0.3;
+          f.bakeCurrentTransformIntoVertices(); parts.push(f);
+        }
+        const sT=pRadius*0.12,sH=bL*0.5,sW=pRadius*0.25;
+        for(let a=0;a<4;a++){
+          const ang=(a*Math.PI)/2+Math.PI/4;
+          const s=BABYLON.MeshBuilder.CreateBox("strk"+a,{width:sT,height:sH,depth:sW},scene);
+          s.rotation.y=-ang;
+          s.position.x=Math.cos(ang)*(pRadius+sT/2);
+          s.position.z=Math.sin(ang)*(pRadius+sT/2);
+          s.position.y=yBs+bL*0.4;
+          s.bakeCurrentTransformIntoVertices(); parts.push(s);
+        }
+        return BABYLON.Mesh.MergeMeshes(parts,true,true)||body;
       }
 
-      function createGBU57Geometry(pRadius, pLength) {
-        const points = [];
-        const noseLen = pLength * 0.25;
-        const bodyLen = pLength * 0.55;
-        const tailLen = pLength * 0.2;
-
-        const halfLen = pLength / 2;
-        const yNose = -halfLen;
-        const yBodyStart = yNose + noseLen;
-        const yBodyEnd = yBodyStart + bodyLen;
-        const yTailEnd = halfLen;
-
-        // 1. Ogive nose curve (pointing down along -Y)
-        points.push(new THREE.Vector2(0, yNose));
-        const noseSteps = 12;
-        for (let i = 1; i <= noseSteps; i++) {
-          const t = i / noseSteps;
-          const r = pRadius * Math.sin(t * Math.PI * 0.5);
-          const y = yNose + t * noseLen;
-          points.push(new THREE.Vector2(r, y));
-        }
-
-        // 2. Main cylinder body with structural reinforcement ring
-        points.push(new THREE.Vector2(pRadius, yBodyStart));
-        points.push(new THREE.Vector2(pRadius, yBodyEnd * 0.5));
-        points.push(new THREE.Vector2(pRadius * 1.03, yBodyEnd * 0.52));
-        points.push(new THREE.Vector2(pRadius * 1.03, yBodyEnd * 0.55));
-        points.push(new THREE.Vector2(pRadius, yBodyEnd * 0.57));
-        points.push(new THREE.Vector2(pRadius, yBodyEnd));
-
-        // 3. Boat-tail tapered tail cone
-        points.push(new THREE.Vector2(pRadius * 0.7, yTailEnd - tailLen * 0.2));
-        points.push(new THREE.Vector2(pRadius * 0.5, yTailEnd));
-        points.push(new THREE.Vector2(0, yTailEnd));
-
-        const bodyGeom = new THREE.LatheGeometry(points, 32);
-        const geometries = [bodyGeom];
-
-        // 4. Tail Fins (4 Grid/Planar Fins at 90-degree intervals)
-        const finW = pRadius * 1.8;
-        const finH = tailLen * 0.8;
-        const finT = pRadius * 0.12;
-
-        for (let a = 0; a < 4; a++) {
-          const angle = (a * Math.PI) / 2;
-          const finGeom = new THREE.BoxGeometry(finT, finH, finW);
-          const posX = Math.cos(angle) * (pRadius * 0.5 + finW / 2);
-          const posZ = Math.sin(angle) * (pRadius * 0.5 + finW / 2);
-          const posY = yBodyEnd + finH * 0.3;
-
-          finGeom.rotateY(-angle);
-          finGeom.translate(posX, posY, posZ);
-          geometries.push(finGeom);
-        }
-
-        // 5. Longitudinal Body Strakes (4 guiding ribs around mid body)
-        const strakeT = pRadius * 0.12;
-        const strakeH = bodyLen * 0.5;
-        const strakeW = pRadius * 0.25;
-
-        for (let a = 0; a < 4; a++) {
-          const angle = (a * Math.PI) / 2 + Math.PI / 4;
-          const strakeGeom = new THREE.BoxGeometry(strakeT, strakeH, strakeW);
-          const posX = Math.cos(angle) * (pRadius + strakeT / 2);
-          const posZ = Math.sin(angle) * (pRadius + strakeT / 2);
-          const posY = yBodyStart + bodyLen * 0.4;
-
-          strakeGeom.rotateY(-angle);
-          strakeGeom.translate(posX, posY, posZ);
-          geometries.push(strakeGeom);
-        }
-
-        return mergeGeometriesSimple(geometries);
-      }
-
+      // ─── PROJECTILE SETUP ─────────────────────────────────────────────
       function setupProjectile() {
-        let pRadius = currentData.proj_diameter / 2.0;
-        const projGeom = createGBU57Geometry(pRadius, currentData.proj_length);
-        // Premium material - Glowing Projectile
-        const projMat = new THREE.MeshPhysicalMaterial({
-          color: 0x00ffff,
-          metalness: 0.3,
-          roughness: 0.2,
-          clearcoat: 0.8,
-          clearcoatRoughness: 0.1,
-          emissive: 0x00ffff,
-          emissiveIntensity: 10.0,
-        });
-        projectile = new THREE.Mesh(projGeom, projMat);
-        projectile.castShadow = true;
-        projectile.receiveShadow = true;
-        scene.add(projectile);
+        const d=(currentData||scenarios[0]);
+        const mesh=createGBU57Mesh(d.proj_diameter/2.0, d.proj_length);
+        const mat=new BABYLON.PBRMaterial("projMat",scene);
+        mat.albedoColor=c3(0x00ffff); mat.metallic=0.3; mat.roughness=0.2;
+        mat.emissiveColor=c3(0x00ffff); mat.emissiveIntensity=10.0;
+        mat.clearCoat.isEnabled=true; mat.clearCoat.intensity=0.8; mat.clearCoat.roughness=0.1;
+        mesh.material=mat; mesh.castShadows=true; mesh.receiveShadows=true;
+        if(window._shadowGen)window._shadowGen.addShadowCaster(mesh);
+        projectile=mesh;
       }
 
+      // ─── EFFECTS SETUP ────────────────────────────────────────────────
       function setupEffects() {
-        const shockGeom = new THREE.SphereGeometry(4.0, 32, 32);
-        const shockMat = new THREE.MeshBasicMaterial({
-          color: 0xef4444,
-          transparent: true,
-          opacity: 0.6,
-          wireframe: true,
-        });
-        shockwave = new THREE.Mesh(shockGeom, shockMat);
-        shockwave.visible = false;
-        scene.add(shockwave);
+        // Shockwave wireframe sphere
+        shockwave=BABYLON.MeshBuilder.CreateSphere("sw",{diameter:8,segments:32},scene);
+        const swm=new BABYLON.StandardMaterial("swm",scene);
+        swm.emissiveColor=c3(0xef4444); swm.wireframe=true; swm.alpha=0.6;
+        shockwave.material=swm; shockwave.isVisible=false;
 
-        const expGeom = new THREE.SphereGeometry(5.0, 32, 32);
-        const expMat = new THREE.MeshPhysicalMaterial({
-          color: 0xf97316,
-          emissive: 0xf97316,
-          emissiveIntensity: 2.0,
-          transparent: true,
-          opacity: 0.9,
-        });
-        explosionSphere = new THREE.Mesh(expGeom, expMat);
-        explosionSphere.visible = false;
-        scene.add(explosionSphere);
+        // Explosion fireball
+        explosionSphere=BABYLON.MeshBuilder.CreateSphere("exp",{diameter:10,segments:32},scene);
+        const exm=new BABYLON.PBRMaterial("exm",scene);
+        exm.albedoColor=c3(0xf97316); exm.emissiveColor=c3(0xf97316);
+        exm.emissiveIntensity=2.0; exm.alpha=0.9;
+        explosionSphere.material=exm; explosionSphere.isVisible=false;
 
-        // Refractive sonic boom
-        const ringGeom = new THREE.RingGeometry(1, 2.5, 64);
-        const ringMat = new THREE.MeshBasicMaterial({
-          color: 0xa5f3fc,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.9,
-        });
-        boomRing = new THREE.Mesh(ringGeom, ringMat);
-        boomRing.rotation.x = Math.PI / 2;
-        boomRing.visible = false;
-        scene.add(boomRing);
+        // Sonic boom ring (torus — replaces THREE.RingGeometry)
+        boomRing=BABYLON.MeshBuilder.CreateTorus("br",{diameter:3.5,thickness:1.5,tessellation:64},scene);
+        const brm=new BABYLON.StandardMaterial("brm",scene);
+        brm.emissiveColor=c3(0xa5f3fc); brm.backFaceCulling=false; brm.alpha=0.9;
+        boomRing.material=brm; boomRing.rotation.x=Math.PI/2; boomRing.isVisible=false;
 
-        // Volumetric Prandtl-Glauert Supersonic Mach Vapor Cone
-        const machConeGroup = new THREE.Group();
+        // Mach cone: TransformNode parent + two child cylinders (replaces THREE.Group)
+        const mn=new BABYLON.TransformNode("mc",scene);
+        const ic=BABYLON.MeshBuilder.CreateCylinder("ic",{height:12,diameterTop:0,diameterBottom:7,tessellation:32},scene);
+        ic.parent=mn; ic.rotation.x=Math.PI;
+        const icm=new BABYLON.StandardMaterial("icm",scene);
+        icm.emissiveColor=c3(0x38bdf8); icm.backFaceCulling=false; icm.alpha=0.32;
+        ic.material=icm; ic.isVisible=false;
+        const oc=BABYLON.MeshBuilder.CreateCylinder("oc",{height:14,diameterTop:0,diameterBottom:9.6,tessellation:32},scene);
+        oc.parent=mn; oc.rotation.x=Math.PI;
+        const ocm=new BABYLON.StandardMaterial("ocm",scene);
+        ocm.emissiveColor=c3(0x0284c7); ocm.backFaceCulling=false; ocm.alpha=0.08;
+        oc.material=ocm; oc.isVisible=false;
+        mn._coneParts=[ic,oc]; machCone=mn;
 
-        // 1. Core High-Pressure Compression Cone (Vertex gradient: High opacity at tip, fading at base)
-        const coneGeom = new THREE.ConeGeometry(3.5, 12.0, 32, 16, true);
-        const posAttr = coneGeom.attributes.position;
-        const colors = [];
-        const baseVaporColor = new THREE.Color(0x38bdf8); // Atmospheric cyan-blue vapor
-        const tipIntenseColor = new THREE.Color(0xf0f9ff); // Bright shock compression tip
-
-        for (let i = 0; i < posAttr.count; i++) {
-          const y = posAttr.getY(i);
-          // t = 1 at tip (y = +6), t = 0 at base (y = -6)
-          const t = Math.max(0, Math.min(1, (y - -6.0) / 12.0));
-          const c = new THREE.Color().lerpColors(
-            baseVaporColor,
-            tipIntenseColor,
-            Math.pow(t, 2.0),
-          );
-          // Multiply RGB by t^1.5 so alpha/brightness vanishes towards base
-          const intensity = Math.pow(t, 1.5);
-          colors.push(c.r * intensity, c.g * intensity, c.b * intensity);
-        }
-        coneGeom.setAttribute(
-          "color",
-          new THREE.Float32BufferAttribute(colors, 3),
-        );
-
-        const coneMat = new THREE.MeshBasicMaterial({
-          vertexColors: true,
-          transparent: true,
-          opacity: 0.32,
-          side: THREE.DoubleSide,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        });
-        const innerCone = new THREE.Mesh(coneGeom, coneMat);
-        innerCone.rotation.x = Math.PI; // point down towards projectile nose
-        machConeGroup.add(innerCone);
-
-        // 2. Outer Soft Vapor Condensation Envelope
-        const outerGeom = new THREE.ConeGeometry(4.8, 14.0, 32, 1, true);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: 0x0284c7,
-          transparent: true,
-          opacity: 0.08,
-          side: THREE.DoubleSide,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        });
-        const outerCone = new THREE.Mesh(outerGeom, outerMat);
-        outerCone.rotation.x = Math.PI;
-        machConeGroup.add(outerCone);
-
-        // 3. Supersonic Condensation Dust / Vapor Swarm Particles
-        const machDustGeo = new THREE.BufferGeometry();
-        const machDustCount = 350;
-        const machDustPos = new Float32Array(machDustCount * 3);
-        for (let i = 0; i < machDustCount; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const h = Math.random(); // 0 at tip to 1 at base
-          const r = h * 4.2 * Math.random();
-          machDustPos[i * 3] = Math.cos(angle) * r;
-          machDustPos[i * 3 + 1] = -6.0 + h * 12.0; // extending UPWARDS from apex (-6) to base (+6)
-          machDustPos[i * 3 + 2] = Math.sin(angle) * r;
-        }
-        machDustGeo.setAttribute(
-          "position",
-          new THREE.BufferAttribute(machDustPos, 3),
-        );
-        const machDustMat = new THREE.PointsMaterial({
-          color: 0x7dd3fc,
-          size: 0.5,
-          transparent: true,
-          opacity: 0.3,
-          blending: THREE.AdditiveBlending,
-        });
-        const machDust = new THREE.Points(machDustGeo, machDustMat);
-        machConeGroup.add(machDust);
-
-        machCone = machConeGroup;
-        machCone.visible = false;
-        scene.add(machCone);
-
-        // Volumetric dust particles (InstancedMesh for high performance)
-        const dustGeom = new THREE.DodecahedronGeometry(0.3, 0);
-        const dustMat = new THREE.MeshStandardMaterial({
-          color: 0x888888,
-          roughness: 0.9,
-        });
-        dustParticles = new THREE.InstancedMesh(dustGeom, dustMat, 1000);
-        dustParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-
-        const dummy = new THREE.Object3D();
-        for (let i = 0; i < 1000; i++) {
-          dummy.position.set(0, -9999, 0); // Hide initially
-          dummy.updateMatrix();
-          dustParticles.setMatrixAt(i, dummy.matrix);
-        }
-        dustParticles.instanceMatrix.needsUpdate = true;
-        scene.add(dustParticles);
+        // Impact dust: SolidParticleSystem (replaces THREE.InstancedMesh)
+        const db=BABYLON.MeshBuilder.CreatePolyhedron("db",{type:2,size:0.3},scene);
+        dustSPS=new BABYLON.SolidParticleSystem("dSPS",scene);
+        dustSPS.addShape(db,1000); db.dispose();
+        const dm=dustSPS.buildMesh();
+        const dmm=new BABYLON.StandardMaterial("dmm",scene);
+        dmm.diffuseColor=c3(0x888888); dm.material=dmm;
+        for(let i=0;i<dustSPS.nbParticles;i++){dustSPS.particles[i].position.y=-9999;dustSPS.particles[i].isVisible=false;}
+        dustSPS.setParticles();
       }
 
+      // ─── CRATER MESH (replaces THREE.LatheGeometry) ──────────────────
+      function buildCraterMesh(depth) {
+        const rw=currentData?currentData.crater_wide_radius:4.5;
+        const rn=currentData?currentData.crater_narrow_radius:1.0;
+        const sd=Math.min(depth,3.5);
+        return BABYLON.MeshBuilder.CreateLathe("crater",{shape:[
+          new BABYLON.Vector3(rw,  0.1,   0),
+          new BABYLON.Vector3(rn, -sd,    0),
+          new BABYLON.Vector3(rn, -depth, 0),
+          new BABYLON.Vector3(0,  -depth, 0)
+        ],tessellation:64,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);
+      }
+
+      // ─── CLEAR MESH ARRAY ─────────────────────────────────────────────
+      function clearMeshArray(arr) {
+        arr.forEach(m=>{if(m&&!m.isDisposed()){if(m.material)m.material.dispose();m.dispose();}});
+        arr.length=0;
+      }
+
+      // ─── CAMERA CONTROLS ──────────────────────────────────────────────
       function toggleFollowCam() {
-        followCam = !followCam;
-        if (window.ReactAPI) {
-          window.ReactAPI.setFollowCam(followCam);
-        }
+        followCam=!followCam;
+        if(window.ReactAPI)window.ReactAPI.setFollowCam(followCam);
+      }
+      function setSimSpeed(s){ simSpeedMultiplier=s; }
+
+      // Smooth camera move — replaces TWEEN-based animation
+      function smoothCameraMove(px,py,pz,tx,ty,tz) {
+        cameraAnimatables.forEach(a=>{try{a.stop();}catch(e){}});
+        cameraAnimatables=[];
+        const dx=px-tx,dy=py-ty,dz=pz-tz;
+        const nr=Math.sqrt(dx*dx+dy*dy+dz*dz);
+        const nb=Math.acos(Math.max(-1,Math.min(1,dy/nr)));
+        const na=Math.atan2(dz,dx);
+        const ease=new BABYLON.CubicEase();
+        ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+        const F=60,D=60;
+        const push=a=>{if(a)cameraAnimatables.push(a);};
+        push(BABYLON.Animation.CreateAndStartAnimation("ca",camera,"alpha", F,D,camera.alpha, na,0,ease));
+        push(BABYLON.Animation.CreateAndStartAnimation("cb",camera,"beta",  F,D,camera.beta,  nb,0,ease));
+        push(BABYLON.Animation.CreateAndStartAnimation("cr",camera,"radius",F,D,camera.radius,nr,0,ease));
+        push(BABYLON.Animation.CreateAndStartAnimation("ct",camera,"target",F,D,camera.target.clone(),new BABYLON.Vector3(tx,ty,tz),0,ease));
       }
 
-      function setSimSpeed(speed) {
-        simSpeedMultiplier = speed;
-      }
-
-      function smoothCameraMove(px, py, pz, tx, ty, tz) {
-        controls.enableDamping = false; // Prevent fighting during tween
-        new TWEEN.Tween(camera.position)
-          .to({ x: px, y: py, z: pz }, 1000)
-          .easing(TWEEN.Easing.Cubic.InOut)
-          .start();
-
-        new TWEEN.Tween(controls.target)
-          .to({ x: tx, y: ty, z: tz }, 1000)
-          .easing(TWEEN.Easing.Cubic.InOut)
-          .onComplete(() => {
-            controls.enableDamping = true;
-          })
-          .start();
-      }
-
+      // ─── ECHARTS TELEMETRY (unchanged) ────────────────────────────────
       function initECharts() {
-        if (!echarts) return;
-        telemetryChart = echarts.init(
-          document.getElementById("telemetry-chart"),
-        );
-
-        const option = {
-          backgroundColor: "transparent",
-          tooltip: { trigger: "axis" },
-          grid: { left: 5, right: 5, top: 10, bottom: 5, containLabel: false },
-          xAxis: {
-            type: "category",
-            show: false,
-            data: chartDataTime,
-          },
-          yAxis: {
-            type: "value",
-            show: false,
-            min: 0,
-          },
-          series: [
-            {
-              name: "Velocity",
-              type: "line",
-              smooth: true,
-              symbol: "none",
-              itemStyle: { color: "#38bdf8" },
-              areaStyle: {
-                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                  { offset: 0, color: "rgba(56, 189, 248, 0.5)" },
-                  { offset: 1, color: "rgba(56, 189, 248, 0.0)" },
-                ]),
-              },
-              data: chartDataVel,
-            },
-          ],
-        };
-        telemetryChart.setOption(option);
-      }
-
-      function updateChart() {
-        if (!telemetryChart) return;
+        if(typeof echarts==="undefined")return;
+        telemetryChart=echarts.init(document.getElementById("telemetry-chart"));
         telemetryChart.setOption({
-          xAxis: { data: chartDataTime },
-          series: [{ data: chartDataVel }],
+          backgroundColor:"transparent",
+          tooltip:{trigger:"axis"},
+          grid:{left:5,right:5,top:10,bottom:5,containLabel:false},
+          xAxis:{type:"category",show:false,data:chartDataTime},
+          yAxis:{type:"value",show:false,min:0},
+          series:[{name:"Velocity",type:"line",smooth:true,symbol:"none",
+            itemStyle:{color:"#38bdf8"},
+            areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[
+              {offset:0,color:"rgba(56,189,248,0.5)"},{offset:1,color:"rgba(56,189,248,0.0)"}
+            ])},data:chartDataVel}]
         });
       }
-
-            function tweenNumber(elId, newVal, formatFn) {
-        // Obsolete in React paradigm, kept for compatibility if needed elsewhere
+      function updateChart() {
+        if(!telemetryChart)return;
+        telemetryChart.setOption({xAxis:{data:chartDataTime},series:[{data:chartDataVel}]});
       }
 
+      // ─── HUD UPDATE → ReactAPI bridge (unchanged) ─────────────────────
       function updateHUD(frame) {
-        // Send state to React
-        if (window.ReactAPI) {
-            window.ReactAPI.setFrameData({
-                velocity: frame.v !== undefined ? frame.v : 0,
-                pressure: frame.p !== undefined ? frame.p : 0,
-                depth: frame.y !== undefined ? Math.abs(frame.y) : 0,
-                gforce: frame.g !== undefined ? frame.g : 0,
-                dif: frame.dif !== undefined ? frame.dif : 1.0,
-                length: frame.rl !== undefined ? frame.rl : 0,
-                phase: frame.e ? "ERODING (WAPM)" : (animState === "DROPPING" ? "FREEFALL" : "RIGID")
-            });
+        if(window.ReactAPI){
+          window.ReactAPI.setFrameData({
+            velocity: frame.v!==undefined?frame.v:0,
+            pressure: frame.p!==undefined?frame.p:0,
+            depth:    frame.y!==undefined?Math.abs(frame.y):0,
+            gforce:   frame.g!==undefined?frame.g:0,
+            dif:      frame.dif!==undefined?frame.dif:1.0,
+            length:   frame.rl!==undefined?frame.rl:0,
+            phase:    frame.e?"ERODING (WAPM)":(animState==="DROPPING"?"FREEFALL":"RIGID")
+          });
         }
-
-        // Update ECharts
-        chartDataTime.push(frame.t !== undefined ? frame.t.toFixed(2) : "");
+        chartDataTime.push(frame.t!==undefined?frame.t.toFixed(2):"");
         chartDataVel.push(frame.v);
-
-        if (chartDataTime.length > 100) {
-          chartDataTime.shift();
-          chartDataVel.shift();
-        }
-
-        // Throttle chart updates slightly to prevent layout thrashing on fast sims
-        if (Math.random() > 0.5 && typeof updateChart === 'function') {
-          updateChart();
-        }
+        if(chartDataTime.length>100){chartDataTime.shift();chartDataVel.shift();}
+        if(Math.random()>0.5)updateChart();
       }
 
+      // ─── FINAL BADGES ─────────────────────────────────────────────────
       function buildFinalBadges(data) {
-        // We only handle 3D mesh swapping here, React handles the UI
-        if (data.is_kinetic) {
-          if (projectile && projectile.geometry) {
-            projectile.geometry.dispose();
-            let pRadius = currentData.proj_diameter / 2.0;
-            projectile.geometry = createGBU57Geometry(
-              pRadius,
-              currentData.proj_length
-            );
-            projectile.material.metalness = 0.5;
-            projectile.material.color.setHex(0xa855f7);
-          }
-        }
-        // Non-kinetic projectile appearance is handled by selectScenario
-      }
-
-      function clearGroup(group) {
-        while (group.children.length > 0) {
-          const child = group.children[0];
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) {
-            if (Array.isArray(child.material))
-              child.material.forEach((m) => m.dispose());
-            else child.material.dispose();
-          }
-          group.remove(child);
+        if(data.is_kinetic&&projectile){
+          projectile.material.metallic=0.5;
+          projectile.material.albedoColor=c3(0xa855f7);
         }
       }
 
-      function createCraterGeometry(depth) {
-        const points = [];
-        const r_wide = currentData ? currentData.crater_wide_radius : 4.5;
-        const r_narrow = currentData ? currentData.crater_narrow_radius : 1.0;
-        const shallow_depth = Math.min(depth, 3.5);
-
-        // Spline smoothing could go here, for now linear interpolation points
-        points.push(new THREE.Vector2(r_wide, 0.1));
-        points.push(new THREE.Vector2(r_narrow, -shallow_depth));
-        points.push(new THREE.Vector2(r_narrow, -depth));
-        points.push(new THREE.Vector2(0, -depth));
-        return new THREE.LatheGeometry(points, 64);
-      }
-
-      function selectScenario(index, manualClick = true) {
-        if (!scenarios[index]) return;
-        TWEEN.removeAll(); // Clear running UI/Camera animations
-        stopAnthem(); // Stop any running national anthem sound
-
-        currentData = scenarios[index];
-        if (window.ReactAPI) {
-            window.ReactAPI.setActiveScenarioIdx(index);
-        }
-
-        let maxAlt = 0;
-        if (currentData.drop_frames && currentData.drop_frames.length > 0) {
-          maxAlt = Math.abs(currentData.drop_frames[0].y);
-        }
-
-        // Always clear and rebuild, properly disposing of memory
-        clearGroup(targetLayersGroup);
-        clearGroup(cratersGroup);
-        clearGroup(airGroup);
-
-        // Build Air Volume and Dust Particles
-        let effectiveAlt = maxAlt > 0 ? maxAlt : 60;
-        const airGeo = new THREE.BoxGeometry(100, effectiveAlt, 100);
-        const airMat = new THREE.MeshPhysicalMaterial({
-          color: 0x0284c7,
-          transparent: true,
-          opacity: 0.05,
-          transmission: 0.9,
-          roughness: 0.1,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        });
-        airBox = new THREE.Mesh(airGeo, airMat);
-        airBox.position.y = effectiveAlt / 2;
-        airGroup.add(airBox);
-
-        // Dust particles (falling flakes with barometric altitude density gradient)
-        const maxH = effectiveAlt + 30;
-        const scaleK = 2.2 / maxH;
-        const sampleAltitude = () => {
-          const u = Math.random();
-          return -Math.log(1 - u * (1 - Math.exp(-2.2))) / scaleK;
+      // ─── FRAME INTERPOLATION (identical logic to Three.js version) ────
+      function getInterpolatedFrame(frames,t) {
+        if(frames.length===0)return null;
+        if(t<=frames[0].t)return frames[0];
+        if(t>=frames[frames.length-1].t)return frames[frames.length-1];
+        let idx=frames.findIndex(f=>f.t>=t);
+        if(idx===0)idx=1;
+        const f0=frames[idx-1],f1=frames[idx];
+        const fac=(t-f0.t)/(f1.t-f0.t);
+        const L=(a,b)=>(a!==undefined&&b!==undefined)?a+(b-a)*fac:undefined;
+        return {
+          t,y:L(f0.y,f1.y),v:L(f0.v,f1.v),m:L(f0.m,f1.m),
+          p:L(f0.p,f1.p),g:L(f0.g,f1.g),h:L(f0.h,f1.h),
+          dif:L(f0.dif,f1.dif),rl:L(f0.rl,f1.rl),ob:L(f0.ob,f1.ob),
+          obliquity_deg:f0.obliquity_deg!==undefined?L(f0.obliquity_deg,f1.obliquity_deg):(f0.ob!==undefined?L(f0.ob,f1.ob):undefined),
+          aoa_deg:L(f0.aoa_deg,f1.aoa_deg),pr:L(f0.pr,f1.pr),
+          sb:fac<0.5?f0.sb:f1.sb, e:fac<0.5?f0.e:f1.e
         };
+      }
 
-        const dustGeo = new THREE.BufferGeometry();
-        const dustVerts = [];
-        for (let i = 0; i < 2500; i++) {
-          dustVerts.push(
-            (Math.random() - 0.5) * 150,
-            sampleAltitude(),
-            (Math.random() - 0.5) * 150,
-          );
+      // ─── SELECT SCENARIO ──────────────────────────────────────────────
+      function selectScenario(index) {
+        if(!scenarios[index])return;
+        cameraAnimatables.forEach(a=>{try{a.stop();}catch(e){}});
+        cameraAnimatables=[];
+        stopAnthem();
+        currentData=scenarios[index];
+        if(window.ReactAPI)window.ReactAPI.setActiveScenarioIdx(index);
+
+        let maxAlt=0;
+        if(currentData.drop_frames&&currentData.drop_frames.length>0)
+          maxAlt=Math.abs(currentData.drop_frames[0].y);
+
+        clearMeshArray(targetLayerMeshes);
+        clearMeshArray(airMeshes);
+
+        // Volumetric air box
+        const effAlt=maxAlt>0?maxAlt:60;
+        const ab=BABYLON.MeshBuilder.CreateBox("ab",{width:100,height:effAlt,depth:100},scene);
+        ab.position.y=effAlt/2;
+        const abm=new BABYLON.PBRMaterial("abm",scene);
+        abm.albedoColor=c3(0x0284c7); abm.alpha=0.05; abm.metallic=0; abm.roughness=0.1;
+        ab.material=abm; ab.isPickable=false; airMeshes.push(ab);
+
+        // Ambient falling dust (replaces THREE.Points + BufferAttribute per-frame update)
+        if(ambientDustMesh&&!ambientDustMesh.isDisposed())ambientDustMesh.dispose();
+        const DC=2500;
+        ambientDustMaxH=effAlt+30; ambientDustScaleK=2.2/ambientDustMaxH;
+        const sA=()=>{const u=Math.random();return -Math.log(1-u*(1-Math.exp(-2.2)))/ambientDustScaleK;};
+        ambientDustPositions=new Float32Array(DC*3);
+        const di=new Int32Array(DC);
+        for(let i=0;i<DC;i++){
+          ambientDustPositions[i*3]=(Math.random()-0.5)*150;
+          ambientDustPositions[i*3+1]=sA();
+          ambientDustPositions[i*3+2]=(Math.random()-0.5)*150;
+          di[i]=i;
         }
-        dustGeo.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(dustVerts, 3),
-        );
-        const dustMat = new THREE.PointsMaterial({
-          color: 0xbae6fd,
-          size: 0.8,
-          transparent: true,
-          opacity: 0.6,
-        });
-        ambientDustParticles = new THREE.Points(dustGeo, dustMat);
-        airGroup.add(ambientDustParticles);
+        ambientDustMesh=new BABYLON.Mesh("ad",scene);
+        const vd=new BABYLON.VertexData();
+        vd.positions=ambientDustPositions; vd.indices=di;
+        vd.applyToMesh(ambientDustMesh,true);
+        const adm=new BABYLON.StandardMaterial("adm",scene);
+        adm.emissiveColor=c3(0xbae6fd); adm.disableLighting=true;
+        adm.pointsCloud=true; adm.pointSize=2; adm.alpha=0.6;
+        ambientDustMesh.material=adm; airMeshes.push(ambientDustMesh);
 
-        let currentY = 0;
-        if (currentData.target_layers && currentData.target_layers.length > 0) {
-          currentData.target_layers.forEach((layer) => {
-            const thickness = Math.max(2, Math.min(60, layer.thickness));
-            const blockGeom = new THREE.BoxGeometry(32, thickness - 0.05, 32); // 0.05 gap
-
-            let color = 0x334155;
-            let rough = 0.8;
-            let metal = 0.1;
-            if (layer.density < 2000) {
-              color = 0x5c4033;
-              rough = 1.0;
-              metal = 0.0;
-            } // Dirt
-            else if (layer.density > 2600) {
-              color = 0x1e293b;
-              rough = 0.4;
-              metal = 0.3;
-            } // Hard rock/concrete
-
-            const blockMat = new THREE.MeshStandardMaterial({
-              color: color,
-              transparent: true,
-              opacity: 0.6,
-              roughness: rough,
-              metalness: metal,
-              depthWrite: false,
-            });
-            const blockMesh = new THREE.Mesh(blockGeom, blockMat);
-            blockMesh.position.set(0, currentY - thickness / 2, 0);
-            blockMesh.receiveShadow = true;
-
-            const edges = new THREE.EdgesGeometry(blockGeom);
-            const line = new THREE.LineSegments(
-              edges,
-              new THREE.LineBasicMaterial({
-                color: 0x475569,
-                linewidth: 1.0,
-                transparent: true,
-                opacity: 0.4,
-              }),
-            );
-            blockMesh.add(line);
-
-            targetLayersGroup.add(blockMesh);
-            currentY -= thickness;
+        // Target layers
+        let curY=0;
+        if(currentData.target_layers&&currentData.target_layers.length>0){
+          currentData.target_layers.forEach(layer=>{
+            const th=Math.max(2,Math.min(60,layer.thickness));
+            const bl=BABYLON.MeshBuilder.CreateBox("bl",{width:32,height:th-0.05,depth:32},scene);
+            let ch=0x334155,ro=0.8,me=0.1;
+            if(layer.density<2000){ch=0x5c4033;ro=1.0;me=0.0;}
+            else if(layer.density>2600){ch=0x1e293b;ro=0.4;me=0.3;}
+            const bm=new BABYLON.PBRMaterial("bm"+layer.name,scene);
+            bm.albedoColor=c3(ch); bm.metallic=me; bm.roughness=ro; bm.alpha=0.6;
+            bl.material=bm; bl.position.y=curY-th/2; bl.receiveShadows=true;
+            targetLayerMeshes.push(bl); curY-=th;
           });
         }
 
         rebuildRulers(maxAlt);
+        chartDataTime=[]; chartDataVel=[]; updateChart();
 
-        // Reset graph
-        chartDataTime = [];
-        chartDataVel = [];
-        updateChart();
+        // Crater
+        if(activeCrater&&!activeCrater.isDisposed()){activeCrater.material=null;activeCrater.dispose();}
+        const cm=new BABYLON.PBRMaterial("cm",scene);
+        cm.albedoColor=c3(0xef4444); cm.emissiveColor=c3(0xb91c1c);
+        cm.emissiveIntensity=2.5; cm.roughness=0.4; cm.metallic=0.2; cm.backFaceCulling=false;
+        activeCrater=buildCraterMesh(0.1); activeCrater.material=cm; activeCrater.isVisible=false;
 
-        // Red glowing hole/tunnel as requested by user
-        const craterMat = new THREE.MeshStandardMaterial({
-          color: 0xef4444,
-          emissive: 0xb91c1c,
-          emissiveIntensity: 2.5,
-          roughness: 0.4,
-          metalness: 0.2,
-          side: THREE.DoubleSide,
-        });
-        activeCrater = new THREE.Mesh(createCraterGeometry(0.1), craterMat);
-        activeCrater.visible = false;
-        cratersGroup.add(activeCrater);
-
-        // Reset Projectile Geometry
-        if (!currentData.is_kinetic) {
-          projectile.geometry.dispose();
-          let pRadius = currentData.proj_diameter / 2.0;
-          projectile.geometry = createGBU57Geometry(
-            pRadius,
-            currentData.proj_length,
-          );
-          projectile.material.metalness = 0.3;
-          projectile.material.color.setHex(0x00ffff);
-          projectile.material.emissive.setHex(0x00ffff);
-          projectile.material.emissiveIntensity = 10.0;
-        } else {
-          projectile.material.emissive.setHex(0x9333ea); // Purple glow for kinetic
-          projectile.material.emissiveIntensity = 10.0;
+        // Rebuild projectile for new scenario dimensions
+        if(projectile){
+          const om=projectile.material; projectile.material=null; projectile.dispose();
+          projectile=createGBU57Mesh(currentData.proj_diameter/2.0,currentData.proj_length);
+          projectile.material=om;
+          if(window._shadowGen)window._shadowGen.addShadowCaster(projectile);
         }
-        projectile.scale.set(1, 1, 1);
-        projectile.position.set(0, maxAlt > 0 ? maxAlt : 50, 0);
-        // Aircraft release: start 100% horizontal (pitched 90 degrees / PI / 2), exactly like B-2 drop
-        projectile.rotation.set(0, 0, Math.PI / 2.0);
-        projectile.visible = true;
 
-        // Reset Effect States fully
-        machCone.visible = false;
-        shockwave.visible = false;
-        shockwave.scale.set(1, 1, 1);
-        shockwave.material.opacity = 0.6;
+        if(!currentData.is_kinetic){
+          projectile.material.metallic=0.3; projectile.material.albedoColor=c3(0x00ffff);
+          projectile.material.emissiveColor=c3(0x00ffff); projectile.material.emissiveIntensity=10.0;
+        } else {
+          projectile.material.emissiveColor=c3(0x9333ea); projectile.material.emissiveIntensity=10.0;
+        }
 
-        explosionSphere.visible = false;
-        explosionSphere.scale.set(0.1, 0.1, 0.1);
-        explosionSphere.material.opacity = 0.9;
+        projectile.scaling=new BABYLON.Vector3(1,1,1);
+        projectile.position=new BABYLON.Vector3(0,maxAlt>0?maxAlt:50,0);
+        projectile.rotation=new BABYLON.Vector3(0,0,Math.PI/2.0);
+        projectile.isVisible=true;
 
-        boomRing.visible = false;
-        boomRing.scale.set(1, 1, 1);
-        boomRing.material.opacity = 0.9;
+        machCone._coneParts.forEach(c=>{c.isVisible=false;});
+        shockwave.isVisible=false; shockwave.scaling=new BABYLON.Vector3(1,1,1); shockwave.material.alpha=0.6;
+        explosionSphere.isVisible=false; explosionSphere.scaling=new BABYLON.Vector3(0.1,0.1,0.1); explosionSphere.material.alpha=0.9;
+        boomRing.isVisible=false; boomRing.scaling=new BABYLON.Vector3(1,1,1); boomRing.material.alpha=0.9;
 
         buildFinalBadges(currentData);
-
-        animState = "PRE_DELAY";
-        simTime = 0;
-        prevFrame = null;
-        explosionTriggered = false;
-        cameraShake = 0;
+        animState="PRE_DELAY"; simTime=0; prevFrame=null; explosionTriggered=false; cameraShake=0;
       }
 
-      function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
-      }
+      // ─── MAIN ANIMATION LOOP ──────────────────────────────────────────
+      function animationLoop() {
+        // getDeltaTime() returns ms — convert to seconds
+        const dt=Math.min(engine.getDeltaTime()/1000,0.1);
 
-      function getInterpolatedFrame(frames, t) {
-        if (frames.length === 0) return null;
-        if (t <= frames[0].t) return frames[0];
-        if (t >= frames[frames.length - 1].t) return frames[frames.length - 1];
-
-        let idx = frames.findIndex((f) => f.t >= t);
-        if (idx === 0) idx = 1;
-
-        const f0 = frames[idx - 1];
-        const f1 = frames[idx];
-        const factor = (t - f0.t) / (f1.t - f0.t);
-
-        return {
-          t: t,
-          y: THREE.MathUtils.lerp(f0.y, f1.y, factor),
-          v: THREE.MathUtils.lerp(f0.v, f1.v, factor),
-          m: THREE.MathUtils.lerp(f0.m, f1.m, factor),
-          p:
-            f0.p !== undefined
-              ? THREE.MathUtils.lerp(f0.p, f1.p, factor)
-              : undefined,
-          g:
-            f0.g !== undefined
-              ? THREE.MathUtils.lerp(f0.g, f1.g, factor)
-              : undefined,
-          h:
-            f0.h !== undefined
-              ? THREE.MathUtils.lerp(f0.h, f1.h, factor)
-              : undefined,
-          dif:
-            f0.dif !== undefined
-              ? THREE.MathUtils.lerp(f0.dif, f1.dif, factor)
-              : undefined,
-          rl:
-            f0.rl !== undefined
-              ? THREE.MathUtils.lerp(f0.rl, f1.rl, factor)
-              : undefined,
-          ob:
-            f0.ob !== undefined
-              ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
-              : undefined,
-          obliquity_deg:
-            f0.obliquity_deg !== undefined
-              ? THREE.MathUtils.lerp(f0.obliquity_deg, f1.obliquity_deg, factor)
-              : f0.ob !== undefined
-                ? THREE.MathUtils.lerp(f0.ob, f1.ob, factor)
-                : undefined,
-          aoa_deg:
-            f0.aoa_deg !== undefined
-              ? THREE.MathUtils.lerp(f0.aoa_deg, f1.aoa_deg, factor)
-              : undefined,
-          sb: factor < 0.5 ? f0.sb : f1.sb,
-          e: factor < 0.5 ? f0.e : f1.e,
-        };
-      }
-
-      function animate(time) {
-        requestAnimationFrame(animate);
-        TWEEN.update(time);
-
-        let dt = clock.getDelta();
-        if (dt > 0.1) dt = 0.1; // Cap delta to prevent huge jumps
-
-        if (ambientDustParticles && airBox) {
-          const positions =
-            ambientDustParticles.geometry.attributes.position.array;
-          const maxH = airBox.geometry.parameters.height + 30;
-          const scaleK = 2.2 / maxH;
-
-          for (let i = 1; i < positions.length; i += 3) {
-            const y = positions[i];
-            const airDensityFactor = Math.exp(-scaleK * y);
-            // Slower terminal fall velocity near ground (dense air), faster fall at high altitude (thin air)
-            const fallSpeed = 3.0 + 6.0 * (1.0 - airDensityFactor);
-
-            positions[i] -= dt * fallSpeed;
-            if (positions[i] < 0) {
-              const u = Math.random();
-              positions[i] = -Math.log(1 - u * (1 - Math.exp(-2.2))) / scaleK;
+        // Ambient dust fall — replaces THREE.Points BufferAttribute update
+        if(ambientDustMesh&&ambientDustPositions&&!ambientDustMesh.isDisposed()){
+          const sk=ambientDustScaleK;
+          for(let i=1;i<ambientDustPositions.length;i+=3){
+            const y=ambientDustPositions[i];
+            const rho=Math.exp(-sk*y);
+            ambientDustPositions[i]-=dt*(3.0+6.0*(1.0-rho));
+            if(ambientDustPositions[i]<0){
+              const u=Math.random();
+              ambientDustPositions[i]=-Math.log(1-u*(1-Math.exp(-2.2)))/sk;
             }
           }
-          ambientDustParticles.geometry.attributes.position.needsUpdate = true;
+          ambientDustMesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind,ambientDustPositions,false,false);
         }
 
-        if (animState === "PRE_DELAY") {
-          simTime += dt;
-          if (simTime > 1.0) {
-            animState =
-              currentData.drop_frames && currentData.drop_frames.length > 0
-                ? "DROPPING"
-                : "PENETRATING";
+        // Boom ring growth
+        if(boomRing.isVisible){
+          const s=boomRing.scaling.x+dt*boomRingGrowthRate;
+          boomRing.scaling=new BABYLON.Vector3(s,s,s);
+          boomRing.material.alpha-=dt*1.5;
+          if(boomRing.material.alpha<=0)boomRing.isVisible=false;
+        }
 
-            // Play USA National Anthem as bomb drop animation begins!
+        // Shockwave spin
+        if(shockwave.isVisible){shockwave.rotation.y+=dt*2;shockwave.rotation.x+=dt;}
+
+        // ── State Machine ──────────────────────────────────────────────
+        if(animState==="PRE_DELAY"){
+          simTime+=dt;
+          if(simTime>1.0){
+            animState=(currentData.drop_frames&&currentData.drop_frames.length>0)?"DROPPING":"PENETRATING";
             playAnthem();
-
-            if (animState === "DROPPING") {
-              simTime = currentData.drop_frames[0].t;
-            } else if (
-              currentData.pen_frames &&
-              currentData.pen_frames.length > 0
-            ) {
-              simTime = currentData.pen_frames[0].t;
-            } else {
-              simTime = 0;
-            }
+            if(animState==="DROPPING") simTime=currentData.drop_frames[0].t;
+            else if(currentData.pen_frames&&currentData.pen_frames.length>0) simTime=currentData.pen_frames[0].t;
+            else simTime=0;
           }
-        } else if (animState === "DROPPING") {
-          simTime += dt * simSpeedMultiplier;
-          const maxTime =
-            currentData.drop_frames[currentData.drop_frames.length - 1].t;
+        } else if(animState==="DROPPING"){
+          simTime+=dt*simSpeedMultiplier;
+          const maxT=currentData.drop_frames[currentData.drop_frames.length-1].t;
+          if(simTime<maxT){
+            const frame=getInterpolatedFrame(currentData.drop_frames,simTime);
+            projectile.position.y=frame.y;
+            const maxDA=Math.abs(currentData.drop_frames[0].y)||60;
+            const dp=Math.max(0,Math.min(1.0,1.0-frame.y/maxDA));
+            const pitch=frame.pr!==undefined?frame.pr:(Math.PI/2.0)*(1.0-Math.pow(dp,0.75));
+            projectile.rotation.z=pitch;
 
-          if (simTime < maxTime) {
-            const frame = getInterpolatedFrame(
-              currentData.drop_frames,
-              simTime,
-            );
-            projectile.position.y = frame.y;
-
-            // 100% Physically-based aerodynamic pitch alignment:
-            // Fin-stabilized flight path angle of attack theta = atan2(vx, |vy|)
-            const maxDropAlt =
-              currentData &&
-              currentData.drop_frames &&
-              currentData.drop_frames.length > 0
-                ? Math.abs(currentData.drop_frames[0].y)
-                : 60;
-            // Aerodynamic free-fall pitch rotation:
-            // Spawns 100% horizontal (PI/2 = 90 deg) matching aircraft release,
-            // then aerodynamically rotates pitch smoothly down to vertical (0 deg) as it accelerates toward ground
-            const dropProgress = Math.max(
-              0,
-              Math.min(1.0, 1.0 - frame.y / maxDropAlt),
-            );
-            const pitchRad =
-              frame.pr !== undefined
-                ? frame.pr
-                : (Math.PI / 2.0) * (1.0 - Math.pow(dropProgress, 0.75));
-            projectile.rotation.z = pitchRad;
-
-            if (frame.sb === true) {
-              boomRing.visible = true;
-              // boomRing.position.copy(projectile.position);
-
-              // Match projectile pitch rotation angle
-              boomRing.rotation.z = projectile.rotation.z;
-
-              // Rotate offset vector around Z axis so Mach cone stays attached to nose tip as bomb rotates
-              const offsetLen = currentData.proj_length / 2.0 - 1.8;
-              boomRing.position.x =
-                projectile.position.x -
-                Math.sin(projectile.rotation.z) * offsetLen;
-              boomRing.position.y =
-                projectile.position.y +
-                Math.cos(projectile.rotation.z) * offsetLen;
-
-              boomRing.scale.set(1, 1, 1);
-              boomRing.material.opacity = 1.0;
-              // Faster/more energetic booms for higher Mach numbers (physics-derived rate)
-              boomRingGrowthRate = 8.0 + Math.min(30.0, frame.m) * 1.2;
+            if(frame.sb===true){
+              boomRing.isVisible=true; boomRing.rotation.z=pitch;
+              const ol=currentData.proj_length/2.0-1.8;
+              boomRing.position.x=projectile.position.x-Math.sin(pitch)*ol;
+              boomRing.position.y=projectile.position.y+Math.cos(pitch)*ol;
+              boomRing.scaling=new BABYLON.Vector3(1,1,1); boomRing.material.alpha=1.0;
+              boomRingGrowthRate=8.0+Math.min(30.0,frame.m)*1.2;
             }
+            if(frame.v>343.0&&frame.m>1.0){
+              machCone._coneParts.forEach(c=>{c.isVisible=true;});
+              const sk2=2.2/(maxDA+30),rho=Math.exp(-sk2*Math.max(0,frame.y));
+              const vf=Math.min(1.0,(frame.m-1.0)/0.7),int=vf*(0.35+0.65*rho);
+              if(machCone._coneParts[0])machCone._coneParts[0].material.alpha=0.35*int;
+              if(machCone._coneParts[1])machCone._coneParts[1].material.alpha=0.08*int;
+              machCone.rotation.z=pitch;
+              const ol=currentData.proj_length/2.0-1.8;
+              machCone.position.x=projectile.position.x-Math.sin(pitch)*ol;
+              machCone.position.y=projectile.position.y+Math.cos(pitch)*ol;
+              const ma=Math.max(0.35,Math.min(1.2,1.4/Math.max(1.01,frame.m)));
+              machCone.scaling=new BABYLON.Vector3(ma,1.0,ma);
+            } else {
+              machCone._coneParts.forEach(c=>{c.isVisible=false;});
+            }
+            updateHUD(frame); prevFrame=frame;
+          } else {
+            animState="PENETRATING";
+            machCone._coneParts.forEach(c=>{c.isVisible=false;});
+            shockwave.isVisible=false;
+            if(currentData.pen_frames&&currentData.pen_frames.length>0)simTime=currentData.pen_frames[0].t;
+            else simTime=0;
+            prevFrame=null; cameraShake=currentData.camera_shake_magnitude;
+          }
+        } else if(animState==="PENETRATING"){
+          if(!currentData.pen_frames||currentData.pen_frames.length===0){animState="EXPLODING";simTime=0;}
+          else {
+            const ps=currentData.pen_frames[0].t,pe=currentData.pen_frames[currentData.pen_frames.length-1].t;
+            const pd=pe-ps,ts=pd>0?pd/5.0:1.0;
+            simTime+=dt*ts*simSpeedMultiplier;
+            if(simTime<pe){
+              const frame=getInterpolatedFrame(currentData.pen_frames,simTime);
+              const cl=frame.rl!==undefined?frame.rl:currentData.proj_length;
+              projectile.scaling.y=cl/currentData.proj_length;
+              projectile.position.y=-frame.y+cl/2.0;
+              const oblD=frame.obliquity_deg!==undefined?frame.obliquity_deg:(frame.ob||0);
+              const totalR=(oblD+(frame.aoa_deg||0))*(Math.PI/180);
+              projectile.rotation.z=totalR;
+              if(activeCrater&&!activeCrater.isDisposed())activeCrater.rotation.z=totalR;
+              const tv=frame.h!==undefined?frame.h:20;
+              const tK=tv<200?tv+273.15:tv;
+              const bH=currentData.is_kinetic?0xa855f7:0x00ffff;
+              const tc=computePlanckBlackbodyColor(tK,bH);
+              projectile.material.emissiveColor=tc;
+              const tn=Math.max(0,(tK-300)/1500);
+              projectile.material.emissiveIntensity=2.0+Math.pow(tn,3.0)*18.0;
+              const ji=(frame.g||0)/15000.0;
+              projectile.position.x=(Math.random()-0.5)*ji;
+              projectile.position.z=(Math.random()-0.5)*ji;
+              if((currentData.shock_damage_prob_percent||0)>50.0&&Math.random()>0.8)
+                projectile.material.albedoColor=new BABYLON.Color3(1,1,1);
+              else projectile.material.albedoColor=c3(bH);
 
-            // 100% Physically-based Mach Cone Generation: Velocity + Aerodynamic Friction + Air Density
-            if (frame.v > 343.0 && frame.m > 1.0) {
-              machCone.visible = true;
-
-              // Local atmospheric air density ratio (highest at ground level y=0, decaying exponentially with altitude)
-              const scaleK = 2.2 / (maxDropAlt + 30);
-              const airDensityFactor = Math.exp(-scaleK * Math.max(0, frame.y));
-
-              // Velocity/Mach expansion factor (0 at Mach 1.0, max at Mach 1.7+)
-              const velMachFactor = Math.min(1.0, (frame.m - 1.0) / 0.7);
-
-              // Combined Physical Intensity: Dynamic Pressure & Air Friction (q = 1/2 * rho * v^2)
-              const machIntensity =
-                velMachFactor * (0.35 + 0.65 * airDensityFactor);
-
-              if (machCone.children && machCone.children.length >= 3) {
-                machCone.children[0].material.opacity = 0.35 * machIntensity;
-                machCone.children[1].material.opacity = 0.08 * machIntensity;
-                machCone.children[2].material.opacity = 0.3 * machIntensity;
+              // Live crater growth
+              if(activeCrater&&!activeCrater.isDisposed()){
+                const om2=activeCrater.material; activeCrater.material=null; activeCrater.dispose();
+                activeCrater=buildCraterMesh(Math.abs(frame.y));
+                activeCrater.material=om2; activeCrater.isVisible=true;
               }
 
-              // Match projectile pitch rotation angle
-              machCone.rotation.z = projectile.rotation.z;
-
-              // Rotate offset vector around Z axis so Mach cone stays attached to nose tip as bomb rotates
-              const offsetLen = currentData.proj_length / 2.0 - 1.8;
-              machCone.position.x =
-                projectile.position.x -
-                Math.sin(projectile.rotation.z) * offsetLen;
-              machCone.position.y =
-                projectile.position.y +
-                Math.cos(projectile.rotation.z) * offsetLen;
-
-              // Dynamically scale Mach cone angle (sin(alpha) = 1/M): higher Mach = narrower cone
-              const machAngleFactor = Math.max(
-                0.35,
-                Math.min(1.2, 1.4 / Math.max(1.01, frame.m)),
-              );
-              machCone.scale.set(machAngleFactor, 1.0, machAngleFactor);
-            } else {
-              machCone.visible = false;
-            }
-
-            updateHUD(frame);
-            prevFrame = frame;
-          } else {
-            animState = "PENETRATING";
-            machCone.visible = false;
-
-            // Trigger ground impact shockwave sphere (driven 100% by kinetic energy = 1/2 * m * v^2)
-            // Kinetic shock energy is computed and exported from the C++ backend simulation engine
-            const kineticShockJoules = currentData.kinetic_shock_joules || 0.0;
-
-            // Energy scale factor for sphere radius and expansion rate
-            const keScale = Math.max(
-              1.0,
-              Math.pow(kineticShockJoules / 1e8, 0.333),
-            );
-
-            shockwave.visible = false;
-
-            if (currentData.pen_frames && currentData.pen_frames.length > 0) {
-              simTime = currentData.pen_frames[0].t;
-            } else {
-              simTime = 0;
-            }
-            prevFrame = null;
-            cameraShake = currentData.camera_shake_magnitude; // Physically derived camera shake
-          }
-        } else if (animState === "PENETRATING") {
-          if (!currentData.pen_frames || currentData.pen_frames.length === 0) {
-            animState = "EXPLODING";
-            simTime = 0;
-          } else {
-            const penStart = currentData.pen_frames[0].t;
-            const penEnd =
-              currentData.pen_frames[currentData.pen_frames.length - 1].t;
-            const penDuration = penEnd - penStart;
-            // Force penetration animation to take at least 5.0 seconds of real time for visibility
-            const overrideTimeScale = penDuration > 0 ? penDuration / 5.0 : 1.0;
-            simTime += dt * overrideTimeScale * simSpeedMultiplier;
-
-            const maxTime =
-              currentData.pen_frames[currentData.pen_frames.length - 1].t;
-
-            if (simTime < maxTime) {
-              const frame = getInterpolatedFrame(
-                currentData.pen_frames,
-                simTime,
-              );
-
-              // 1. WAPM Erosion (Rod Shrinking)
-              const currentLength =
-                frame.rl !== undefined ? frame.rl : currentData.proj_length;
-              projectile.scale.y = currentLength / currentData.proj_length;
-              projectile.position.y = -frame.y + currentLength / 2.0;
-
-              // 2. C++ Hydrocode Obliquity & Trajectory Bending Dynamics
-              // Read exact C++ simulation obliquity/refraction angle (obliquity_deg or ob)
-              const oblDeg =
-                frame.obliquity_deg !== undefined
-                  ? frame.obliquity_deg
-                  : frame.ob || 0;
-              const aoaDeg = frame.aoa_deg || 0;
-
-              // Total orientation angle = C++ Obliquity Trajectory Bending + Angle of Attack
-              const totalAngleRad = (oblDeg + aoaDeg) * (Math.PI / 180);
-
-              projectile.rotation.z = totalAngleRad;
-              activeCrater.rotation.z = totalAngleRad;
-
-              // 3. Thermal Ablation & Friction Heat Planck Blackbody Radiation
-              const tempVal = frame.h !== undefined ? frame.h : 20;
-              // If temperature is reported in Celsius, convert to Kelvin
-              const tempKelvin = tempVal < 200 ? tempVal + 273.15 : tempVal;
-              const baseColorHex = currentData.is_kinetic ? 0xa855f7 : 0x00ffff;
-
-              const thermoColor = computePlanckBlackbodyColor(
-                tempKelvin,
-                baseColorHex,
-              );
-              projectile.material.emissive.copy(thermoColor);
-
-              // Stefan-Boltzmann Law emissive radiation intensity (scaling with T^4)
-              const tempNorm = Math.max(0, (tempKelvin - 300) / 1500);
-              projectile.material.emissiveIntensity =
-                2.0 + Math.pow(tempNorm, 3.0) * 18.0;
-
-              // 5. Shock Stress & G-Force Tremors
-              const gForce = frame.g || 0;
-              const jitter = gForce / 15000.0; // e.g. 15000G = 1.0 magnitude jitter
-              projectile.position.x = (Math.random() - 0.5) * jitter;
-              projectile.position.z = (Math.random() - 0.5) * jitter;
-
-              if (
-                (currentData.shock_damage_prob_percent || 0) > 50.0 &&
-                Math.random() > 0.8
-              ) {
-                // Flicker the projectile to white briefly to show intense shock stress
-                projectile.material.color.setHex(0xffffff);
-              } else {
-                projectile.material.color.setHex(baseColorHex);
-              }
-
-              activeCrater.visible = true;
-              activeCrater.geometry.dispose();
-              activeCrater.geometry = createCraterGeometry(Math.abs(frame.y));
-
-              // Volumetric Dust Emission
-              if (dustParticles) {
-                const pPos = projectile.position;
-                for (let i = 0; i < 20; i++) {
-                  // spawn/move 20 particles per frame
-                  const idx = Math.floor(Math.random() * 1000);
-                  const dummy = new THREE.Object3D();
-                  // Emit from around the projectile head
-                  dummy.position.set(
-                    pPos.x + (Math.random() - 0.5) * 4.0,
-                    pPos.y - Math.random() * 2.0,
-                    pPos.z + (Math.random() - 0.5) * 4.0,
-                  );
-                  const scale = Math.random() * 2.0 + 0.5;
-                  dummy.scale.set(scale, scale, scale);
-                  dummy.updateMatrix();
-                  dustParticles.setMatrixAt(idx, dummy.matrix);
+              // Volumetric impact dust
+              if(dustSPS){
+                const pp=projectile.position;
+                for(let i=0;i<20;i++){
+                  const idx=Math.floor(Math.random()*1000);
+                  const p=dustSPS.particles[idx];
+                  p.position.x=pp.x+(Math.random()-0.5)*4.0;
+                  p.position.y=pp.y-Math.random()*2.0;
+                  p.position.z=pp.z+(Math.random()-0.5)*4.0;
+                  const sc=Math.random()*2.0+0.5;
+                  p.scaling.x=sc;p.scaling.y=sc;p.scaling.z=sc;p.isVisible=true;
                 }
-                dustParticles.instanceMatrix.needsUpdate = true;
+                dustSPS.setParticles();
               }
-
-              updateHUD(frame);
-              prevFrame = frame;
+              updateHUD(frame); prevFrame=frame;
             } else {
-              animState = "PRE_EXPLOSION";
-              simTime = 0;
+              animState="PRE_EXPLOSION"; simTime=0;
             }
           }
-        } else if (animState === "PRE_EXPLOSION") {
-          simTime += dt;
-          if (simTime > 1.0) {
-            animState = "EXPLODING";
-            simTime = 0;
-          }
-        } else if (animState === "EXPLODING") {
-          simTime += dt;
-
-          if (!explosionTriggered) {
-            explosionTriggered = true;
-            if (currentData.is_kinetic) {
-              projectile.material.color.setHex(0xc084fc);
-              projectile.material.emissive.setHex(0x581c87);
-              activeCrater.material.color.setHex(0xa855f7);
-              activeCrater.material.emissive.setHex(0x7e22ce);
-            } else if (currentData.fail || !currentData.exp_survives) {
-              projectile.scale.set(1.8, 0.4, 1.8);
-              projectile.material.color.setHex(0xf87171);
-              projectile.material.emissive.setHex(0x7f1d1d);
-              activeCrater.material.color.setHex(0xef4444);
-              activeCrater.material.emissive.setHex(0xb91c1c);
-            } else {
-              explosionSphere.visible = true;
-              explosionSphere.position.copy(projectile.position);
-              projectile.visible = false;
-
-              // Detonation Temperature & Explosive Type Color Calibration:
-              // PBXN-109 / Tritonal (~3000 K): Intense Fiery Orange/Yellow (0xff7700)
-              // AFX-757 / High-Temp Aluminized (~4000 K+): White-Hot Blinding Incandescence (0xfffbeb)
-              const expMass = currentData.exp_mass || 2400.0;
-              const detTempK = currentData.detonation_temp_k || 3400.0;
-
-              let expColor = new THREE.Color(0xf97316);
-              if (detTempK > 3800) {
-                expColor.setHex(0xfffbeb); // White hot high-temp aluminized payload
-              } else if (detTempK > 3200) {
-                expColor.setHex(0xfb923c); // Bright orange/yellow detonation flame
-              } else {
-                expColor.setHex(0xd97706); // Deep amber/red standard HE flame
+        } else if(animState==="PRE_EXPLOSION"){
+          simTime+=dt; if(simTime>1.0){animState="EXPLODING";simTime=0;}
+        } else if(animState==="EXPLODING"){
+          simTime+=dt;
+          if(!explosionTriggered){
+            explosionTriggered=true;
+            if(currentData.is_kinetic){
+              projectile.material.albedoColor=c3(0xc084fc);
+              projectile.material.emissiveColor=c3(0x581c87);
+              if(activeCrater&&!activeCrater.isDisposed()){
+                activeCrater.material.albedoColor=c3(0xa855f7);
+                activeCrater.material.emissiveColor=c3(0x7e22ce);
               }
-
-              explosionSphere.material.color.copy(expColor);
-              explosionSphere.material.emissive.copy(expColor);
-              explosionSphere.material.emissiveIntensity = 5.0;
+            } else if(currentData.fail||!currentData.exp_survives){
+              projectile.scaling=new BABYLON.Vector3(1.8,0.4,1.8);
+              projectile.material.albedoColor=c3(0xf87171);
+              projectile.material.emissiveColor=c3(0x7f1d1d);
+              if(activeCrater&&!activeCrater.isDisposed()){
+                activeCrater.material.albedoColor=c3(0xef4444);
+                activeCrater.material.emissiveColor=c3(0xb91c1c);
+              }
+            } else {
+              explosionSphere.isVisible=true;
+              explosionSphere.position=projectile.position.clone();
+              projectile.isVisible=false;
+              const dT=currentData.detonation_temp_k||3400.0;
+              const eH=dT>3800?0xfffbeb:dT>3200?0xfb923c:0xd97706;
+              const eC=c3(eH);
+              explosionSphere.material.albedoColor=eC;
+              explosionSphere.material.emissiveColor=eC;
+              explosionSphere.material.emissiveIntensity=5.0;
             }
           }
-
-          if (explosionSphere.visible) {
-            // Explosive payload shockwave yield is computed and exported from the C++ backend simulation engine
-            const totalExplosiveYield =
-              currentData.total_explosive_yield || 0.0;
-
-            // Scale the explosion based directly on the actual computed total yield
-            const maxScale = Math.max(
-              5.0,
-              Math.min(50.0, totalExplosiveYield / 2.5e8),
-            ); // Sourced directly from C++ yield/mass logic
-
-            // Growth rate scaled by the target size itself, so larger explosions (more explosive
-            // mass) don't take proportionally longer to reach full scale than smaller ones.
-            const explosionGrowthRate = Math.max(4.0, maxScale * 1.25);
-            explosionSphere.scale.addScalar(dt * explosionGrowthRate);
-            if (explosionSphere.scale.x > maxScale) {
-              explosionSphere.material.opacity -= dt * 2.0;
-            }
-            if (explosionSphere.material.opacity <= 0) {
-              explosionSphere.visible = false;
-              animState = "DONE";
-              simTime = 0;
-              stopAnthem(); // Stop anthem when animation completes
-            }
-          } else if (shockwave.visible) {
-            // Growth rate scaled by the physically-derived camera shake magnitude (kinetic energy)
-            const shockwaveGrowthRate =
-              10.0 + currentData.camera_shake_magnitude * 10.0;
-            shockwave.scale.addScalar(dt * shockwaveGrowthRate);
-            shockwave.material.opacity -= dt * 1.0;
-            if (simTime > 1.5) {
-              shockwave.visible = false;
-              animState = "DONE";
-              simTime = 0;
-              stopAnthem(); // Stop anthem when animation completes
-            }
+          if(explosionSphere.isVisible){
+            const yJ=currentData.total_explosive_yield||0.0;
+            const ms=Math.max(5.0,Math.min(50.0,yJ/2.5e8));
+            const ns=explosionSphere.scaling.x+dt*Math.max(4.0,ms*1.25);
+            explosionSphere.scaling=new BABYLON.Vector3(ns,ns,ns);
+            if(ns>ms)explosionSphere.material.alpha-=dt*2.0;
+            if(explosionSphere.material.alpha<=0){explosionSphere.isVisible=false;animState="DONE";simTime=0;stopAnthem();}
+          } else if(shockwave.isVisible){
+            const sgr=10.0+currentData.camera_shake_magnitude*10.0;
+            const sw=shockwave.scaling.x+dt*sgr;
+            shockwave.scaling=new BABYLON.Vector3(sw,sw,sw); shockwave.material.alpha-=dt*1.0;
+            if(simTime>1.5){shockwave.isVisible=false;animState="DONE";simTime=0;stopAnthem();}
           } else {
-            if (simTime > 1.0) {
-              animState = "DONE";
-              simTime = 0;
-              stopAnthem(); // Stop anthem when animation completes
-            }
+            if(simTime>1.0){animState="DONE";simTime=0;stopAnthem();}
           }
-        } else if (animState === "DONE") {
-          simTime += dt;
-          if (simTime > 2.0) {
-            animState = "FINISHED";
-          }
+        } else if(animState==="DONE"){
+          simTime+=dt; if(simTime>2.0)animState="FINISHED";
         }
 
-        if (boomRing.visible) {
-          boomRing.scale.addScalar(dt * boomRingGrowthRate);
-          boomRing.material.opacity -= dt * 1.5;
-          if (boomRing.material.opacity <= 0) boomRing.visible = false;
+        // Follow cam — ArcRotateCamera: just update target to projectile position
+        if(followCam&&projectile&&!projectile.isDisposed()){
+          camera.target=projectile.position.clone();
         }
 
-        if (shockwave.visible) {
-          shockwave.rotation.y += dt * 2;
-          shockwave.rotation.x += dt;
-        }
-
-        if (followCam) {
-          const delta = new THREE.Vector3().subVectors(
-            projectile.position,
-            controls.target,
-          );
-          camera.position.add(delta);
-          controls.target.copy(projectile.position);
-        }
-
-        controls.update();
-
-        // Apply camera shake temporarily before rendering
-        let shakeOffset = new THREE.Vector3();
-        if (cameraShake > 0) {
-          shakeOffset.set(
-            (Math.random() - 0.5) * cameraShake * 6,
-            (Math.random() - 0.5) * cameraShake * 6,
-            0,
-          );
-          camera.position.add(shakeOffset);
-          cameraShake -= dt * 1.5;
-        }
-
-        composer.render(); // Use composer instead of renderer for Bloom
-
-        // Revert shake offset so it doesn't drift
-        if (shakeOffset.x !== 0 || shakeOffset.y !== 0) {
-          camera.position.sub(shakeOffset);
+        // Camera shake — applied before render, reverted by afterRender callback
+        if(cameraShake>0){
+          _shakeOX=(Math.random()-0.5)*cameraShake*6;
+          _shakeOY=(Math.random()-0.5)*cameraShake*6;
+          camera.target.x+=_shakeOX;
+          camera.target.y+=_shakeOY;
+          cameraShake-=dt*1.5;
         }
       }
 
-      window.onload = init;
+      window.onload=init;
     </script>
   </body>
 </html>
