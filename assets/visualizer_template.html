@@ -695,7 +695,12 @@
       // ─── ECHARTS TELEMETRY (unchanged) ────────────────────────────────
       function initECharts() {
         if(typeof echarts==="undefined")return;
-        telemetryChart=echarts.init(document.getElementById("telemetry-chart"));
+        const chartEl = document.getElementById("telemetry-chart");
+        if(!chartEl) {
+          setTimeout(initECharts, 50);
+          return;
+        }
+        telemetryChart=echarts.init(chartEl);
         telemetryChart.setOption({
           backgroundColor:"transparent",
           tooltip:{trigger:"axis"},
