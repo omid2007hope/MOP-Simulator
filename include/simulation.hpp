@@ -178,6 +178,8 @@ struct SimulationResult {
 	double time_scale_pen = 0.0;
 	double x_acceleration = 0.0;
 	double y_acceleration = 0.0;
+	double kinetic_shock_joules = 0.0;
+	double total_explosive_yield = 0.0;
 	std::vector<TelemetryFrame> drop_frames;
 	std::vector<TelemetryFrame> penetration_frames;
 };

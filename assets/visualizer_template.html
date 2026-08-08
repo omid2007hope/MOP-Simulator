@@ -224,7 +224,10 @@
               <div class="text-[9px] text-slate-500 uppercase tracking-wider">
                 Shock Pressure
               </div>
-              <div class="text-orange-400 font-bold text-sm" id="hud-shock-pressure">
+              <div
+                class="text-orange-400 font-bold text-sm"
+                id="hud-shock-pressure"
+              >
                 0.00 GPa
               </div>
             </div>
@@ -1453,21 +1456,8 @@
           metalness: 0.2,
           side: THREE.DoubleSide,
         });
-        const initialCraterDepth =
-          currentData.prev_strike_depth !== undefined &&
-          currentData.prev_strike_depth > 0
-            ? currentData.prev_strike_depth
-            : currentData.pen_frames &&
-                currentData.pen_frames.length > 0 &&
-                currentData.pen_frames[0].y > 0
-              ? currentData.pen_frames[0].y
-              : 0.1;
-
-        activeCrater = new THREE.Mesh(
-          createCraterGeometry(Math.max(0.1, initialCraterDepth)),
-          craterMat,
-        );
-        activeCrater.visible = initialCraterDepth > 0;
+        activeCrater = new THREE.Mesh(createCraterGeometry(0.1), craterMat);
+        activeCrater.visible = false;
         cratersGroup.add(activeCrater);
 
         // Reset Projectile Geometry
@@ -1733,20 +1723,9 @@
             machCone.visible = false;
 
             // Trigger ground impact shockwave sphere (driven 100% by kinetic energy = 1/2 * m * v^2)
-            // --- 100% physically aligned C++ shock math ---
-            function computeImpactShockwave(totalMass, velocityUponImpact) {
-              return 0.5 * totalMass * Math.pow(velocityUponImpact, 2);
-            }
+            // Kinetic shock energy is computed and exported from the C++ backend simulation engine
+            const kineticShockJoules = currentData.kinetic_shock_joules || 0.0;
 
-            const lastDropFrame =
-              currentData.drop_frames && currentData.drop_frames.length > 0
-                ? currentData.drop_frames[currentData.drop_frames.length - 1]
-                : prevFrame;
-            const impactVelocity = (lastDropFrame && lastDropFrame.v) || 300.0;
-            const impactMass = currentData.proj_mass || 13600.0;
-            
-            const kineticShockJoules = computeImpactShockwave(impactMass, impactVelocity);
-            
             // Energy scale factor for sphere radius and expansion rate
             const keScale = Math.max(
               1.0,
@@ -1919,19 +1898,15 @@
           }
 
           if (explosionSphere.visible) {
-            // --- 100% physically aligned C++ shock math ---
-            function computeExplosiveShockwave(explosiveMass, explosiveEnergy) {
-              const couplingEfficiency = 1.0; // "nearly 100%" - Impedance matched in dense rock
-              return explosiveMass * explosiveEnergy * couplingEfficiency;
-            }
-
-            const expMass = currentData.exp_mass || 2400.0;
-            const expEnergy = currentData.explosive_energy_j_per_kg || 5.2e6; // Default to AFX-757
-            const totalExplosiveYield = computeExplosiveShockwave(expMass, expEnergy);
+            // Explosive payload shockwave yield is computed and exported from the C++ backend simulation engine
+            const totalExplosiveYield = currentData.total_explosive_yield || 0.0;
 
             // Scale the explosion based directly on the actual computed total yield
-            const maxScale = Math.max(5.0, Math.min(50.0, totalExplosiveYield / 2.5e8)); // Sourced directly from C++ yield/mass logic
-            
+            const maxScale = Math.max(
+              5.0,
+              Math.min(50.0, totalExplosiveYield / 2.5e8),
+            ); // Sourced directly from C++ yield/mass logic
+
             // Growth rate scaled by the target size itself, so larger explosions (more explosive
             // mass) don't take proportionally longer to reach full scale than smaller ones.
             const explosionGrowthRate = Math.max(4.0, maxScale * 1.25);

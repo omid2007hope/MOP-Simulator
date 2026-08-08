@@ -704,5 +704,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 
 	simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 
+	res.kinetic_shock_joules = impactShockwave(proj.total_mass, impact_velocity);
+	res.total_explosive_yield = explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
+
 	return res;
 }
