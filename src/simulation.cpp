@@ -189,6 +189,39 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	impact_pitch = std::atan2(current_vx, std::max(0.001, current_vy));
 }
 
+void impactShockwave(double totalMass, double velocityUponImpact) {
+
+	// ==========================================
+	// Phase 1: Kinetic Shock (Penetration Phase)
+	// ==========================================
+	// The impact generates a hypervelocity ground shock wave.
+	// Based on: "approx. 30,000 lbs total weight" and "approaching Mach 1+"
+
+	// Formula: KE = 1/2 * m * v^2
+	double kineticShock = 0.5 * totalMass * std::pow(velocityUponImpact, 2);
+};
+
+void explosiveShockwave(double explosiveMass, double explosiveEnergy) {
+
+	// ==========================================
+	// Phase 2: In-Depth Chemical Explosion
+	// ==========================================
+	// Confined Sedov-Taylor blast generating massive ground shock.
+	// Based on: "5,300 lbs of explosive filler" and "nearly 100%" energy coupling.
+
+	// Because the explosion is buried in dense rock (impedance matching),
+	// energy is not lost to the atmosphere (which would normally be 10-50% efficiency).
+	// ! NEEDS TO BE CALCULATED ! IMPORTANT ASF !
+	double couplingEfficiency = 1.0; // "nearly 100%"
+
+	// Formula: Mass * Specific Energy * Coupling Efficiency
+	double explosiveShock = explosiveMass * explosiveEnergy * couplingEfficiency;
+
+	// The total destructive energy delivered to the bunker is the sum of both phases:
+	// double totalTargetShockEnergy = kineticShock + explosiveShock;
+	S
+};
+
 void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 						SimulationResult& res,
 						double impact_velocity,

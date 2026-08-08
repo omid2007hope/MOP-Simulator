@@ -19,6 +19,7 @@ struct PhysicsConstants {
 	const double molarMassAir = 0.0289644;
 	const double adiabaticIndexAir = 1.4;
 	const double earthRadius = 6356766.0;
+	const double SpeedOfSound = 343.0;
 };
 
 
@@ -200,9 +201,9 @@ private:
 	// ! cons payload comes from c (cons) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	PhysicsConstants cons;
 
-	void impactShockwave(const SimulationResult& res, const AtmosphereState& atoms);
+	void impactShockwave(double totalMass, double velocityUponImpact);
 
-	void explosiveShockwave(const SimulationResult& res, const AtmosphereState& atoms);
+	void explosiveShockwave(double explosiveMass, double explosiveEnergy);
 
 
 	// ! scenario, proj, res, impact_velocity, imp act_pitch and dt payloads come from simulation.cpp - line 668
