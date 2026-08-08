@@ -109,15 +109,15 @@ inline const Projectile MOP_DEFAULT = {.name = "GBU-57 Massive Ordnance Penetrat
 				       .explosive_mass = 2400.0,
 				       .casing_density = 7800.0,
 				       .yield_strength = 2.0e9,
-				       .specific_heat = 460.0,
-				       .melting_point = 1800.0,
-				       .heat_of_fusion = 272000.0,
 				       .area_moment_inertia = 0.02,
 				       .elastic_modulus = 200.0e9,
 				       .casing_wall_thickness = 0.1,
 				       .hugoniot_c0 = 4570.0,
 				       .hugoniot_s = 1.49,
-				       .explosive_critical_energy = 3.0e15};
+				       .explosive_critical_energy = 3.0e15,
+				       .specific_heat = 460.0,
+				       .melting_point = 1800.0,
+				       .heat_of_fusion = 272000.0};
 
 
 
@@ -160,14 +160,14 @@ inline const Projectile RODS_FROM_GOD_DEFAULT = {
 	.explosive_mass = 0.0,
 	.casing_density = 19300.0,
 	.yield_strength = 1.51e9,
-	.specific_heat = 134.0,
-	.melting_point = 3695.0,
-	.heat_of_fusion = 192000.0,
 	.area_moment_inertia = 0.0004,
 	.elastic_modulus = 400.0e9,
 	.casing_wall_thickness = 0.15,
 	.hugoniot_c0 = 4030.0,
 	.hugoniot_s = 1.24,
-	.explosive_critical_energy = 3.0e15};
+	.explosive_critical_energy = 3.0e15,
+	.specific_heat = 134.0,
+	.melting_point = 3695.0,
+	.heat_of_fusion = 192000.0};
 
 #endif // DEFAULT_HPP
