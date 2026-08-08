@@ -21,9 +21,13 @@ endif
 
 TARGET = bin/mop_sim$(EXE)
 TEST_TARGET = bin/test_simulation$(EXE)
+TEST_IMPACT_TARGET = bin/test_impactShock$(EXE)
+TEST_EXPLOSIVE_TARGET = bin/test_explosiveShock$(EXE)
 
 OBJS = build/main.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
 TEST_OBJS = build/test_simulation.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
+TEST_IMPACT_OBJS = build/impactShock.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
+TEST_EXPLOSIVE_OBJS = build/explosiveShock.o build/simulation.o build/config_loader.o build/environment_physics.o build/telemetry_exporter.o
 
 all: $(TARGET)
 
@@ -55,15 +59,34 @@ build/test_simulation.o: tests/test_simulation.cpp include/simulation.hpp includ
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-test: $(TEST_TARGET)
-	@echo "Running unit tests..."
-	@$(TEST_TARGET)
+build/impactShock.o: tests/impactShock.cpp include/simulation.hpp include/default.hpp
+	@$(MKDIR_BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+build/explosiveShock.o: tests/explosiveShock.cpp include/simulation.hpp include/default.hpp
+	@$(MKDIR_BUILD)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(TEST_TARGET): $(TEST_OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
+$(TEST_IMPACT_TARGET): $(TEST_IMPACT_OBJS)
+	@$(MKDIR_BIN)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+$(TEST_EXPLOSIVE_TARGET): $(TEST_EXPLOSIVE_OBJS)
+	@$(MKDIR_BIN)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+test: $(TEST_TARGET) $(TEST_IMPACT_TARGET) $(TEST_EXPLOSIVE_TARGET)
+	@echo "Running unit tests..."
+	@$(TEST_TARGET)
+	@$(TEST_IMPACT_TARGET)
+	@$(TEST_EXPLOSIVE_TARGET)
+
 clean:
+	@echo "Cleaning build artifacts..."
 	@$(RM_CLEAN)
 
 .PHONY: all test clean

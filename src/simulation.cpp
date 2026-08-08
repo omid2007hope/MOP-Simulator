@@ -15,12 +15,12 @@
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
     : proj(p), target(t), cons(c) {}
 
-void ImpactSimulator::impactShockwave(double totalMass, double velocityUponImpact) {
+double ImpactSimulator::impactShockwave(double totalMass, double velocityUponImpact) {
 	double kineticShock = 0.5 * totalMass * std::pow(velocityUponImpact, 2);
-	(void)kineticShock;
+	return kineticShock;
 }
 
-void ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveEnergy) {
+double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveEnergy) {
 
 	// Because the explosion is buried in dense rock (impedance matching),
 	// energy is not lost to the atmosphere (which would normally be 10-50% efficiency).
@@ -29,7 +29,7 @@ void ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveE
 
 
 	double explosiveShock = explosiveMass * explosiveEnergy * couplingEfficiency;
-	(void)explosiveShock;
+	return explosiveShock;
 }
 
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
