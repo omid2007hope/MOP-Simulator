@@ -674,17 +674,28 @@
         dustSPS.setParticles();
       }
 
-      // ─── CRATER MESH (replaces THREE.LatheGeometry) ──────────────────
-      function buildCraterMesh(depth) {
+      // ─── CRATER MESH (optimized for 60fps live updates) ──────────────────
+      function buildCraterMesh(depth, existingMesh = null) {
         const rw=currentData?currentData.crater_wide_radius:4.5;
         const rn=currentData?currentData.crater_narrow_radius:1.0;
-        const sd=Math.min(depth,3.5);
-        return BABYLON.MeshBuilder.CreateLathe("crater",{shape:[
-          new BABYLON.Vector3(rw,  0.1,   0),
-          new BABYLON.Vector3(rn, -sd,    0),
-          new BABYLON.Vector3(rn, -depth, 0),
-          new BABYLON.Vector3(0,  -depth, 0)
-        ],tessellation:64,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);
+        const d = Math.max(depth, 0.05); // prevent 0-length path
+        const sd=Math.min(d,3.5);
+        
+        const path = [
+          new BABYLON.Vector3(0, 0.1, 0),
+          new BABYLON.Vector3(0, -sd, 0),
+          new BABYLON.Vector3(0, -d, 0)
+        ];
+        
+        return BABYLON.MeshBuilder.CreateTube("crater", {
+          path: path,
+          radiusFunction: (i) => (i === 0 ? rw : rn),
+          tessellation: 32,
+          updatable: true,
+          sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+          cap: BABYLON.Mesh.CAP_END,
+          instance: existingMesh
+        }, scene);
       }
 
       // ─── CLEAR MESH ARRAY ─────────────────────────────────────────────
@@ -1040,11 +1051,10 @@
                 projectile.material.albedoColor=new BABYLON.Color3(1,1,1);
               else projectile.material.albedoColor=c3(bH);
 
-              // Live crater growth
+              // Live crater growth (updated in-place for performance)
               if(activeCrater&&!activeCrater.isDisposed()){
-                const om2=activeCrater.material; activeCrater.material=null; activeCrater.dispose();
-                activeCrater=buildCraterMesh(Math.abs(frame.y));
-                activeCrater.material=om2; activeCrater.isVisible=true;
+                buildCraterMesh(Math.abs(frame.y), activeCrater);
+                activeCrater.isVisible=true;
               }
 
               // Volumetric impact dust
