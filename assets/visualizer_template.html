@@ -333,6 +333,26 @@
       </div>
     </div>
 
+    <!-- ! HERE HERE HERE -->
+    <div
+      class="absolute bottom-80 right-6 z-10 w-80 rounded-xl glass-panel p-5"
+    >
+      <div class="unskew">
+        <h1
+          class="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-3"
+        >
+          Data Statistics
+        </h1>
+        <div
+          id="all-data-stats-container"
+          class="text-[9px] font-bold tracking-wider text-slate-400 flex flex-col gap-1 max-h-[50vh] overflow-y-auto"
+        >
+          <!-- JS injects here -->
+        </div>
+      </div>
+    </div>
+    <!-- ! HERE HERE HERE -->
+
     <!-- Scenarios -->
     <div
       class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 rounded-2xl glass-panel px-5 py-3 flex items-center gap-3 max-w-[80vw] overflow-x-auto"
@@ -1233,6 +1253,28 @@
         const expBadge = document.getElementById("hud-exp-badge");
         document.getElementById("hud-scenario").innerText = data.name;
 
+        // --- INJECT ALL DATA INTO STATISTICS PANEL ---
+        const statsContainer = document.getElementById("all-data-stats-container");
+        if (statsContainer) {
+          statsContainer.innerHTML = "";
+          for (const key in data) {
+            if (key === "drop_frames" || key === "pen_frames" || key === "target_layers") continue;
+            
+            let val = data[key];
+            if (typeof val === 'number') {
+              val = val % 1 === 0 ? val.toString() : val.toFixed(4);
+            }
+            
+            statsContainer.innerHTML += `
+              <div class="flex justify-between items-center border-b border-slate-800/50 pb-1 pt-1">
+                <span class="text-cyan-600/70 lowercase">\${key}:</span>
+                <span class="text-slate-200 text-right break-all ml-2">\${val}</span>
+              </div>
+            `;
+          }
+        }
+        // ---------------------------------------------
+
         // Reset yield mark
         document.getElementById("bar-yield-mark").style.left = "100%"; // Assuming bar max is yield * 1.2
 
@@ -1899,7 +1941,8 @@
 
           if (explosionSphere.visible) {
             // Explosive payload shockwave yield is computed and exported from the C++ backend simulation engine
-            const totalExplosiveYield = currentData.total_explosive_yield || 0.0;
+            const totalExplosiveYield =
+              currentData.total_explosive_yield || 0.0;
 
             // Scale the explosion based directly on the actual computed total yield
             const maxScale = Math.max(
