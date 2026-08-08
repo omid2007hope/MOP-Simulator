@@ -105,6 +105,8 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
 			p.hugoniot_s = item.value("hugoniot_s", 1.49);
 			p.explosive_critical_energy =
 				item.value("explosive_critical_energy", 3.0e15);
+			p.explosive_energy_j_per_kg =
+				item.value("explosive_energy_j_per_kg", p.explosive_mass > 0.0 ? 5.2e6 : 0.0);
 			projectiles.push_back(p);
 		}
 	} catch (const std::exception& e) {
