@@ -277,12 +277,6 @@ private:
 				       double impact_pitch,
 				       double dt);
 
-public:
-	// ! p, t and c payloads come from main.cpp - line 464
-	// ! ImpactSimulator simulator(munition, object, cons);
-	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
-	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
-
 	double impactShockwave(double totalMass, double velocityUponImpact);
 
 	double explosiveShockwave(double explosiveMass, double explosiveEnergy);
@@ -291,6 +285,12 @@ public:
 			       double flightPathAngle,
 			       double velocity,
 			       double bombTotalMass);
+
+public:
+	// ! p, t and c payloads come from main.cpp - line 464
+	// ! ImpactSimulator simulator(munition, object, cons);
+	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
+	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
 	// ! scenario payload comes from main.cpp - line 466.
 	// ! results.push_back(simulator.simulate(sc));
