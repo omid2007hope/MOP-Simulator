@@ -32,15 +32,110 @@ double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiv
 	return explosiveShock;
 }
 
+double ImpactSimulator::angleSimulation(double altitude,
+					double flightPathAngle,
+					double velocity,
+					double bombTotalMass) {
+
+	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(altitude / 3.28084, cons);
+
+	double fpa_rad = flightPathAngle * cons.PI / 180.0;
+
+	double trim_deg = EnvironmentPhysics::flightControlTrim(
+		flightPathAngle,
+		velocity,
+		bombTotalMass,
+		B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope,
+		B2_Sprit_Strategic_Bomber.bomber_wingArea,
+		atmos.density_kgm3,
+		cons);
+	// ! IMPORTANT
+	// ! I think trim_deg is already radians so no need not sure - Check environment_physics.cpp
+	double trim_rad = trim_deg * cons.PI / 180.0;
+	// ! IMPORTANT
+	double fpa_rad_corrected = fpa_rad - trim_rad;
+
+	double current_vx = velocity * std::cos(fpa_rad_corrected);
+	double current_vy = velocity * std::sin(fpa_rad_corrected);
+
+	auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
+		AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
+		{
+
+			double v_mag = std::hypot(vx, vy);
+			double mach = v_mag / atm.speed_of_sound_ms;
+			double cd = EnvironmentPhysics::getMachDependentDrag(
+				mach, dragCoefficient, proj, cons);
+			double f = 0.5 * atm.density_kgm3 * v_mag * v_mag * cd * area;
+
+			DropDeriv d;
+			if (v_mag > 0.0) {
+				d.dv_x = -(f / proj.total_mass) * (vx / v_mag);
+				d.dv_y = cons.gravity - (f / proj.total_mass) * (vy / v_mag);
+
+				double guidance_pull = 1.5 * cons.gravity;
+				double guidance_accel = (vx > 0.0) ? -guidance_pull : guidance_pull;
+				if (std::abs(vx) < 5.0) {
+					guidance_accel = -vx * 1.5;
+				}
+				d.dv_x += guidance_accel;
+			} else {
+				d.dv_x = 0.0;
+				d.dv_y = cons.gravity;
+			}
+			d.dy = -vy;
+			return d;
+		};
+
+		DropDeriv k1 = calc_derivs(y_m, current_vx, current_vy);
+		DropDeriv k2 = calc_derivs(y_m + 0.5 * dt_drop * k1.dy,
+					   current_vx + 0.5 * dt_drop * k1.dv_x,
+					   current_vy + 0.5 * dt_drop * k1.dv_y);
+		DropDeriv k3 = calc_derivs(y_m + 0.5 * dt_drop * k2.dy,
+					   current_vx + 0.5 * dt_drop * k2.dv_x,
+					   current_vy + 0.5 * dt_drop * k2.dv_y);
+		DropDeriv k4 = calc_derivs(y_m + dt_drop * k3.dy,
+					   current_vx + dt_drop * k3.dv_x,
+					   current_vy + dt_drop * k3.dv_y);
+
+
+		double prev_y_m = y_m;
+		double prev_vx = current_vx;
+		double prev_vy = current_vy;
+
+		current_vx += (dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
+		current_vy += (dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
+		y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
+
+		current_velocity = std::hypot(current_vx, current_vy);
+
+		if (y_m < 0.0) {
+			double fraction = prev_y_m / (prev_y_m - y_m);
+			current_vx = prev_vx + fraction * (current_vx - prev_vx);
+			current_vy = prev_vy + fraction * (current_vy - prev_vy);
+			y_m = 0.0;
+			t_drop = t_drop - dt_drop + fraction * dt_drop;
+			current_velocity = std::hypot(current_vx, current_vy);
+		}
+	}
+};
+
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      const Projectile& proj,
 					      SimulationResult& res,
 					      double& impact_velocity,
 					      double& impact_pitch,
 					      double dt) {
-	// ! ShockWave
-	// ! ShockWave
-	impactShockwave(proj.total_mass, res.velocity);
+
+	// ! Pass data to - for angle simulation.
+	angleSimulation(scenario.altitude_ft,
+			scenario.flight_path_angle,
+			scenario.velocity,
+			proj.total_mass)
+
+		// ! ShockWave
+		// ! ShockWave
+		impactShockwave(proj.total_mass, res.velocity);
 	explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
 	// ! ShockWave
 	// ! ShockWave
@@ -51,25 +146,8 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	AtmosphereState atmos =
 		EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
 
-	double fpa_rad = scenario.flight_path_angle * cons.PI / 180.0;
-
-	double trim_deg = EnvironmentPhysics::flightControlTrim(
-		scenario.flight_path_angle,
-		scenario.velocity,
-		proj.total_mass,
-		B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope,
-		B2_Sprit_Strategic_Bomber.bomber_wingArea,
-		atmos.density_kgm3,
-		cons);
-
-	double trim_rad = trim_deg * cons.PI / 180.0;
-	double fpa_rad_corrected = fpa_rad - trim_rad;
-
 	double current_altitude = scenario.altitude_ft;
-	double current_vx = scenario.velocity * std::cos(fpa_rad_corrected);
-	double current_vy = scenario.velocity * std::sin(fpa_rad_corrected);
 	double current_velocity = scenario.velocity;
-
 	double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
 	double CRH = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
 	double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
@@ -88,69 +166,14 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 		double y_m = current_altitude / 3.28084;
 
 		while (current_altitude > 0.0) {
-			auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
-				AtmosphereState atm =
-					EnvironmentPhysics::standardAtmosphere(alt_m, cons);
-				double v_mag = std::hypot(vx, vy);
-				double mach = v_mag / atm.speed_of_sound_ms;
-				double cd = EnvironmentPhysics::getMachDependentDrag(
-					mach, dragCoefficient, proj, cons);
-				double f = 0.5 * atm.density_kgm3 * v_mag * v_mag * cd * area;
-				DropDeriv d;
-				if (v_mag > 0.0) {
-					d.dv_x = -(f / proj.total_mass) * (vx / v_mag);
-					d.dv_y =
-						cons.gravity - (f / proj.total_mass) * (vy / v_mag);
 
-					double guidance_pull = 1.5 * cons.gravity;
-					double guidance_accel =
-						(vx > 0.0) ? -guidance_pull : guidance_pull;
-					if (std::abs(vx) < 5.0) {
-						guidance_accel = -vx * 1.5;
-					}
-					d.dv_x += guidance_accel;
-				} else {
-					d.dv_x = 0.0;
-					d.dv_y = cons.gravity;
-				}
-				d.dy = -vy;
-				return d;
-			};
+			AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
 
-			DropDeriv k1 = calc_derivs(y_m, current_vx, current_vy);
-			DropDeriv k2 = calc_derivs(y_m + 0.5 * dt_drop * k1.dy,
-						   current_vx + 0.5 * dt_drop * k1.dv_x,
-						   current_vy + 0.5 * dt_drop * k1.dv_y);
-			DropDeriv k3 = calc_derivs(y_m + 0.5 * dt_drop * k2.dy,
-						   current_vx + 0.5 * dt_drop * k2.dv_x,
-						   current_vy + 0.5 * dt_drop * k2.dv_y);
-			DropDeriv k4 = calc_derivs(y_m + dt_drop * k3.dy,
-						   current_vx + dt_drop * k3.dv_x,
-						   current_vy + dt_drop * k3.dv_y);
-
-			double prev_y_m = y_m;
-			double prev_vx = current_vx;
-			double prev_vy = current_vy;
-
-			current_vx +=
-				(dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
-			current_vy +=
-				(dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
-			y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
-			current_velocity = std::hypot(current_vx, current_vy);
-
-			if (y_m < 0.0) {
-				double fraction = prev_y_m / (prev_y_m - y_m);
-				current_vx = prev_vx + fraction * (current_vx - prev_vx);
-				current_vy = prev_vy + fraction * (current_vy - prev_vy);
-				y_m = 0.0;
-				t_drop = t_drop - dt_drop + fraction * dt_drop;
-				current_velocity = std::hypot(current_vx, current_vy);
-			}
 
 			current_altitude = y_m * 3.28084;
 			AtmosphereState current_atm =
 				EnvironmentPhysics::standardAtmosphere(y_m, cons);
+
 			double current_density = current_atm.density_kgm3;
 
 			bool is_sonic_boom_frame = false;
@@ -159,17 +182,17 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 			    !sonic_boom_triggered) {
 				sonic_boom_triggered = true;
 				is_sonic_boom_frame = true;
-				
+
 				// To eliminate the 1-tick lag, we print the state exactly as it was when the threshold was crossed.
 				// Since we stepped over it, we interpolate to the exact moment. But for simplicity and zero-lag,
 				// if t_drop <= dt_drop, it means it started supersonic.
 				double boom_time = (t_drop <= dt_drop) ? 0.0 : t_drop;
-				double boom_alt = (t_drop <= dt_drop) ? scenario.altitude_ft : current_altitude;
-				
+				double boom_alt = (t_drop <= dt_drop) ? scenario.altitude_ft
+								      : current_altitude;
+
 				std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ "
 					  << std::fixed << std::setprecision(2) << boom_time
-					  << "s (Altitude: " << std::setprecision(0)
-					  << boom_alt
+					  << "s (Altitude: " << std::setprecision(0) << boom_alt
 					  << " ft | Density: " << std::setprecision(3)
 					  << current_density << " kg/m^3) <<<\n";
 			}
@@ -185,17 +208,21 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 				frame.is_sonic_boom = is_sonic_boom_frame;
 				frame.pitch_rad =
 					std::atan2(current_vx, std::max(0.001, current_vy));
-				
+
 				frame.current_vx = current_vx;
 				frame.current_vy = current_vy;
 				frame.drag_coefficient = EnvironmentPhysics::getMachDependentDrag(
 					frame.mach, dragCoefficient, proj, cons);
 				frame.drag_force = 0.5 * current_atm.density_kgm3 *
-						    std::pow(current_velocity, 2) * frame.drag_coefficient * area;
-				
+						   std::pow(current_velocity, 2) *
+						   frame.drag_coefficient * area;
+
 				double guidance_pull_val = 1.5 * cons.gravity;
-				double guidance_accel = (current_vx > 0.0) ? -guidance_pull_val : guidance_pull_val;
-				if (std::abs(current_vx) < 5.0) { guidance_accel = -current_vx * 1.5; }
+				double guidance_accel =
+					(current_vx > 0.0) ? -guidance_pull_val : guidance_pull_val;
+				if (std::abs(current_vx) < 5.0) {
+					guidance_accel = -current_vx * 1.5;
+				}
 				frame.guidance_pull = guidance_accel;
 
 				res.drop_frames.push_back(frame);
@@ -233,10 +260,11 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 
 	impact_velocity = current_velocity;
 	impact_pitch = std::atan2(current_vx, std::max(0.001, current_vy));
-	
+
 	res.trim_deg = trim_deg;
 	res.trim_rad = trim_rad;
 	res.fpa_rad_corrected = fpa_rad_corrected;
+	// !
 	res.area = area;
 	res.impact_velocity = impact_velocity;
 	res.impact_pitch = impact_pitch;
@@ -360,7 +388,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			res.premature_detonation = true;
 			res.shock_damage_prob_percent = 100.0;
 			res.regime = "Shock Initiation (Walker-Wasley)";
-			res.outcome_summary = "Premature detonation triggered by Hugoniot impact shock.";
+			res.outcome_summary =
+				"Premature detonation triggered by Hugoniot impact shock.";
 			res.actual_penetration_depth = 0.0;
 			return;
 		}
@@ -395,8 +424,9 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		}
 
 		const auto& layer = target.layers[current_layer_idx];
-		double layerEntryDepth =
-			(current_layer_idx == 0) ? 0.0 : layer_bottom_depths_local[current_layer_idx - 1];
+		double layerEntryDepth = (current_layer_idx == 0)
+						 ? 0.0
+						 : layer_bottom_depths_local[current_layer_idx - 1];
 
 		double squaredVelocity = current_velocity * current_velocity;
 		double baseStrength = layer.compressive_strength +
@@ -623,7 +653,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			frame.dif = res.dynamic_increase_factor;
 			frame.remaining_length = erosion_active ? current_length : proj.length;
 			frame.obliquity_deg = obliquity_radians * 180.0 / cons.PI;
-			
+
 			frame.current_vx = 0.0;
 			frame.current_vy = current_velocity;
 			frame.Up = Up;
@@ -631,30 +661,45 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			frame.P_shock = P_shock;
 			frame.transmitted_pressure = transmitted_pressure;
 			frame.shock_energy = shock_energy;
-			
-			frame.asymmetric_force = asymmetric_force; 
+
+			frame.asymmetric_force = asymmetric_force;
 			frame.bending_moment = bending_moment;
-			frame.max_bending_stress = max_bending_stress; 
-			
-			frame.strain_rate = std::fabs(current_velocity) / std::max(0.01, proj.diameter);
+			frame.max_bending_stress = max_bending_stress;
+
+			frame.strain_rate =
+				std::fabs(current_velocity) / std::max(0.01, proj.diameter);
 			frame.effective_strength = baseStrength * res.dynamic_increase_factor;
-			
+
 			double fc_mpa = std::max(0.001, frame.effective_strength / 1.0e6);
 			double S = 82.6 * std::pow(fc_mpa, -0.544);
-			double CRH_val = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
-			double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) / (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
-			frame.tunnel_force = area * (S * frame.effective_strength + dragCoef * baseDensity * current_velocity * current_velocity);
-			
-			frame.interface_erosion_velocity = erosion_active ? 
-				(current_velocity * std::sqrt(baseDensity / std::max(1.0, proj.casing_density))) : 0.0;
-			
-			frame.heat_rate = (current_temperature > proj.melting_point) ? (current_temperature - proj.melting_point) : 0.0;
-			frame.excess_heat = (current_temperature > proj.melting_point) ? 
-				((current_temperature - proj.melting_point) * current_mass * proj.specific_heat) : 0.0;
-			frame.mass_loss = (proj.heat_of_fusion > 0 && frame.excess_heat > 0) ? 
-				(frame.excess_heat / proj.heat_of_fusion) : 0.0;
-			frame.effective_linear_density = erosion_active ? 
-				(proj.total_mass / proj.length) : (current_mass / std::max(0.01, current_length));
+			double CRH_val = (proj.diameter > 0.0)
+						 ? (proj.curvature_noseReduce / proj.diameter)
+						 : 3.0;
+			double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) /
+					  (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
+			frame.tunnel_force = area * (S * frame.effective_strength +
+						     dragCoef * baseDensity * current_velocity *
+							     current_velocity);
+
+			frame.interface_erosion_velocity =
+				erosion_active ? (current_velocity *
+						  std::sqrt(baseDensity /
+							    std::max(1.0, proj.casing_density)))
+					       : 0.0;
+
+			frame.heat_rate = (current_temperature > proj.melting_point)
+						  ? (current_temperature - proj.melting_point)
+						  : 0.0;
+			frame.excess_heat = (current_temperature > proj.melting_point)
+						    ? ((current_temperature - proj.melting_point) *
+						       current_mass * proj.specific_heat)
+						    : 0.0;
+			frame.mass_loss = (proj.heat_of_fusion > 0 && frame.excess_heat > 0)
+						  ? (frame.excess_heat / proj.heat_of_fusion)
+						  : 0.0;
+			frame.effective_linear_density =
+				erosion_active ? (proj.total_mass / proj.length)
+					       : (current_mass / std::max(0.01, current_length));
 
 			res.penetration_frames.push_back(frame);
 		}
@@ -772,7 +817,8 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 	simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 
 	res.kinetic_shock_joules = impactShockwave(proj.total_mass, impact_velocity);
-	res.total_explosive_yield = explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
+	res.total_explosive_yield =
+		explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
 
 	return res;
 }

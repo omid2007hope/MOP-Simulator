@@ -276,7 +276,13 @@ public:
 	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
 	double impactShockwave(double totalMass, double velocityUponImpact);
+
 	double explosiveShockwave(double explosiveMass, double explosiveEnergy);
+
+	double angleSimulation(double altitude,
+			       double flightPathAngle,
+			       double velocity,
+			       double bombTotalMass);
 
 	// ! scenario payload comes from main.cpp - line 466.
 	// ! results.push_back(simulator.simulate(sc));
