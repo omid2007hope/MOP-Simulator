@@ -242,6 +242,21 @@ struct AngleSimulationResult {
 	double current_vy = 0.0;
 };
 
+struct ShockWaveIgnitionResult {
+	double dynamic_pressure;
+	double shock_pressure_gpa_peak;
+	double shock_pulse_duration_us;
+	double velocity;
+	double kinetic_energy;
+	double shock_damage_prob_percent;
+	double actual_penetration_depth;
+	bool casing_failure;
+	bool explosive_charge_survives;
+	bool premature_detonation;
+	std::string regime;
+	std::string outcome_summary;
+};
+
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
 	// ! purpose: encapsulated simulation engine that binds projectile properties, target strata, and physics models to compute trajectory and penetration results.
@@ -293,11 +308,10 @@ public:
 	static double explosiveShockwave(double explosiveMass, double explosiveEnergy);
 
 	// Ground penetration
-	static double shockWaveIgnition(SimulationResult& res,
-					double currentVelocity,
-					double rhoT,
-					double pShock,
-					double TAU);
+	ShockWaveIgnitionResult shockWaveIgnition(double currentVelocity,
+						  double rhoT,
+						  double pShock,
+						  double TAU);
 
 
 	// ! scenario payload comes from main.cpp - line 466.
