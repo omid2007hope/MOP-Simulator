@@ -297,6 +297,7 @@ struct ThermalMassAblationResult {
 	double final_rod_length = 0.0;
 	double erosion_length_lost = 0.0;
 	bool casing_failure = false;
+	bool should_break = false;
 	std::string regime = "";
 	std::string outcome_summary = "";
 };
@@ -356,7 +357,10 @@ private:
 		bool erosionOccurred,
 		double kineticEnergy);
 
-	ThermalMassAblationResult thermalMassAblation();
+	ThermalMassAblationResult thermalMassAblation(bool erosionActive,
+						      double& currentTemperature,
+						      double& currentMass,
+						      double& currentLength);
 
 
 public:

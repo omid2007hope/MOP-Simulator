@@ -403,28 +403,27 @@ PostPenetrationCraterProfilingResult ImpactSimulator::postPenetrationCraterProfi
 }
 
 
-ThermalMassAblationResult thermalMassAblation(bool erosionActive,
-					      double currentTemperature,
-					      double excessTemp,
-					      double currentMass,
-					      double currentLength) {
+ThermalMassAblationResult ImpactSimulator::thermalMassAblation(bool erosionActive,
+								 double& currentTemperature,
+								 double& currentMass,
+								 double& currentLength) {
 	ThermalMassAblationResult TMA;
 
 	if (!erosionActive) {
 		if (currentTemperature > proj.melting_point) {
 			double excess_temp = currentTemperature - proj.melting_point;
-			double excess_heat = excessTemp * currentMass * proj.specific_heat;
+			double excess_heat = excess_temp * currentMass * proj.specific_heat;
 
 			if (excess_heat > 0 && proj.heat_of_fusion > 0) {
 				double mass_loss = excess_heat / proj.heat_of_fusion;
 				currentMass -= mass_loss;
-				current_temperature = proj.melting_point;
+				currentTemperature = proj.melting_point;
 
 				if (currentMass < 0.1 * proj.total_mass) {
 					TMA.casing_failure = true;
 					TMA.regime = "Thermal Destruction";
 					TMA.outcome_summary = "Projectile completely ablated.";
-					break;
+					TMA.should_break = true;
 				}
 			}
 		}
@@ -440,10 +439,12 @@ ThermalMassAblationResult thermalMassAblation(bool erosionActive,
 			TMA.regime = "Hypervelocity Erosion Burnout";
 			TMA.outcome_summary =
 				"Projectile fully eroded by hydrodynamic penetration.";
-			break;
+			TMA.should_break = true;
 		}
 	}
-};
+	
+	return TMA;
+}
 
 // ! ********************
 // ! Penetration in ground
@@ -765,9 +766,22 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 		ThermalMassAblationResult TMAR = thermalMassAblation(erosion_active,
 								     current_temperature,
-								     excess_temp,
 								     current_mass,
 								     current_length);
+
+		if (TMAR.casing_failure) {
+			res.casing_failure = TMAR.casing_failure;
+			res.regime = TMAR.regime;
+			res.outcome_summary = TMAR.outcome_summary;
+		}
+		if (erosion_active) {
+			res.final_rod_length = TMAR.final_rod_length;
+			res.erosion_length_lost = TMAR.erosion_length_lost;
+		}
+		
+		if (TMAR.should_break) {
+			break;
+		}
 
 		// !
 		// !
