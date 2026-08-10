@@ -95,12 +95,6 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 							 scenario.velocity,
 							 proj.total_mass);
 
-	// ! ShockWave
-	// ! ShockWave
-	impactShockwave(proj.total_mass, res.velocity);
-	explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
-	// ! ShockWave
-	// ! ShockWave
 
 	(void)dt; // Suppress unused parameter warning
 

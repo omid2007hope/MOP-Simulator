@@ -26,7 +26,7 @@ int main() {
 	double mass1 = 13600.0;
 	double vel1 = 500.0;
 	double expected1 = 0.5 * mass1 * std::pow(vel1, 2);
-	double result1 = simulator.impactShockwave(mass1, vel1);
+	double result1 = ImpactSimulator::impactShockwave(mass1, vel1);
 	std::cout << "Test 1 (impactShockwave): Expected " << expected1 << ", Got " << result1 << std::endl;
 	assert(approxEqual(result1, expected1));
 
@@ -34,7 +34,7 @@ int main() {
 	double mass2 = 1000.0;
 	double vel2 = 0.0;
 	double expected2 = 0.0;
-	double result2 = simulator.impactShockwave(mass2, vel2);
+	double result2 = ImpactSimulator::impactShockwave(mass2, vel2);
 	std::cout << "Test 2 (impactShockwave): Expected " << expected2 << ", Got " << result2 << std::endl;
 	assert(approxEqual(result2, expected2));
 
