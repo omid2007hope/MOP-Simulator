@@ -302,6 +302,31 @@ struct ThermalMassAblationResult {
 	std::string outcome_summary = "";
 };
 
+struct FramePackPayload {
+	double t;
+	double current_depth;
+	double current_velocity;
+	double groundSpeedOfSound;
+	double dynamic_pressure;
+	double acceleration;
+	double current_temperature;
+	bool erosion_active;
+	double dynamic_increase_factor;
+	double current_length;
+	double obliquity_radians;
+	double Up;
+	double Us;
+	double P_shock;
+	double transmitted_pressure;
+	double shock_energy;
+	double asymmetric_force;
+	double bending_moment;
+	double max_bending_stress;
+	double baseStrength;
+	double baseDensity;
+	double current_mass;
+};
+
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
 	// ! purpose: encapsulated simulation engine that binds projectile properties, target strata, and physics models to compute trajectory and penetration results.
@@ -361,6 +386,8 @@ private:
 						      double& currentTemperature,
 						      double& currentMass,
 						      double& currentLength);
+
+	TelemetryFrame buildPenetrationFrame(const FramePackPayload& payload);
 
 
 public:

@@ -116,6 +116,9 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	if (current_altitude > 0.0) {
 		std::cout << "\n--- Simulating Atmospheric Drop from " << current_altitude
 			  << " ft ---\n";
+		
+		res.mach_number = current_velocity / atmos.speed_of_sound_ms;
+
 		double dt_drop = 0.01;
 		double next_print_altitude = current_altitude - 5000.0;
 		bool sonic_boom_triggered = false;
@@ -444,6 +447,71 @@ ThermalMassAblationResult ImpactSimulator::thermalMassAblation(bool erosionActiv
 	}
 	
 	return TMA;
+}
+
+TelemetryFrame ImpactSimulator::buildPenetrationFrame(const FramePackPayload& p) {
+	TelemetryFrame frame;
+	frame.time = p.t;
+	frame.altitude = 0.0;
+	frame.depth = p.current_depth;
+	frame.velocity = p.current_velocity;
+	frame.mach = p.current_velocity / p.groundSpeedOfSound;
+	frame.dynamic_pressure = p.dynamic_pressure;
+	frame.g_force = std::abs(p.acceleration / cons.gravity);
+	frame.heat = std::min(1.0, p.current_temperature / proj.melting_point);
+	frame.is_eroding = p.erosion_active;
+	frame.dif = p.dynamic_increase_factor;
+	frame.remaining_length = p.erosion_active ? p.current_length : proj.length;
+	frame.obliquity_deg = p.obliquity_radians * 180.0 / cons.PI;
+
+	frame.current_vx = 0.0;
+	frame.current_vy = p.current_velocity;
+	frame.Up = p.Up;
+	frame.Us = p.Us;
+	frame.P_shock = p.P_shock;
+	frame.transmitted_pressure = p.transmitted_pressure;
+	frame.shock_energy = p.shock_energy;
+
+	frame.asymmetric_force = p.asymmetric_force;
+	frame.bending_moment = p.bending_moment;
+	frame.max_bending_stress = p.max_bending_stress;
+
+	frame.strain_rate =
+		std::fabs(p.current_velocity) / std::max(0.01, proj.diameter);
+	frame.effective_strength = p.baseStrength * p.dynamic_increase_factor;
+
+	double fc_mpa = std::max(0.001, frame.effective_strength / 1.0e6);
+	double S = 82.6 * std::pow(fc_mpa, -0.544);
+	double CRH_val = (proj.diameter > 0.0)
+				 ? (proj.curvature_noseReduce / proj.diameter)
+				 : 3.0;
+	double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) /
+			  (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
+	frame.tunnel_force = (cons.PI * std::pow(proj.diameter / 2.0, 2)) * (S * frame.effective_strength +
+				     dragCoef * p.baseDensity * p.current_velocity *
+					     p.current_velocity);
+
+	frame.interface_erosion_velocity =
+		p.erosion_active ? (p.current_velocity *
+				  std::sqrt(p.baseDensity /
+					    std::max(1.0, proj.casing_density)))
+			       : 0.0;
+
+	frame.heat_rate = (p.current_temperature > proj.melting_point)
+				  ? (p.current_temperature - proj.melting_point)
+				  : 0.0;
+	frame.excess_heat = (p.current_temperature > proj.melting_point)
+				    ? ((p.current_temperature - proj.melting_point) *
+				       p.current_mass * proj.specific_heat)
+				    : 0.0;
+	frame.mass_loss = (proj.heat_of_fusion > 0 && frame.excess_heat > 0)
+				  ? (frame.excess_heat / proj.heat_of_fusion)
+				  : 0.0;
+	frame.effective_linear_density =
+		p.erosion_active ? (proj.total_mass / proj.length)
+			       : (p.current_mass / std::max(0.01, p.current_length));
+
+	return frame;
 }
 
 // ! ********************
@@ -800,66 +868,15 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		}
 
 		if (pen_frame_counter++ % 20 == 0) {
-			TelemetryFrame frame;
-			frame.time = t;
-			frame.altitude = 0.0;
-			frame.depth = current_depth;
-			frame.velocity = current_velocity;
-			frame.mach = current_velocity / groundSpeedOfSound;
-			frame.dynamic_pressure = dynamic_pressure;
-			frame.g_force = std::abs(acceleration / cons.gravity);
-			frame.heat = std::min(1.0, current_temperature / proj.melting_point);
-			frame.is_eroding = erosion_active;
-			frame.dif = res.dynamic_increase_factor;
-			frame.remaining_length = erosion_active ? current_length : proj.length;
-			frame.obliquity_deg = obliquity_radians * 180.0 / cons.PI;
-
-			frame.current_vx = 0.0;
-			frame.current_vy = current_velocity;
-			frame.Up = Up;
-			frame.Us = Us;
-			frame.P_shock = P_shock;
-			frame.transmitted_pressure = transmitted_pressure;
-			frame.shock_energy = shock_energy;
-
-			frame.asymmetric_force = asymmetric_force;
-			frame.bending_moment = bending_moment;
-			frame.max_bending_stress = max_bending_stress;
-
-			frame.strain_rate =
-				std::fabs(current_velocity) / std::max(0.01, proj.diameter);
-			frame.effective_strength = baseStrength * res.dynamic_increase_factor;
-
-			double fc_mpa = std::max(0.001, frame.effective_strength / 1.0e6);
-			double S = 82.6 * std::pow(fc_mpa, -0.544);
-			double CRH_val = (proj.diameter > 0.0)
-						 ? (proj.curvature_noseReduce / proj.diameter)
-						 : 3.0;
-			double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) /
-					  (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
-			frame.tunnel_force = area * (S * frame.effective_strength +
-						     dragCoef * baseDensity * current_velocity *
-							     current_velocity);
-
-			frame.interface_erosion_velocity =
-				erosion_active ? (current_velocity *
-						  std::sqrt(baseDensity /
-							    std::max(1.0, proj.casing_density)))
-					       : 0.0;
-
-			frame.heat_rate = (current_temperature > proj.melting_point)
-						  ? (current_temperature - proj.melting_point)
-						  : 0.0;
-			frame.excess_heat = (current_temperature > proj.melting_point)
-						    ? ((current_temperature - proj.melting_point) *
-						       current_mass * proj.specific_heat)
-						    : 0.0;
-			frame.mass_loss = (proj.heat_of_fusion > 0 && frame.excess_heat > 0)
-						  ? (frame.excess_heat / proj.heat_of_fusion)
-						  : 0.0;
-			frame.effective_linear_density =
-				erosion_active ? (proj.total_mass / proj.length)
-					       : (current_mass / std::max(0.01, current_length));
+			FramePackPayload payload = {
+				t, current_depth, current_velocity, groundSpeedOfSound,
+				dynamic_pressure, acceleration, current_temperature,
+				erosion_active, res.dynamic_increase_factor, current_length,
+				obliquity_radians, Up, Us, P_shock, transmitted_pressure,
+				shock_energy, asymmetric_force, bending_moment,
+				max_bending_stress, baseStrength, baseDensity, current_mass
+			};
+			TelemetryFrame frame = buildPenetrationFrame(payload);
 
 			res.penetration_frames.push_back(frame);
 		}
@@ -937,9 +954,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 	res.obliquity_angle = scenario.obliquity_angle;
 	res.angle_of_attack = scenario.angle_of_attack;
 
-	res.mach_number = scenario.velocity / EnvironmentPhysics::standardAtmosphere(
-						      scenario.altitude_ft / 3.28084, cons)
-						      .speed_of_sound_ms;
+	res.mach_number = 0.0;
 	res.casing_failure = false;
 	res.premature_detonation = false;
 	res.explosive_charge_survives = true;
