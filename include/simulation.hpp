@@ -227,11 +227,16 @@ struct SimulationResult {
 	std::vector<TelemetryFrame> penetration_frames;
 };
 
+
+
+
 struct DropDeriv {
 	double dv_x;
 	double dv_y;
 	double dy;
 };
+
+
 
 
 struct AngleSimulationResult {
@@ -241,6 +246,9 @@ struct AngleSimulationResult {
 	double current_vx = 0.0;
 	double current_vy = 0.0;
 };
+
+
+
 
 struct ShockWaveIgnitionResult {
 	double dynamic_pressure = 0.0;
@@ -259,22 +267,36 @@ struct ShockWaveIgnitionResult {
 	std::string outcome_summary = "";
 };
 
+
+
+
 struct PostPenetrationCraterProfilingResult {
 
-	double cumulative_breach_depth = 0;
-	double actual_penetration_depth = 0;
-	double rigid_penetration = 0;
-	double dynamic_pressure = 0;
-	double hydro_penetration = 0;
-	double shock_damage_prob_percent = 0;
-	double explosive_mass = 0;
-	double explosion_scale = 0;
-	double crater_wide_radius = 0;
-	double crater_narrow_radius = 0;
-	double camera_shake_magnitude = 0;
+	double cumulative_breach_depth = 0.0;
+	double actual_penetration_depth = 0.0;
+	double rigid_penetration = 0.0;
+	double dynamic_pressure = 0.0;
+	double hydro_penetration = 0.0;
+	double shock_damage_prob_percent = 0.0;
+	double explosive_mass = 0.0;
+	double explosion_scale = 0.0;
+	double crater_wide_radius = 0.0;
+	double crater_narrow_radius = 0.0;
+	double camera_shake_magnitude = 0.0;
 	bool is_kinetic_rod = false;
 	bool explosive_charge_survives = true;
 	bool premature_detonation = false;
+	std::string regime = "";
+	std::string outcome_summary = "";
+};
+
+
+
+
+struct ThermalMassAblationResult {
+	double final_rod_length = 0.0;
+	double erosion_length_lost = 0.0;
+	bool casing_failure = false;
 	std::string regime = "";
 	std::string outcome_summary = "";
 };
@@ -333,6 +355,8 @@ private:
 		bool casingFailure,
 		bool erosionOccurred,
 		double kineticEnergy);
+
+	ThermalMassAblationResult thermalMassAblation();
 
 
 public:

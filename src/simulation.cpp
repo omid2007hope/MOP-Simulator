@@ -365,7 +365,7 @@ PostPenetrationCraterProfilingResult ImpactSimulator::postPenetrationCraterProfi
 	PPCPR.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
 
 	PPCPR.is_kinetic_rod = (proj.explosive_mass == 0.0);
-	
+
 	if (!casingFailure) {
 		if (erosionOccurred) {
 			PPCPR.regime = "Hypervelocity Erosion (Walker-Anderson)";
@@ -401,6 +401,49 @@ PostPenetrationCraterProfilingResult ImpactSimulator::postPenetrationCraterProfi
 
 	return PPCPR;
 }
+
+
+ThermalMassAblationResult thermalMassAblation(bool erosionActive,
+					      double currentTemperature,
+					      double excessTemp,
+					      double currentMass,
+					      double currentLength) {
+	ThermalMassAblationResult TMA;
+
+	if (!erosionActive) {
+		if (currentTemperature > proj.melting_point) {
+			double excess_temp = currentTemperature - proj.melting_point;
+			double excess_heat = excessTemp * currentMass * proj.specific_heat;
+
+			if (excess_heat > 0 && proj.heat_of_fusion > 0) {
+				double mass_loss = excess_heat / proj.heat_of_fusion;
+				currentMass -= mass_loss;
+				current_temperature = proj.melting_point;
+
+				if (currentMass < 0.1 * proj.total_mass) {
+					TMA.casing_failure = true;
+					TMA.regime = "Thermal Destruction";
+					TMA.outcome_summary = "Projectile completely ablated.";
+					break;
+				}
+			}
+		}
+	} else {
+		currentLength = std::max(0.0, currentLength);
+		double effective_linear_density = proj.total_mass / proj.length;
+		currentMass = effective_linear_density * currentLength;
+		TMA.final_rod_length = currentLength;
+		TMA.erosion_length_lost = proj.length - currentLength;
+
+		if (currentLength < 0.05 * proj.length) {
+			TMA.casing_failure = true;
+			TMA.regime = "Hypervelocity Erosion Burnout";
+			TMA.outcome_summary =
+				"Projectile fully eroded by hydrodynamic penetration.";
+			break;
+		}
+	}
+};
 
 // ! ********************
 // ! Penetration in ground
@@ -716,41 +759,19 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		current_temperature += (dt / 6.0) * (k1.dT + 2 * k2.dT + 2 * k3.dT + k4.dT);
 		current_length += (dt / 6.0) * (k1.dL + 2 * k2.dL + 2 * k3.dL + k4.dL);
 
-		if (!erosion_active) {
-			if (current_temperature > proj.melting_point) {
-				double excess_temp = current_temperature - proj.melting_point;
-				double excess_heat =
-					excess_temp * current_mass * proj.specific_heat;
+		// !
+		// !
+		// !
 
-				if (excess_heat > 0 && proj.heat_of_fusion > 0) {
-					double mass_loss = excess_heat / proj.heat_of_fusion;
-					current_mass -= mass_loss;
-					current_temperature = proj.melting_point;
+		ThermalMassAblationResult TMAR = thermalMassAblation(erosion_active,
+								     current_temperature,
+								     excess_temp,
+								     current_mass,
+								     current_length);
 
-					if (current_mass < 0.1 * proj.total_mass) {
-						res.casing_failure = true;
-						res.regime = "Thermal Destruction";
-						res.outcome_summary =
-							"Projectile completely ablated.";
-						break;
-					}
-				}
-			}
-		} else {
-			current_length = std::max(0.0, current_length);
-			double effective_linear_density = proj.total_mass / proj.length;
-			current_mass = effective_linear_density * current_length;
-			res.final_rod_length = current_length;
-			res.erosion_length_lost = proj.length - current_length;
-
-			if (current_length < 0.05 * proj.length) {
-				res.casing_failure = true;
-				res.regime = "Hypervelocity Erosion Burnout";
-				res.outcome_summary =
-					"Projectile fully eroded by hydrodynamic penetration.";
-				break;
-			}
-		}
+		// !
+		// !
+		// !
 
 		if (current_depth >= next_print_depth) {
 			double g_force = acceleration / cons.gravity;
