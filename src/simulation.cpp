@@ -293,25 +293,26 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	res.cons_earthRadius = cons.earthRadius;
 }
 
-ShockWaveIgnitionResult ImpactScenario::shockWaveIgnition(
+ShockWaveIgnitionResult ImpactSimulator::shockWaveIgnition(
 	double currentVelocity, double impactVelocity, double rhoT, double pShock, double TAU) {
 
 	ShockWaveIgnitionResult shock;
 
 	// Set initial dynamic pressure on impact so it is never 0.00 GPa
-	max_dynamic_pressure = 0.5 * rhoT * pow(currentVelocity, 2);
-	shock.dynamic_pressure = max_dynamic_pressure;
+	shock.dynamic_pressure = 0.5 * rhoT * std::pow(currentVelocity, 2);
 
 	double shock_transmission_coef = 0.25;
 	double transmitted_pressure = pShock * shock_transmission_coef;
 
+	shock.transmitted_pressure = transmitted_pressure;
 	shock.shock_pressure_gpa_peak = transmitted_pressure / 1.0e9;
 	shock.shock_pulse_duration_us = TAU * 1.0e6;
 
-	double shock_energy = pow(transmitted_pressure, 2) * TAU;
+	double shock_energy = std::pow(transmitted_pressure, 2) * TAU;
+	shock.shock_energy = shock_energy;
 
 	shock.velocity = impactVelocity;
-	shock.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
+	shock.kinetic_energy = 0.5 * proj.total_mass * std::pow(impactVelocity, 2);
 
 	if (proj.explosive_mass > 0.0 && proj.explosive_critical_energy > 0.0) {
 		if (shock_energy >= proj.explosive_critical_energy) {
@@ -323,10 +324,11 @@ ShockWaveIgnitionResult ImpactScenario::shockWaveIgnition(
 			shock.outcome_summary =
 				"Premature detonation triggered by Hugoniot impact shock.";
 			shock.actual_penetration_depth = 0.0;
-			return shock;
 		}
 	}
-};
+
+	return shock;
+}
 
 // ! ********************
 // ! Penetration in ground
@@ -411,10 +413,6 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
 	res.mach_number = current_velocity / groundSpeedOfSound;
 
-	// !
-	// !
-	// !
-
 	double rho_t = target.layers.empty() ? 2500.0 : target.layers[0].density;
 	double rho_p = proj.casing_density > 0 ? proj.casing_density : 7800.0;
 	double Up = current_velocity / (1.0 + std::sqrt(rho_t / rho_p));
@@ -425,16 +423,29 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	double wall_thick = proj.casing_wall_thickness > 0 ? proj.casing_wall_thickness : 0.05;
 	double tau = (2.0 * wall_thick) / c0;
 
-	//
-	double walkerWasley =
+	ShockWaveIgnitionResult walkerWasley =
 		shockWaveIgnition(current_velocity, impact_velocity, rho_t, P_shock, tau);
-	//
 
+	max_dynamic_pressure = walkerWasley.dynamic_pressure;
+	res.dynamic_pressure = max_dynamic_pressure;
+	res.shock_pressure_gpa_peak = walkerWasley.shock_pressure_gpa_peak;
+	res.shock_pulse_duration_us = walkerWasley.shock_pulse_duration_us;
+	res.velocity = walkerWasley.velocity;
+	res.kinetic_energy = walkerWasley.kinetic_energy;
 
+	double transmitted_pressure = walkerWasley.transmitted_pressure;
+	double shock_energy = walkerWasley.shock_energy;
 
-	// !
-	// !
-	// !
+	if (walkerWasley.premature_detonation) {
+		res.casing_failure = walkerWasley.casing_failure;
+		res.explosive_charge_survives = walkerWasley.explosive_charge_survives;
+		res.premature_detonation = walkerWasley.premature_detonation;
+		res.shock_damage_prob_percent = walkerWasley.shock_damage_prob_percent;
+		res.regime = walkerWasley.regime;
+		res.outcome_summary = walkerWasley.outcome_summary;
+		res.actual_penetration_depth = walkerWasley.actual_penetration_depth;
+		return;
+	}
 
 
 	double t = 0.0;

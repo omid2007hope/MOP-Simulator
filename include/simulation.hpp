@@ -243,18 +243,20 @@ struct AngleSimulationResult {
 };
 
 struct ShockWaveIgnitionResult {
-	double dynamic_pressure;
-	double shock_pressure_gpa_peak;
-	double shock_pulse_duration_us;
-	double velocity;
-	double kinetic_energy;
-	double shock_damage_prob_percent;
-	double actual_penetration_depth;
-	bool casing_failure;
-	bool explosive_charge_survives;
-	bool premature_detonation;
-	std::string regime;
-	std::string outcome_summary;
+	double dynamic_pressure = 0.0;
+	double shock_pressure_gpa_peak = 0.0;
+	double shock_pulse_duration_us = 0.0;
+	double transmitted_pressure = 0.0;
+	double shock_energy = 0.0;
+	double velocity = 0.0;
+	double kinetic_energy = 0.0;
+	double shock_damage_prob_percent = 0.0;
+	double actual_penetration_depth = 0.0;
+	bool casing_failure = false;
+	bool explosive_charge_survives = true;
+	bool premature_detonation = false;
+	std::string regime = "";
+	std::string outcome_summary = "";
 };
 
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
@@ -297,6 +299,15 @@ private:
 					      double velocity,
 					      double bombTotalMass);
 
+
+	// Ground penetration
+	ShockWaveIgnitionResult shockWaveIgnition(double currentVelocity,
+						  double impactVelocity,
+						  double rhoT,
+						  double pShock,
+						  double TAU);
+
+
 public:
 	// ! p, t and c payloads come from main.cpp - line 464
 	// ! ImpactSimulator simulator(munition, object, cons);
@@ -306,12 +317,6 @@ public:
 	// ! Atmospheric drop
 	static double impactShockwave(double totalMass, double velocityUponImpact);
 	static double explosiveShockwave(double explosiveMass, double explosiveEnergy);
-
-	// Ground penetration
-	ShockWaveIgnitionResult shockWaveIgnition(double currentVelocity,
-						  double rhoT,
-						  double pShock,
-						  double TAU);
 
 
 	// ! scenario payload comes from main.cpp - line 466.
