@@ -259,6 +259,26 @@ struct ShockWaveIgnitionResult {
 	std::string outcome_summary = "";
 };
 
+struct PostPenetrationCraterProfilingResult {
+
+	double cumulative_breach_depth = 0;
+	double actual_penetration_depth = 0;
+	double rigid_penetration = 0;
+	double dynamic_pressure = 0;
+	double hydro_penetration = 0;
+	double shock_damage_prob_percent = 0;
+	double explosive_mass = 0;
+	double explosion_scale = 0;
+	double crater_wide_radius = 0;
+	double crater_narrow_radius = 0;
+	double camera_shake_magnitude = 0;
+	bool is_kinetic_rod = false;
+	bool explosive_charge_survives = true;
+	bool premature_detonation = false;
+	std::string regime = "";
+	std::string outcome_summary = "";
+};
+
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
 	// ! purpose: encapsulated simulation engine that binds projectile properties, target strata, and physics models to compute trajectory and penetration results.
@@ -306,6 +326,13 @@ private:
 						  double rhoT,
 						  double pShock,
 						  double TAU);
+
+	PostPenetrationCraterProfilingResult postPenetrationCraterProfiling(
+		double currentDepth,
+		double maxDynamicPressure,
+		bool casingFailure,
+		bool erosionOccurred,
+		double kineticEnergy);
 
 
 public:

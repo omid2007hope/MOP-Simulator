@@ -333,6 +333,75 @@ ShockWaveIgnitionResult ImpactSimulator::shockWaveIgnition(
 	return shock;
 }
 
+PostPenetrationCraterProfilingResult ImpactSimulator::postPenetrationCraterProfiling(
+	double currentDepth,
+	double maxDynamicPressure,
+	bool casingFailure,
+	bool erosionOccurred,
+	double kineticEnergy) {
+
+	PostPenetrationCraterProfilingResult PPCPR;
+
+	target.pulverizeDepth(currentDepth);
+	PPCPR.cumulative_breach_depth = currentDepth;
+	PPCPR.actual_penetration_depth = currentDepth;
+	PPCPR.rigid_penetration = currentDepth;
+
+	PPCPR.dynamic_pressure = maxDynamicPressure;
+
+	double total_thickness = 0.0;
+	double weighted_density_sum = 0.0;
+
+	for (const auto& layer : target.layers) {
+		weighted_density_sum += layer.density * layer.thickness;
+		total_thickness += layer.thickness;
+	}
+
+	double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
+
+	double average_density =
+		(total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
+
+	PPCPR.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
+
+	PPCPR.is_kinetic_rod = (proj.explosive_mass == 0.0);
+	
+	if (!casingFailure) {
+		if (erosionOccurred) {
+			PPCPR.regime = "Hypervelocity Erosion (Walker-Anderson)";
+			PPCPR.outcome_summary =
+				"Projectile eroded hydrodynamically; casing survived intact.";
+		} else {
+			PPCPR.regime = "Rigid Penetration (Crater+Tunnel)";
+		}
+	}
+
+	if (PPCPR.is_kinetic_rod) {
+		PPCPR.shock_damage_prob_percent = 0.0;
+	}
+
+	if (casingFailure) {
+		PPCPR.explosive_charge_survives = false;
+		PPCPR.premature_detonation = true;
+	} else {
+		PPCPR.explosive_charge_survives = true;
+	}
+
+	PPCPR.explosive_mass = proj.explosive_mass;
+	if (PPCPR.is_kinetic_rod) {
+		PPCPR.explosion_scale = 1.0;
+		PPCPR.crater_wide_radius = proj.diameter * 2.0;
+	} else {
+		PPCPR.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
+		PPCPR.crater_wide_radius =
+			std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
+	}
+	PPCPR.crater_narrow_radius = proj.diameter / 2.0;
+	PPCPR.camera_shake_magnitude = std::min(1.5, kineticEnergy / 1e9);
+
+	return PPCPR;
+}
+
 // ! ********************
 // ! Penetration in ground
 // ! ********************
@@ -777,57 +846,35 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	}
 	std::cout << "------------------------------------\n\n";
 
-	target.pulverizeDepth(current_depth);
-	res.cumulative_breach_depth = current_depth;
+	PostPenetrationCraterProfilingResult PPCP =
+		postPenetrationCraterProfiling(current_depth,
+					       max_dynamic_pressure,
+					       res.casing_failure,
+					       res.erosion_occurred,
+					       res.kinetic_energy);
 
-	res.actual_penetration_depth = current_depth;
-	res.dynamic_pressure = max_dynamic_pressure;
-	res.rigid_penetration = current_depth;
-
-	double total_thickness = 0.0;
-	double weighted_density_sum = 0.0;
-	for (const auto& layer : target.layers) {
-		weighted_density_sum += layer.density * layer.thickness;
-		total_thickness += layer.thickness;
+	res.cumulative_breach_depth = PPCP.cumulative_breach_depth;
+	res.actual_penetration_depth = PPCP.actual_penetration_depth;
+	res.rigid_penetration = PPCP.rigid_penetration;
+	res.dynamic_pressure = PPCP.dynamic_pressure;
+	res.hydro_penetration = PPCP.hydro_penetration;
+	res.is_kinetic_rod = PPCP.is_kinetic_rod;
+	if (!PPCP.regime.empty()) {
+		res.regime = PPCP.regime;
 	}
-	double default_density = target.layers.empty() ? 2500.0 : target.layers[0].density;
-	double average_density =
-		(total_thickness > 0) ? (weighted_density_sum / total_thickness) : default_density;
-	res.hydro_penetration = proj.length * std::sqrt(proj.casing_density / average_density);
-
-	res.is_kinetic_rod = (proj.explosive_mass == 0.0);
-	if (res.is_kinetic_rod) {
-		if (!res.casing_failure) {
-			if (res.erosion_occurred) {
-				res.regime = "Hypervelocity Erosion (Walker-Anderson)";
-				res.outcome_summary =
-					"Projectile eroded hydrodynamically; casing survived intact.";
-			} else {
-				res.regime = "Rigid Penetration (Crater+Tunnel)";
-			}
-		}
-		res.shock_damage_prob_percent = 0.0;
-		if (res.casing_failure) {
-			res.explosive_charge_survives = false;
-			res.premature_detonation = true;
-		} else {
-			res.explosive_charge_survives = true;
-			if (res.erosion_occurred) {
-				res.regime = "Hypervelocity Erosion (Walker-Anderson)";
-			}
-		}
+	if (!PPCP.outcome_summary.empty()) {
+		res.outcome_summary = PPCP.outcome_summary;
 	}
-
-	res.explosive_mass = proj.explosive_mass;
-	if (res.is_kinetic_rod) {
-		res.explosion_scale = 1.0;
-		res.crater_wide_radius = proj.diameter * 2.0;
-	} else {
-		res.explosion_scale = std::max(5.0, std::min(50.0, proj.explosive_mass / 50.0));
-		res.crater_wide_radius = std::min(20.0, std::max(4.5, proj.explosive_mass / 100.0));
-	}
-	res.crater_narrow_radius = proj.diameter / 2.0;
-	res.camera_shake_magnitude = std::min(1.5, res.kinetic_energy / 1e9);
+	res.shock_damage_prob_percent = PPCP.shock_damage_prob_percent;
+	res.explosive_charge_survives = PPCP.explosive_charge_survives;
+	res.premature_detonation = PPCP.premature_detonation;
+	res.explosive_mass = PPCP.explosive_mass;
+	res.explosion_scale = PPCP.explosion_scale;
+	res.crater_wide_radius = PPCP.crater_wide_radius;
+	res.crater_narrow_radius = PPCP.crater_narrow_radius;
+	res.camera_shake_magnitude = PPCP.camera_shake_magnitude;
+	// !
+	// !
 
 	constexpr double desiredWallClockSeconds = 6.0;
 	double totalPenSimTime =
