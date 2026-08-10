@@ -32,7 +32,7 @@ double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiv
 	return explosiveShock;
 }
 
-double ImpactSimulator::angleSimulation(double altitude,
+AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 					double flightPathAngle,
 					double velocity,
 					double bombTotalMass) {
@@ -58,10 +58,65 @@ double ImpactSimulator::angleSimulation(double altitude,
 	double current_vx = velocity * std::cos(fpa_rad_corrected);
 	double current_vy = velocity * std::sin(fpa_rad_corrected);
 
-	auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
-		AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
-		{
+	AngleSimulationResult res;
+	res.trim_deg = trim_deg;
+	res.trim_rad = trim_rad;
+	res.fpa_rad_corrected = fpa_rad_corrected;
+	res.current_vx = current_vx;
+	res.current_vy = current_vy;
+	return res;
+}
 
+void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
+					      const Projectile& proj,
+					      SimulationResult& res,
+					      double& impact_velocity,
+					      double& impact_pitch,
+					      double dt) {
+
+	// ! Pass data to - for angle simulation.
+	AngleSimulationResult angleRes = angleSimulation(scenario.altitude_ft,
+			scenario.flight_path_angle,
+			scenario.velocity,
+			proj.total_mass);
+
+		// ! ShockWave
+		// ! ShockWave
+		impactShockwave(proj.total_mass, res.velocity);
+	explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
+	// ! ShockWave
+	// ! ShockWave
+
+	(void)dt; // Suppress unused parameter warning
+
+
+	AtmosphereState atmos =
+		EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
+
+	double current_altitude = scenario.altitude_ft;
+	double current_velocity = scenario.velocity;
+	double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
+	double CRH = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
+	double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
+	double dragCoefficient =
+		(8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
+
+	double current_vx = angleRes.current_vx;
+	double current_vy = angleRes.current_vy;
+
+	if (current_altitude > 0.0) {
+		std::cout << "\n--- Simulating Atmospheric Drop from " << current_altitude
+			  << " ft ---\n";
+		double dt_drop = 0.01;
+		double next_print_altitude = current_altitude - 5000.0;
+		bool sonic_boom_triggered = false;
+		double t_drop = 0.0;
+		int drop_frame_counter = 0;
+
+		double y_m = current_altitude / 3.28084;
+
+		auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
+			AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
 			double v_mag = std::hypot(vx, vy);
 			double mach = v_mag / atm.speed_of_sound_ms;
 			double cd = EnvironmentPhysics::getMachDependentDrag(
@@ -87,88 +142,38 @@ double ImpactSimulator::angleSimulation(double altitude,
 			return d;
 		};
 
-		DropDeriv k1 = calc_derivs(y_m, current_vx, current_vy);
-		DropDeriv k2 = calc_derivs(y_m + 0.5 * dt_drop * k1.dy,
-					   current_vx + 0.5 * dt_drop * k1.dv_x,
-					   current_vy + 0.5 * dt_drop * k1.dv_y);
-		DropDeriv k3 = calc_derivs(y_m + 0.5 * dt_drop * k2.dy,
-					   current_vx + 0.5 * dt_drop * k2.dv_x,
-					   current_vy + 0.5 * dt_drop * k2.dv_y);
-		DropDeriv k4 = calc_derivs(y_m + dt_drop * k3.dy,
-					   current_vx + dt_drop * k3.dv_x,
-					   current_vy + dt_drop * k3.dv_y);
-
-
-		double prev_y_m = y_m;
-		double prev_vx = current_vx;
-		double prev_vy = current_vy;
-
-		current_vx += (dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
-		current_vy += (dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
-		y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
-
-		current_velocity = std::hypot(current_vx, current_vy);
-
-		if (y_m < 0.0) {
-			double fraction = prev_y_m / (prev_y_m - y_m);
-			current_vx = prev_vx + fraction * (current_vx - prev_vx);
-			current_vy = prev_vy + fraction * (current_vy - prev_vy);
-			y_m = 0.0;
-			t_drop = t_drop - dt_drop + fraction * dt_drop;
-			current_velocity = std::hypot(current_vx, current_vy);
-		}
-	}
-};
-
-void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
-					      const Projectile& proj,
-					      SimulationResult& res,
-					      double& impact_velocity,
-					      double& impact_pitch,
-					      double dt) {
-
-	// ! Pass data to - for angle simulation.
-	angleSimulation(scenario.altitude_ft,
-			scenario.flight_path_angle,
-			scenario.velocity,
-			proj.total_mass)
-
-		// ! ShockWave
-		// ! ShockWave
-		impactShockwave(proj.total_mass, res.velocity);
-	explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
-	// ! ShockWave
-	// ! ShockWave
-
-	(void)dt; // Suppress unused parameter warning
-
-
-	AtmosphereState atmos =
-		EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
-
-	double current_altitude = scenario.altitude_ft;
-	double current_velocity = scenario.velocity;
-	double area = cons.PI * std::pow(proj.diameter / 2.0, 2);
-	double CRH = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
-	double Caliber_Radius_Head = (CRH > 0.0) ? CRH : 3.0;
-	double dragCoefficient =
-		(8.0 * Caliber_Radius_Head - 1.0) / (24.0 * std::pow(Caliber_Radius_Head, 2));
-
-	if (current_altitude > 0.0) {
-		std::cout << "\n--- Simulating Atmospheric Drop from " << current_altitude
-			  << " ft ---\n";
-		double dt_drop = 0.01;
-		double next_print_altitude = current_altitude - 5000.0;
-		bool sonic_boom_triggered = false;
-		double t_drop = 0.0;
-		int drop_frame_counter = 0;
-
-		double y_m = current_altitude / 3.28084;
-
 		while (current_altitude > 0.0) {
 
-			AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
+			DropDeriv k1 = calc_derivs(y_m, current_vx, current_vy);
+			DropDeriv k2 = calc_derivs(y_m + 0.5 * dt_drop * k1.dy,
+						   current_vx + 0.5 * dt_drop * k1.dv_x,
+						   current_vy + 0.5 * dt_drop * k1.dv_y);
+			DropDeriv k3 = calc_derivs(y_m + 0.5 * dt_drop * k2.dy,
+						   current_vx + 0.5 * dt_drop * k2.dv_x,
+						   current_vy + 0.5 * dt_drop * k2.dv_y);
+			DropDeriv k4 = calc_derivs(y_m + dt_drop * k3.dy,
+						   current_vx + dt_drop * k3.dv_x,
+						   current_vy + dt_drop * k3.dv_y);
 
+
+			double prev_y_m = y_m;
+			double prev_vx = current_vx;
+			double prev_vy = current_vy;
+
+			current_vx += (dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
+			current_vy += (dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
+			y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
+
+			current_velocity = std::hypot(current_vx, current_vy);
+
+			if (y_m < 0.0) {
+				double fraction = prev_y_m / (prev_y_m - y_m);
+				current_vx = prev_vx + fraction * (current_vx - prev_vx);
+				current_vy = prev_vy + fraction * (current_vy - prev_vy);
+				y_m = 0.0;
+				t_drop = t_drop - dt_drop + fraction * dt_drop;
+				current_velocity = std::hypot(current_vx, current_vy);
+			}
 
 			current_altitude = y_m * 3.28084;
 			AtmosphereState current_atm =
@@ -261,9 +266,9 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	impact_velocity = current_velocity;
 	impact_pitch = std::atan2(current_vx, std::max(0.001, current_vy));
 
-	res.trim_deg = trim_deg;
-	res.trim_rad = trim_rad;
-	res.fpa_rad_corrected = fpa_rad_corrected;
+	res.trim_deg = angleRes.trim_deg;
+	res.trim_rad = angleRes.trim_rad;
+	res.fpa_rad_corrected = angleRes.fpa_rad_corrected;
 	// !
 	res.area = area;
 	res.impact_velocity = impact_velocity;

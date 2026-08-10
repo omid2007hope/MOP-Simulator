@@ -234,6 +234,14 @@ struct DropDeriv {
 };
 
 
+struct AngleSimulationResult {
+	double trim_deg = 0.0;
+	double trim_rad = 0.0;
+	double fpa_rad_corrected = 0.0;
+	double current_vx = 0.0;
+	double current_vy = 0.0;
+};
+
 // ! Core impact simulator engine handling atmospheric trajectory and ground penetration physics
 class ImpactSimulator {
 	// ! purpose: encapsulated simulation engine that binds projectile properties, target strata, and physics models to compute trajectory and penetration results.
@@ -279,7 +287,7 @@ public:
 
 	double explosiveShockwave(double explosiveMass, double explosiveEnergy);
 
-	double angleSimulation(double altitude,
+	AngleSimulationResult angleSimulation(double altitude,
 			       double flightPathAngle,
 			       double velocity,
 			       double bombTotalMass);
