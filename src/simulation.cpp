@@ -293,6 +293,9 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	res.cons_earthRadius = cons.earthRadius;
 }
 
+// ! ********************
+// ! Shock Initiation (Walker-Wasley)
+// ! ********************
 ShockWaveIgnitionResult ImpactSimulator::shockWaveIgnition(
 	double currentVelocity, double impactVelocity, double rhoT, double pShock, double TAU) {
 
