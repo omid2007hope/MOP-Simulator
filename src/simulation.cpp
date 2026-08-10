@@ -20,7 +20,7 @@ ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const Phy
 
 
 // ! ********************
-// ! Shock Wave caused by impact
+// ! Shock Wave caused by impact -- INTERNAL
 // ! ********************
 double ImpactSimulator::impactShockwave(double totalMass, double velocityUponImpact) {
 	double kineticShock = 0.5 * totalMass * std::pow(velocityUponImpact, 2);
@@ -29,7 +29,7 @@ double ImpactSimulator::impactShockwave(double totalMass, double velocityUponImp
 
 
 // ! ********************
-// ! Shock Wave caused by explosion
+// ! Shock Wave caused by explosion -- INTERNAL
 // ! ********************
 double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveEnergy) {
 
@@ -44,7 +44,7 @@ double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiv
 }
 
 // ! ********************
-// ! Bomb's Angle
+// ! Bomb's Angle -- INTERNAL
 // ! ********************
 AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 						       double flightPathAngle,
@@ -292,6 +292,40 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	res.cons_adiabaticIndexAir = cons.adiabaticIndexAir;
 	res.cons_earthRadius = cons.earthRadius;
 }
+
+double ImpactScenario::shockWaveIgnition(
+	SimulationResult& res, double currentVelocity, double rhoT, double pShock, double TAU) {
+
+	// Set initial dynamic pressure on impact so it is never 0.00 GPa
+	max_dynamic_pressure = 0.5 * rhoT * pow(currentVelocity, 2);
+	res.dynamic_pressure = max_dynamic_pressure;
+
+	double shock_transmission_coef = 0.25;
+	double transmitted_pressure = pShock * shock_transmission_coef;
+
+	res.shock_pressure_gpa_peak = transmitted_pressure / 1.0e9;
+	res.shock_pulse_duration_us = TAU * 1.0e6;
+
+	double shock_energy = pow(transmitted_pressure, 2) * TAU;
+
+	res.velocity = impact_velocity;
+	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
+
+	if (proj.explosive_mass > 0.0 && proj.explosive_critical_energy > 0.0) {
+		if (shock_energy >= proj.explosive_critical_energy) {
+			res.casing_failure = true;
+			res.explosive_charge_survives = false;
+			res.premature_detonation = true;
+			res.shock_damage_prob_percent = 100.0;
+			res.regime = "Shock Initiation (Walker-Wasley)";
+			res.outcome_summary =
+				"Premature detonation triggered by Hugoniot impact shock.";
+			res.actual_penetration_depth = 0.0;
+			return;
+		}
+	}
+};
+
 // ! ********************
 // ! Penetration in ground
 // ! ********************
@@ -300,6 +334,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 						double impact_velocity,
 						double impact_pitch,
 						double dt) {
+
+
 	double target_obliquity_radians = scenario.obliquity_angle * cons.PI / 180.0;
 	double obliquity_radians = target_obliquity_radians + impact_pitch;
 	double angleOfAttack_radians = scenario.angle_of_attack * cons.PI / 180.0;
@@ -373,6 +409,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
 	res.mach_number = current_velocity / groundSpeedOfSound;
 
+	// !
+	// !
+	// !
+
 	double rho_t = target.layers.empty() ? 2500.0 : target.layers[0].density;
 	double rho_p = proj.casing_density > 0 ? proj.casing_density : 7800.0;
 	double Up = current_velocity / (1.0 + std::sqrt(rho_t / rho_p));
@@ -383,35 +423,17 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	double wall_thick = proj.casing_wall_thickness > 0 ? proj.casing_wall_thickness : 0.05;
 	double tau = (2.0 * wall_thick) / c0;
 
-	// Set initial dynamic pressure on impact so it is never 0.00 GPa
-	max_dynamic_pressure = 0.5 * rho_t * current_velocity * current_velocity;
-	res.dynamic_pressure = max_dynamic_pressure;
+	//
+	double walkerWasley = shockWaveIgnition(res, current_velocity, rho_t, P_shock, tau);
+	//
 
-	// Approximate shock transmission coefficient from steel casing to explosive fill
-	// Z_steel = ~35 MRayls, Z_explosive = ~5 MRayls. T = 2*Z2/(Z1+Z2) =~ 0.25
-	double shock_transmission_coef = 0.25;
-	double transmitted_pressure = P_shock * shock_transmission_coef;
 
-	res.shock_pressure_gpa_peak = transmitted_pressure / 1.0e9;
-	res.shock_pulse_duration_us = tau * 1.0e6;
 
-	double shock_energy = transmitted_pressure * transmitted_pressure * tau;
-	res.velocity = impact_velocity;
-	res.kinetic_energy = 0.5 * proj.total_mass * std::pow(impact_velocity, 2);
 
-	if (proj.explosive_mass > 0.0 && proj.explosive_critical_energy > 0.0) {
-		if (shock_energy >= proj.explosive_critical_energy) {
-			res.casing_failure = true;
-			res.explosive_charge_survives = false;
-			res.premature_detonation = true;
-			res.shock_damage_prob_percent = 100.0;
-			res.regime = "Shock Initiation (Walker-Wasley)";
-			res.outcome_summary =
-				"Premature detonation triggered by Hugoniot impact shock.";
-			res.actual_penetration_depth = 0.0;
-			return;
-		}
-	}
+	// !
+	// !
+	// !
+
 
 	double t = 0.0;
 

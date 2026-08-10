@@ -278,9 +278,9 @@ private:
 				       double dt);
 
 	AngleSimulationResult angleSimulation(double altitude,
-			       double flightPathAngle,
-			       double velocity,
-			       double bombTotalMass);
+					      double flightPathAngle,
+					      double velocity,
+					      double bombTotalMass);
 
 public:
 	// ! p, t and c payloads come from main.cpp - line 464
@@ -288,8 +288,17 @@ public:
 	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
 	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
 
+	// ! Atmospheric drop
 	static double impactShockwave(double totalMass, double velocityUponImpact);
 	static double explosiveShockwave(double explosiveMass, double explosiveEnergy);
+
+	// Ground penetration
+	static double shockWaveIgnition(SimulationResult& res,
+					double currentVelocity,
+					double rhoT,
+					double pShock,
+					double TAU);
+
 
 	// ! scenario payload comes from main.cpp - line 466.
 	// ! results.push_back(simulator.simulate(sc));
