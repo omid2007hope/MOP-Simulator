@@ -12,14 +12,25 @@
 #include "simulation.hpp"
 
 
+// ! ********************
+// ! Constructor
+// ! ********************
 ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
     : proj(p), target(t), cons(c) {}
 
+
+// ! ********************
+// ! Shock Wave caused by impact
+// ! ********************
 double ImpactSimulator::impactShockwave(double totalMass, double velocityUponImpact) {
 	double kineticShock = 0.5 * totalMass * std::pow(velocityUponImpact, 2);
 	return kineticShock;
 }
 
+
+// ! ********************
+// ! Shock Wave caused by explosion
+// ! ********************
 double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveEnergy) {
 
 	// Because the explosion is buried in dense rock (impedance matching),
@@ -32,10 +43,13 @@ double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiv
 	return explosiveShock;
 }
 
+// ! ********************
+// ! Bomb's Angle
+// ! ********************
 AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
-					double flightPathAngle,
-					double velocity,
-					double bombTotalMass) {
+						       double flightPathAngle,
+						       double velocity,
+						       double bombTotalMass) {
 
 	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(altitude / 3.28084, cons);
 
@@ -49,10 +63,9 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 		B2_Sprit_Strategic_Bomber.bomber_wingArea,
 		atmos.density_kgm3,
 		cons);
-	// ! IMPORTANT
-	// ! I think trim_deg is already radians so no need not sure - Check environment_physics.cpp
+
 	double trim_rad = trim_deg * cons.PI / 180.0;
-	// ! IMPORTANT
+
 	double fpa_rad_corrected = fpa_rad - trim_rad;
 
 	double current_vx = velocity * std::cos(fpa_rad_corrected);
@@ -66,7 +79,9 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 	res.current_vy = current_vy;
 	return res;
 }
-
+// ! ********************
+// ! Traveling in air
+// ! ********************
 void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      const Projectile& proj,
 					      SimulationResult& res,
@@ -76,13 +91,13 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 
 	// ! Pass data to - for angle simulation.
 	AngleSimulationResult angleRes = angleSimulation(scenario.altitude_ft,
-			scenario.flight_path_angle,
-			scenario.velocity,
-			proj.total_mass);
+							 scenario.flight_path_angle,
+							 scenario.velocity,
+							 proj.total_mass);
 
-		// ! ShockWave
-		// ! ShockWave
-		impactShockwave(proj.total_mass, res.velocity);
+	// ! ShockWave
+	// ! ShockWave
+	impactShockwave(proj.total_mass, res.velocity);
 	explosiveShockwave(proj.explosive_mass, proj.explosive_energy_j_per_kg);
 	// ! ShockWave
 	// ! ShockWave
@@ -160,8 +175,10 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 			double prev_vx = current_vx;
 			double prev_vy = current_vy;
 
-			current_vx += (dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
-			current_vy += (dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
+			current_vx +=
+				(dt_drop / 6.0) * (k1.dv_x + 2 * k2.dv_x + 2 * k3.dv_x + k4.dv_x);
+			current_vy +=
+				(dt_drop / 6.0) * (k1.dv_y + 2 * k2.dv_y + 2 * k3.dv_y + k4.dv_y);
 			y_m += (dt_drop / 6.0) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
 
 			current_velocity = std::hypot(current_vx, current_vy);
@@ -281,7 +298,9 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	res.cons_adiabaticIndexAir = cons.adiabaticIndexAir;
 	res.cons_earthRadius = cons.earthRadius;
 }
-
+// ! ********************
+// ! Penetration in ground
+// ! ********************
 void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 						SimulationResult& res,
 						double impact_velocity,
@@ -789,7 +808,9 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	res.x_acceleration = 0.0;
 	res.y_acceleration = 0.0;
 }
-
+// ! ********************
+// ! End Result
+// ! ********************
 SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 
 
