@@ -79,6 +79,9 @@ protected:
 	virtual void BeginPlay() override;
 
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile Configuration")
+	FProjectile ProjectilePhysicsData;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UStaticMeshComponent> ProjectileMesh;
 
