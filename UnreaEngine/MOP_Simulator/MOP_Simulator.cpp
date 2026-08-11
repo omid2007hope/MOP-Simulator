@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "MOP_Simulator.h"
+#include "MOPSimulatorComponent.h"
 
 #include "Modules/ModuleManager.h"
 
@@ -22,6 +23,11 @@ ATarget::ATarget() {
 	// assign a mesh
 	TargetMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TargetMesh"));
 	RootComponent = TargetMesh; // Make the mesh the root of the entire Actor!
+
+	// Attach the physics simulation component
+	// It auto-runs ImpactSimulator::simulate() in BeginPlay and draws
+	// the drop arc + penetration tunnel via DrawDebugLine/Sphere/String.
+	SimulatorComponent = CreateDefaultSubobject<UMOPSimulatorComponent>(TEXT("MOPSimulator"));
 
 	// Set Default Target Data (Fordow-like Hardened Mountain Facility)
 	TargetPhysicsData.Name = TEXT("Fordow-like Hardened Mountain Facility");

@@ -4,7 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "MOPTypes.h"
 #include "MOP_Simulator.generated.h"
+
+// Forward declaration — full include in .cpp to avoid circular dependency
+class UMOPSimulatorComponent;
 
 USTRUCT(BlueprintType)
 struct FProjectile {
@@ -296,6 +300,12 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// Core physics simulation component.
+	// Runs ImpactSimulator::simulate() on BeginPlay, draws debug trajectory
+	// in viewport, and animates the attached projectile via TickComponent.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UMOPSimulatorComponent> SimulatorComponent;
 
 	UFUNCTION()
 	void ReceiveImpact();
