@@ -86,4 +86,11 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION()
+	void OnTargetHit(UPrimitiveComponent* HitComponent,
+			 AActor* OtherActor,
+			 UPrimitiveComponent* OtherComp,
+			 FVector NormalImpulse,
+			 const FHitResult& Hit);
 };

@@ -4,9 +4,8 @@
 #include "Target.h"
 
 // Sets default values
-ATarget::ATarget()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ATarget::ATarget() {
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// assign a mesh
@@ -28,7 +27,8 @@ ATarget::ATarget()
 
 	// Layer 2: Reinforced Concrete
 	FTargetLayer ConcreteLayer;
-	ConcreteLayer.MaterialName = TEXT("Reinforced Concrete (facility structure / shaft lining)");
+	ConcreteLayer.MaterialName =
+		TEXT("Reinforced Concrete (facility structure / shaft lining)");
 	ConcreteLayer.Thickness = 5.0;
 	ConcreteLayer.Density = 2650.0;
 	ConcreteLayer.CompressiveStrength = 70.0e6;
@@ -47,22 +47,20 @@ ATarget::ATarget()
 	RockLayer.HugoniotC0 = 3800.0;
 	RockLayer.HugoniotS = 1.35;
 	TargetPhysicsData.Layers.Add(RockLayer);
-}   
+
+	// Trigger after impact
+	TargetMesh->OnComponentHit.AddDynamic(this, &ATarget::OnTargetHit);
+}
 
 // Impact
 void ATarget::ReceiveImpact() {};
 
 // Called when the game starts or when spawned
-void ATarget::BeginPlay()
-{
+void ATarget::BeginPlay() {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
-void ATarget::Tick(float DeltaTime)
-{
+void ATarget::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
 }
-
