@@ -80,6 +80,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Configuration")
 	FTarget TargetPhysicsData;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UStaticMeshComponent> TargetMesh;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
