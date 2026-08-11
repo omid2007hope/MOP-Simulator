@@ -9,8 +9,10 @@ IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, MOP_Simulator, "MOP_Simula
 
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "Target.h"
+// Sets default values
+AProjectile::AProjectile() {
+	PrimaryActorTick.bCanEverTick = true;
+}
 
 // Sets default values
 ATarget::ATarget() {

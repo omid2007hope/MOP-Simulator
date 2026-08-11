@@ -3,17 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
-
-#include <numbers>
-
-#include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Target.generated.h"
-
+#include "MOP_Simulator.generated.h"
 
 USTRUCT(BlueprintType)
 struct FProjectile {
@@ -74,7 +65,6 @@ struct FProjectile {
 	double HeatOfFusion = 272000.0;
 };
 
-
 // Target layer specification
 USTRUCT(BlueprintType)
 struct FTargetLayer {
@@ -133,6 +123,22 @@ struct FTarget {
 };
 
 UCLASS()
+class AProjectile : public AActor {
+	GENERATED_BODY()
+
+public:
+	AProjectile();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile Configuration")
+	FProjectile ProjectilePhysicsData;
+
+	UFUNCTION(BlueprintCallable, Category = "Physics")
+	FProjectile GetPhysicsData() const {
+		return ProjectilePhysicsData;
+	}
+};
+
+UCLASS()
 class ATarget : public AActor {
 	GENERATED_BODY()
 
@@ -150,15 +156,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UStaticMeshComponent> TargetMesh;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile Configuration")
-	FProjectile ProjectilePhysicsData;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	TObjectPtr<class UStaticMeshComponent> ProjectileMesh;
-
-
-
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -169,9 +166,4 @@ public:
 			 UPrimitiveComponent* OtherComp,
 			 FVector NormalImpulse,
 			 const FHitResult& Hit);
-
-	// Bomb's data
-	FProjectile GetPhysicsData() const {
-		return ProjectilePhysicsData;
-	}
 };
