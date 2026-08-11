@@ -3,40 +3,64 @@
 #pragma once
 
 #include <numbers>
-#include <string>
-#include <vector>
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Target.generated.h"
 
-
 // Target layer specification
-struct TargetLayer {
-	std::string material_name;
-	double thickness = 0.0;
-	double density = 0.0;
-	double compressive_strength = 0.0;
-	double rebar_volume_fraction = 0.0;
-	double rebar_yield_strength = 0.0;
-	double pulverized_depth = 0.0;
-	double hugoniot_c0 = 0.0;
-	double hugoniot_s = 0.0;
+USTRUCT(BlueprintType)
+struct FTargetLayer {
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	FString MaterialName = TEXT("");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double Thickness = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double Density = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double CompressiveStrength = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double RebarVolumeFraction = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double RebarYieldStrength = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double PulverizedDepth = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double HugoniotC0 = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	double HugoniotS = 0.0;
 };
 
 // Target material specification
-struct Target {
-	std::string name;
-	std::vector<TargetLayer> layers;
-	void pulverizeDepth(double breachDepth) {
-		double currentDepthAcc = 0.0;
-		for (auto& layer : layers) {
-			if (breachDepth > currentDepthAcc) {
-				layer.pulverized_depth = std::max(
-					layer.pulverized_depth,
-					std::min(layer.thickness, breachDepth - currentDepthAcc));
+USTRUCT(BlueprintType)
+struct FTarget {
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	FString Name = TEXT("");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Properties")
+	TArray<FTargetLayer> Layers;
+
+	void PulverizeDepth(double BreachDepth) {
+		double CurrentDepthAcc = 0.0;
+		for (FTargetLayer& Layer : Layers) {
+			if (BreachDepth > CurrentDepthAcc) {
+				Layer.PulverizedDepth = FMath::Max(
+					Layer.PulverizedDepth,
+					FMath::Min(Layer.Thickness, BreachDepth - CurrentDepthAcc));
 			}
-			currentDepthAcc += layer.thickness;
+			CurrentDepthAcc += Layer.Thickness;
 		}
 	}
 };
@@ -52,6 +76,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target Configuration")
+	FTarget TargetPhysicsData;
 
 public:
 	// Called every frame
