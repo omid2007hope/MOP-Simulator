@@ -1,6 +1,3 @@
-> [!WARNING]
-> **Notice:** The 3D visualizer is currently broken and too heavy for web execution. Please use the terminal interface. Migration to Unreal Engine 5 is planned for the near future.
-
 ```mermaid
 ---
 id: e3af7d57-9c89-4f14-afd8-05bbc4929335
