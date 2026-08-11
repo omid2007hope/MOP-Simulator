@@ -583,7 +583,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 	}
 	res.critical_angle_threshold = critical_angle_threshold;
 
-	if ((obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
+	if (std::abs(obliquity_radians + angleOfAttack_radians) >= critical_angle_threshold) {
 		res.casing_failure = true;
 		res.regime = "Ricochet";
 		res.outcome_summary = "Projectile deflected off target surface.";
@@ -693,10 +693,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		double asymmetric_force = 0.0;
 		double bending_moment = 0.0;
 		double max_bending_stress = 0.0;
-		if (obliquity_radians > 0.0 || angleOfAttack_radians > 0.0) {
+		if (std::abs(obliquity_radians) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
 			asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
 					   std::sin(obliquity_radians + angleOfAttack_radians);
-			bending_moment = asymmetric_force * (proj.length / 2.0);
+			bending_moment = std::abs(asymmetric_force) * (proj.length / 2.0);
 
 			if (proj.area_moment_inertia > 0) {
 				max_bending_stress = (bending_moment * (proj.diameter / 2.0)) /
@@ -724,7 +724,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			double effective_strength = baseStrength * dif;
 
 			double lateral_force = 0.0;
-			if (theta > 0.0 || angleOfAttack_radians > 0.0) {
+			if (std::abs(theta) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
 				lateral_force = (0.5 * baseDensity * vSq * area) *
 						std::sin(theta + angleOfAttack_radians);
 			}
