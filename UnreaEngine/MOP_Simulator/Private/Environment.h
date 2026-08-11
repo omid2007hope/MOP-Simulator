@@ -7,7 +7,8 @@
 /**
  * 
  */
-class Environment {
+class Environment
+{
 public:
 	Environment();
 	~Environment();

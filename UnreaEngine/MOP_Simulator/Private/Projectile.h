@@ -67,10 +67,11 @@ struct FProjectile {
 };
 
 UCLASS()
-class AProjectile : public AActor {
+class AProjectile : public AActor
+{
 	GENERATED_BODY()
-
-public:
+	
+public:	
 	// Sets default values for this actor's properties
 	AProjectile();
 
@@ -82,7 +83,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<class UStaticMeshComponent> ProjectileMesh;
 
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
 };
