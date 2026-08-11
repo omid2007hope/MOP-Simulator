@@ -10,8 +10,13 @@
  * 
  */
 UCLASS()
-class MOP_SIMULATOR_API AMOP_SimulatorGameModeBase : public AGameModeBase
-{
+class MOP_SIMULATOR_API AMOP_SimulatorGameModeBase :
+
+
+
+    public AGameModeBase {
 	GENERATED_BODY()
-	
+
+protected:
+	virtual void beginPlay() override;
 };
