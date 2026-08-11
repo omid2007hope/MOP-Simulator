@@ -27,7 +27,8 @@ ATarget::ATarget() {
 
 	// Layer 2: Reinforced Concrete
 	FTargetLayer ConcreteLayer;
-	ConcreteLayer.MaterialName = TEXT("Reinforced Concrete (facility structure / shaft lining)");
+	ConcreteLayer.MaterialName =
+		TEXT("Reinforced Concrete (facility structure / shaft lining)");
 	ConcreteLayer.Thickness = 5.0;
 	ConcreteLayer.Density = 2650.0;
 	ConcreteLayer.CompressiveStrength = 70.0e6;
@@ -47,6 +48,9 @@ ATarget::ATarget() {
 	RockLayer.HugoniotS = 1.35;
 	TargetPhysicsData.Layers.Add(RockLayer);
 }
+
+// Impact
+void ATarget::ReceiveImpact() {};
 
 // Called when the game starts or when spawned
 void ATarget::BeginPlay() {
