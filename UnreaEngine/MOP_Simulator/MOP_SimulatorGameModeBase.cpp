@@ -3,11 +3,11 @@
 
 #include "MOP_SimulatorGameModeBase.h"
 
-#include "Projectile.h"
+#include "MOP_Simulator.h"
 
 
 void AMOP_SimulatorGameModeBase::BeginPlay() {
-	super::BeginPlay();
+	Super::BeginPlay();
 
 	// 1. Define where the bomb spawns (e.g., 10,000 meters in the air)
 	FVector SpawnLocation(0.0f, 0.0f, 10000.0f);

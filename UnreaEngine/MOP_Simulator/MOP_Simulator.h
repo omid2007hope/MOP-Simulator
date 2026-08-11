@@ -122,6 +122,143 @@ struct FTarget {
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FImpactScenario {
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	FString Name = TEXT("");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	double AltitudeFt = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	double Velocity = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	double FlightPathAngle = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	double ObliquityAngle = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Impact Scenario")
+	double AngleOfAttack = 0.0;
+};
+
+inline const FImpactScenario Midnight_Hammer_Scenario = {
+	.Name = TEXT("Midnight Hammer"),
+	.AltitudeFt = 50000.0,
+	.Velocity = 250.0,
+	.FlightPathAngle = 357.5,
+	.ObliquityAngle = 0.0,
+	.AngleOfAttack = 0.0,
+};
+
+USTRUCT(BlueprintType)
+struct FAtmosphereState {
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Atmosphere State")
+	double TemperatureK = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Atmosphere State")
+	double PressurePa = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Atmosphere State")
+	double DensityKgm3 = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Atmosphere State")
+	double SpeedOfSoundMs = 0.0;
+};
+
+inline const FAtmosphereState Midnight_Hammer_Atmosphere = {
+	.TemperatureK = 288.15, // 15 degree Celsius
+	.PressurePa = 101325.0,
+	.DensityKgm3 = 1.225,
+	.SpeedOfSoundMs = 340.3
+};
+
+inline const FProjectile MOP_DEFAULT = {
+	.Name = TEXT("GBU-57 Massive Ordnance Penetrator (MOP)"),
+	.Length = 6.2,
+	.Diameter = 0.8,
+	.CurvatureNoseReduce = 4.8,
+	.TotalMass = 13600.0,
+	.ExplosiveMass = 2400.0,
+	.CasingDensity = 7800.0,
+	.YieldStrength = 2.0e9,
+	.AreaMomentInertia = 0.02,
+	.ElasticModulus = 200.0e9,
+	.CasingWallThickness = 0.1,
+	.HugoniotC0 = 4570.0,
+	.HugoniotS = 1.49,
+	.ExplosiveCriticalEnergy = 6.0e16, // Walker-Wasley P^2*tau threshold for AFX-757 insensitive munition
+	.ExplosiveEnergyJPerKg = 5.2e6,
+	.SpecificHeat = 460.0,
+	.MeltingPoint = 1800.0,
+	.HeatOfFusion = 272000.0
+};
+
+inline const FTarget CONCRETE_DEFAULT = {
+	.Name = TEXT("High-Quality Hardened Concrete Structure"),
+	.Layers = {
+		{
+			.MaterialName = TEXT("Soil Overburden"),
+			.Thickness = 2.0,
+			.Density = 1500.0,
+			.CompressiveStrength = 10.0e6,
+			.RebarVolumeFraction = 0.0,
+			.RebarYieldStrength = 0.0,
+			.PulverizedDepth = 0.0,
+			.HugoniotC0 = 1500.0,
+			.HugoniotS = 1.5
+		},
+		{
+			.MaterialName = TEXT("Heavily Reinforced Concrete"),
+			.Thickness = 5.0,
+			.Density = 2650.0,
+			.CompressiveStrength = 60.0e6,
+			.RebarVolumeFraction = 0.02,
+			.RebarYieldStrength = 400.0e6,
+			.PulverizedDepth = 0.0,
+			.HugoniotC0 = 3200.0,
+			.HugoniotS = 1.9
+		},
+		{
+			.MaterialName = TEXT("Solid Granite Rock"),
+			.Thickness = 50.0,
+			.Density = 2750.0,
+			.CompressiveStrength = 130.0e6,
+			.RebarVolumeFraction = 0.0,
+			.RebarYieldStrength = 0.0,
+			.PulverizedDepth = 0.0,
+			.HugoniotC0 = 3680.0,
+			.HugoniotS = 1.35
+		}
+	}
+};
+
+inline const FProjectile Midnight_Hammer_projectile = {
+	.Name = TEXT("GBU-57 Massive Ordnance Penetrator (MOP)"),
+	.Length = 6.2,
+	.Diameter = 0.8,
+	.CurvatureNoseReduce = 4.8,
+	.TotalMass = 13600.0,
+	.ExplosiveMass = 2423.0,
+	.CasingDensity = 7850.0,
+	.YieldStrength = 2.5e9,
+	.AreaMomentInertia = 0.0201,
+	.ElasticModulus = 200.0e9,
+	.CasingWallThickness = 0.1,
+	.HugoniotC0 = 4570.0,
+	.HugoniotS = 1.49,
+	.ExplosiveCriticalEnergy = 3.0e15,
+	.ExplosiveEnergyJPerKg = 5.2e6,
+	.SpecificHeat = 460.0,
+	.MeltingPoint = 1800.0,
+	.HeatOfFusion = 272000.0
+};
+
 UCLASS()
 class AProjectile : public AActor {
 	GENERATED_BODY()
@@ -159,6 +296,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION()
+	void ReceiveImpact();
 
 	UFUNCTION()
 	void OnTargetHit(UPrimitiveComponent* HitComponent,
