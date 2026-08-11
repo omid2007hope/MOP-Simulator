@@ -296,11 +296,11 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 			      const Projectile& proj,
 			      const Target& target,
 			      const std::string& basePath) {
-	std::ifstream tpl(basePath + "/assets/visualizer_template.html");
+	std::ifstream tpl(basePath + "/assets/visualizer_template_light.html");
 	if (!tpl.is_open()) {
 		std::cerr
 			<< "[!] Warning: HTML Visualizer template not found at " << basePath
-			<< "/assets/visualizer_template.html. Visualizer will not be generated.\n";
+			<< "/assets/visualizer_template_light.html. Visualizer will not be generated.\n";
 		return;
 	}
 
