@@ -52,8 +52,23 @@ ATarget::ATarget() {
 	TargetMesh->OnComponentHit.AddDynamic(this, &ATarget::OnTargetHit);
 }
 
-// Impact
-void ATarget::ReceiveImpact() {};
+// on Impact Event
+void ATarget::OnTargetHit(UPrimitiveComponent* HitComponent,
+			  AActor* OtherActor,
+			  UPrimitiveComponent* OtherComp,
+			  FVector NormalImpulse,
+			  const FHitResult& Hit) {
+	// 1. Check if the thing that hit us is actually the Projectile!
+	AProjectile* HittingBomb = Cast<AProjectile>(OtherActor);
+
+	if (HittingBomb != nullptr) {
+		// IT IS THE BOMB!
+		// 2. THIS is where you paste your MASSIVE while-loop from `simulation.cpp`!
+		// You will calculate the penetration depth using `TargetPhysicsData.Layers`
+		// and the bomb's mass!
+	}
+}
+
 
 // Called when the game starts or when spawned
 void ATarget::BeginPlay() {
