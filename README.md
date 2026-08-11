@@ -1,3 +1,6 @@
+> [!WARNING]
+> **Notice:** The 3D visualizer is currently broken and too heavy for web execution. Please use the terminal interface. Migration to Unreal Engine 5 is planned for the near future.
+
 ```mermaid
 ---
 id: e3af7d57-9c89-4f14-afd8-05bbc4929335
@@ -106,11 +109,13 @@ Includes an automated, zero-dependency **Interactive 100% Physics-Based WebGL 3D
 The simulation engine integrates continuum mechanics, cavity expansion theory, Hugoniot shock impedance matching, and dynamic structural failure models step-by-step through depth.
 
 ### 1. Cavity Expansion & Deceleration Model (Two-Phase Forrestal / Poncelet)
+
 For penetration into reinforced concrete and geological strata, the deceleration force $F_z$ is governed by cavity expansion dynamics:
 
 $$ F_z = -\frac{\pi D^2}{4} \left( S f_c' + N \rho_t v^2 \right) $$
 
 Where:
+
 - $D$: Projectile diameter ($m$)
 - $f_c'$: Dynamic Increase Factor (CEB-FIP DIF) adjusted compressive strength of target layer ($Pa$)
 - $S$: Empirical target strength multiplier ($S = 82.6 \cdot (f_c')^{-0.544}$)
@@ -119,6 +124,7 @@ Where:
 - $v$: Instantaneous velocity ($m/s$)
 
 ### 2. Walker-Anderson Hydrodynamic Rod Erosion (WAPM)
+
 At hypervelocity speeds ($v > 1200\ m/s$), dynamic pressures exceed the casing yield strength ($P_{dyn} > Y_p$). The Tate-Bernoulli equation determines interface velocity $u$:
 
 $$ Y_p + \frac{1}{2} \rho_p (v - u)^2 = R_t + \frac{1}{2} \rho_t u^2 $$
@@ -126,6 +132,7 @@ $$ Y_p + \frac{1}{2} \rho_p (v - u)^2 = R_t + \frac{1}{2} \rho_t u^2 $$
 The eroding rod length $L(t)$ shrinks at rate $\frac{dL}{dt} = -(v - u)$, continuously updating projectile mass $m(t)$ and visual casing scale in WebGL.
 
 ### 3. Walker-Wasley Hugoniot Shock Initiation
+
 Explosive shock initiation is evaluated by impedance matching shock Hugoniot jump conditions:
 
 $$ U_s = C_0 + S U_p, \quad P = \rho_0 U_s U_p $$
@@ -133,6 +140,7 @@ $$ U_s = C_0 + S U_p, \quad P = \rho_0 U_s U_p $$
 Transmitted shock stress $P_{shock}$ and casing transit pulse duration $\tau$ evaluate critical initiation energy $P^2 \tau \ge E_c$.
 
 ### 4. Planck Blackbody Thermal Radiation Spectrum
+
 Friction work $F_{\text{friction}} \cdot v$ and hydrodynamic erosion work $0.5 \rho_t (v-u)^3 A$ elevate casing temperature $T$. Thermal radiation in WebGL follows Planck's Law and Wien's Displacement Law ($\lambda_{\max} T = 2.89777 \times 10^{-3}\text{ m}\cdot\text{K}$), shifting emission from dull red ($800\text{ K}$) to bright orange ($1200\text{ K}$), incandescent white ($1800\text{ K}$), and radiant plasma ($2200\text{ K}+$) with Stefan-Boltzmann $T^4$ intensity scaling.
 
 ---
@@ -178,10 +186,12 @@ MOP Simulator/
 ## 🛠️ Build & Compilation
 
 ### Requirements
+
 - **Compiler**: GCC / MinGW-w64 with **C++23** support (`g++ >= 13.0`)
 - **Build System**: `mingw32-make` or `make` or `CMake`
 
 ### 1. Compile Main Binary & Tests (`Makefile`)
+
 Open PowerShell / Terminal in the project root:
 
 ```powershell
@@ -200,6 +210,7 @@ mingw32-make test
 ## 🌐 Interactive 3D WebGL Physics Visualizer
 
 The engine automatically exports `3d_visualizer.html` combining:
+
 - **100% Physics WebGL Rendering**: Driven frame-by-frame by C++ telemetry.
 - **US Standard Atmosphere 1976 Barometric Density**: Inverse transform sampled sky dust particles.
 - **Prandtl-Glauert Supersonic Mach Shock Cones**: $\sin(\alpha) = 1/M$ attached in 3D matrix sync with bomb velocity vector.
