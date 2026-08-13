@@ -7,6 +7,8 @@ build/
 *.pdb
 *.ilk
 
+Research.md
+
 # Generated interactive visualization files
 3d_visualizer.html
 
