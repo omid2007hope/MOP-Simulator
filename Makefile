@@ -35,23 +35,23 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/main.cpp include/simulation.hpp include/config_loader.hpp include/default.hpp
+build/main.o: src/simulation/main.cpp include/simulation.hpp include/config_loader.hpp include/default.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/simulation.o: src/simulation.cpp include/simulation.hpp
+build/simulation.o: src/simulation/simulation.cpp include/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/config_loader.o: src/config_loader.cpp include/config_loader.hpp include/simulation.hpp
+build/config_loader.o: src/simulation/config_loader.cpp include/config_loader.hpp include/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/environment_physics.o: src/environment_physics.cpp include/environment_physics.hpp include/simulation.hpp
+build/environment_physics.o: src/simulation/environment_physics.cpp include/environment_physics.hpp include/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/telemetry_exporter.o: src/telemetry_exporter.cpp include/telemetry_exporter.hpp include/simulation.hpp include/environment_physics.hpp
+build/telemetry_exporter.o: src/simulation/telemetry_exporter.cpp include/telemetry_exporter.hpp include/simulation.hpp include/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 

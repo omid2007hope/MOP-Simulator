@@ -12,8 +12,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Create the simulation core library
 add_library(mop_sim_lib
-    src/simulation.cpp
-    src/config_loader.cpp
+    src/simulation/simulation.cpp
+    src/simulation/config_loader.cpp
 )
 
 target_include_directories(mop_sim_lib PUBLIC
@@ -23,7 +23,7 @@ target_include_directories(mop_sim_lib PUBLIC
 
 # Create the main executable
 add_executable(sim
-    src/main.cpp
+    src/simulation/main.cpp
 )
 
 target_link_libraries(sim PRIVATE mop_sim_lib)
