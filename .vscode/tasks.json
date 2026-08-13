@@ -14,9 +14,9 @@
         "-g",
         "-O0",
         "-Iinclude",
-        "src/simulation/main.cpp",
-        "src/simulation/simulation.cpp",
-        "src/simulation/config_loader.cpp",
+        "src/simulation/penetration/main.cpp",
+        "src/simulation/penetration/simulation.cpp",
+        "src/simulation/penetration/config_loader.cpp",
         "-o",
         "${workspaceFolder}/bin/sim.exe"
       ],
