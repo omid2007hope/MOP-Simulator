@@ -7,7 +7,16 @@ build/
 *.pdb
 *.ilk
 
+# md 
 Research.md
+
+# Envs 
+.env
+.env.local 
+.env.example
+
+# Packages 
+node_modules
 
 # Generated interactive visualization files
 3d_visualizer.html

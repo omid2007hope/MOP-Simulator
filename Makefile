@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 CXX ?= g++
-CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude
+CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude -Iinclude/penetration
 
 ifeq ($(OS),Windows_NT)
     EXE = .exe
@@ -35,35 +35,35 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/simulation/penetration/main.cpp include/simulation.hpp include/config_loader.hpp include/default.hpp
+build/main.o: src/simulation/penetration/main.cpp include/penetration/simulation.hpp include/penetration/config_loader.hpp include/penetration/default.hpp include/penetration/telemetry_exporter.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/simulation.o: src/simulation/penetration/simulation.cpp include/simulation.hpp
+build/simulation.o: src/simulation/penetration/simulation.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/config_loader.o: src/simulation/penetration/config_loader.cpp include/config_loader.hpp include/simulation.hpp
+build/config_loader.o: src/simulation/penetration/config_loader.cpp include/penetration/config_loader.hpp include/penetration/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/environment_physics.o: src/simulation/penetration/environment_physics.cpp include/environment_physics.hpp include/simulation.hpp
+build/environment_physics.o: src/simulation/penetration/environment_physics.cpp include/penetration/environment_physics.hpp include/penetration/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/telemetry_exporter.o: src/simulation/penetration/telemetry_exporter.cpp include/telemetry_exporter.hpp include/simulation.hpp include/environment_physics.hpp
+build/telemetry_exporter.o: src/simulation/penetration/telemetry_exporter.cpp include/penetration/telemetry_exporter.hpp include/penetration/simulation.hpp include/penetration/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/test_simulation.o: tests/test_simulation.cpp include/simulation.hpp include/default.hpp
+build/test_simulation.o: tests/test_simulation.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/impactShock.o: tests/impactShock.cpp include/simulation.hpp include/default.hpp
+build/impactShock.o: tests/impactShock.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/explosiveShock.o: tests/explosiveShock.cpp include/simulation.hpp include/default.hpp
+build/explosiveShock.o: tests/explosiveShock.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 

@@ -14,10 +14,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_library(mop_sim_lib
     src/simulation/penetration/simulation.cpp
     src/simulation/penetration/config_loader.cpp
+    src/simulation/penetration/environment_physics.cpp
+    src/simulation/penetration/telemetry_exporter.cpp
 )
 
 target_include_directories(mop_sim_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/penetration>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -34,7 +37,17 @@ enable_testing()
 add_executable(test_simulation
     tests/test_simulation.cpp
 )
-
 target_link_libraries(test_simulation PRIVATE mop_sim_lib)
-
 add_test(NAME SimulationUnitTests COMMAND test_simulation)
+
+add_executable(test_impactShock
+    tests/impactShock.cpp
+)
+target_link_libraries(test_impactShock PRIVATE mop_sim_lib)
+add_test(NAME ImpactShockTests COMMAND test_impactShock)
+
+add_executable(test_explosiveShock
+    tests/explosiveShock.cpp
+)
+target_link_libraries(test_explosiveShock PRIVATE mop_sim_lib)
+add_test(NAME ExplosiveShockTests COMMAND test_explosiveShock)
