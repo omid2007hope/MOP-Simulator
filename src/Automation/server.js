@@ -4,21 +4,21 @@ const app = express();
 const asyncHandler = require('./util/asyncHandler');
 const createHttpError = require('./util/httpError');
 
-const port = process.env.TEST === true && process.env.PORT ? process.env.PORT : 3000;
-
 if (!process.env.TEST || !process.env.PORT) {
-	const missingEnv =
-		process.env.TEST === undefined
-			? 'Test'
-			: process.env.PORT === undefined
-				? 'Port'
-				: 'An unexpected Error accured';
+	const missingEnv = !process.env.TEST
+		? 'TEST'
+		: !process.env.PORT
+			? 'PORT'
+			: 'An unexpected error occurred';
 
-	throw createHttpError(400, `${missingEnv} is required!`);
+	throw createHttpError(400, `${missingEnv} environment variable is required!`);
 }
 
-const health = require('./router/health');
+const port = process.env.PORT || 3000;
+
+const healthRouter = require('./router/health');
+app.use(healthRouter);
 
 app.listen(port, () => {
-	console.Console.log(`Server running on http://localhost:${port}`);
+	console.log(`Server running on http://localhost:${port}`);
 });
