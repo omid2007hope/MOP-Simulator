@@ -283,6 +283,17 @@ void printReport(const std::vector<SimulationResult>& results,
 			  << std::right << std::setw(12) << shk_ss.str() 
 			  << "  " << std::left << std::setw(30) << r.regime 
 			  << std::left << std::setw(20) << r.outcome_summary << "\n";
+			  
+		// Output valid JSON frame to stdout for the Node.js Automation Runner to catch
+		std::cout << "{\"name\": \"" << r.scenario_name 
+		          << "\", \"velocity\": " << r.velocity 
+		          << ", \"mach\": " << r.mach_number 
+		          << ", \"energy\": " << (r.kinetic_energy / 1e9)
+		          << ", \"cumulative_breach_depth\": " << r.actual_penetration_depth 
+		          << ", \"shock_pressure_gpa_peak\": " << (r.dynamic_pressure / 1e9)
+		          << ", \"regime\": \"" << r.regime 
+		          << "\", \"summary\": \"" << r.outcome_summary 
+		          << "\"}\n";
 	}
 	std::cout << std::string(135, '-') << "\n\n";
 
