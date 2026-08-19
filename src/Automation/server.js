@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 
+const connectMongoDB = require('./model/dataBase/index');
+
 const asyncHandler = require('./util/asyncHandler');
 const createHttpError = require('./util/httpError');
 
@@ -18,6 +20,13 @@ const port = process.env.PORT || (isTest ? 3000 : undefined);
 const healthRouter = require('./router/health');
 app.use(healthRouter);
 
-app.listen(port, () => {
-	console.log(`Server running on http://localhost:${port}`);
-});
+connectMongoDB()
+	.then(() => {
+		app.listen(port, () => {
+			console.log(`Server running on http://localhost:${port}`);
+		});
+	})
+	.catch((error) => {
+		console.error('Failed to connect to database:', error);
+		process.exit(1);
+	});
