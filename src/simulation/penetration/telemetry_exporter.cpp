@@ -442,11 +442,11 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		for (size_t j = 0; j < r.drop_frames.size(); ++j) {
 			const auto& f = r.drop_frames[j];
 			dropFramesJson
-				<< "{t:" << f.time << ",y:" << f.altitude << ",v:" << f.velocity
-				<< ",m:" << f.mach << ",sb:" << (f.is_sonic_boom ? "true" : "false")
-				<< ",pr:" << f.pitch_rad << ",cvx:" << f.current_vx
-				<< ",cvy:" << f.current_vy << ",dc:" << f.drag_coefficient
-				<< ",df:" << f.drag_force << ",gp:" << f.guidance_pull << "}";
+				<< "{\"t\":" << f.time << ",\"y\":" << f.altitude << ",\"v\":" << f.velocity
+				<< ",\"m\":" << f.mach << ",\"sb\":" << (f.is_sonic_boom ? "true" : "false")
+				<< ",\"pr\":" << f.pitch_rad << ",\"cvx\":" << f.current_vx
+				<< ",\"cvy\":" << f.current_vy << ",\"dc\":" << f.drag_coefficient
+				<< ",\"df\":" << f.drag_force << ",\"gp\":" << f.guidance_pull << "}";
 			if (j + 1 < r.drop_frames.size())
 				dropFramesJson << ",";
 		}
@@ -457,20 +457,20 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		for (size_t j = 0; j < r.penetration_frames.size(); ++j) {
 			const auto& f = r.penetration_frames[j];
 			penFramesJson
-				<< "{t:" << f.time << ",y:" << f.depth << ",v:" << f.velocity
-				<< ",m:" << f.mach << ",p:" << (f.dynamic_pressure / 1.0e9)
-				<< ",g:" << f.g_force << ",h:" << f.heat
-				<< ",e:" << (f.is_eroding ? "true" : "false") << ",dif:" << f.dif
-				<< ",rl:" << f.remaining_length << ",ob:" << f.obliquity_deg
-				<< ",cvx:" << f.current_vx << ",cvy:" << f.current_vy
-				<< ",up:" << f.Up << ",us:" << f.Us << ",ps:" << f.P_shock
-				<< ",tp:" << f.transmitted_pressure << ",se:" << f.shock_energy
-				<< ",af:" << f.asymmetric_force << ",bm:" << f.bending_moment
-				<< ",mbs:" << f.max_bending_stress << ",sr:" << f.strain_rate
-				<< ",es:" << f.effective_strength << ",tf:" << f.tunnel_force
-				<< ",iev:" << f.interface_erosion_velocity << ",hr:" << f.heat_rate
-				<< ",eh:" << f.excess_heat << ",ml:" << f.mass_loss
-				<< ",eld:" << f.effective_linear_density << "}";
+				<< "{\"t\":" << f.time << ",\"y\":" << f.depth << ",\"v\":" << f.velocity
+				<< ",\"m\":" << f.mach << ",\"p\":" << (f.dynamic_pressure / 1.0e9)
+				<< ",\"g\":" << f.g_force << ",\"h\":" << f.heat
+				<< ",\"e\":" << (f.is_eroding ? "true" : "false") << ",\"dif\":" << f.dif
+				<< ",\"rl\":" << f.remaining_length << ",\"ob\":" << f.obliquity_deg
+				<< ",\"cvx\":" << f.current_vx << ",\"cvy\":" << f.current_vy
+				<< ",\"up\":" << f.Up << ",\"us\":" << f.Us << ",\"ps\":" << f.P_shock
+				<< ",\"tp\":" << f.transmitted_pressure << ",\"se\":" << f.shock_energy
+				<< ",\"af\":" << f.asymmetric_force << ",\"bm\":" << f.bending_moment
+				<< ",\"mbs\":" << f.max_bending_stress << ",\"sr\":" << f.strain_rate
+				<< ",\"es\":" << f.effective_strength << ",\"tf\":" << f.tunnel_force
+				<< ",\"iev\":" << f.interface_erosion_velocity << ",\"hr\":" << f.heat_rate
+				<< ",\"eh\":" << f.excess_heat << ",\"ml\":" << f.mass_loss
+				<< ",\"eld\":" << f.effective_linear_density << "}";
 			if (j + 1 < r.penetration_frames.size())
 				penFramesJson << ",";
 		}
@@ -480,15 +480,15 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		targetLayersJson << "[";
 		for (size_t k = 0; k < target.layers.size(); ++k) {
 			const auto& lay = target.layers[k];
-			targetLayersJson << "{name:\"" << escapeJSON(lay.material_name)
-					 << "\",thickness:" << lay.thickness
-					 << ",density:" << lay.density
-					 << ",compressive_strength:" << lay.compressive_strength
-					 << ",rebar_volume_fraction:" << lay.rebar_volume_fraction
-					 << ",rebar_yield_strength:" << lay.rebar_yield_strength
-					 << ",pulverized_depth:" << lay.pulverized_depth
-					 << ",hugoniot_c0:" << lay.hugoniot_c0
-					 << ",hugoniot_s:" << lay.hugoniot_s << "}";
+			targetLayersJson << "{\"name\":\"" << escapeJSON(lay.material_name)
+					 << "\",\"thickness\":" << lay.thickness
+					 << ",\"density\":" << lay.density
+					 << ",\"compressive_strength\":" << lay.compressive_strength
+					 << ",\"rebar_volume_fraction\":" << lay.rebar_volume_fraction
+					 << ",\"rebar_yield_strength\":" << lay.rebar_yield_strength
+					 << ",\"pulverized_depth\":" << lay.pulverized_depth
+					 << ",\"hugoniot_c0\":" << lay.hugoniot_c0
+					 << ",\"hugoniot_s\":" << lay.hugoniot_s << "}";
 			if (k + 1 < target.layers.size())
 				targetLayersJson << ",";
 		}
@@ -560,15 +560,15 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		     << ", cons_molarMassAir: " << r.cons_molarMassAir
 		     << ", cons_adiabaticIndexAir: " << r.cons_adiabaticIndexAir
 		     << ", cons_earthRadius: " << r.cons_earthRadius
-		     << ", target_layers: " << targetLayersJson.str() << ", layer_bottom_depths: [";
+		     << ", \"target_layers\": " << targetLayersJson.str() << ", \"layer_bottom_depths\": [";
 		for (size_t k = 0; k < r.layer_bottom_depths.size(); ++k) {
 			data << r.layer_bottom_depths[k];
 			if (k + 1 < r.layer_bottom_depths.size())
 				data << ",";
 		}
 		data << "]"
-		     << ", drop_frames: " << dropFramesJson.str()
-		     << ", pen_frames: " << penFramesJson.str() << " }";
+		     << ", \"drop_frames\": " << dropFramesJson.str()
+		     << ", \"pen_frames\": " << penFramesJson.str() << " }";
 		if (i + 1 < results.size())
 			data << ",";
 		data << "\n";

@@ -27,12 +27,14 @@ class AIClient {
 				});
 				const data = await response.json();
 				if (data.candidates && data.candidates[0].content) {
-					return JSON.parse(data.candidates[0].content.parts[0].text);
+					const rawText = data.candidates[0].content.parts[0].text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
+					return JSON.parse(rawText);
 				} else {
 					console.error("[AI Client] Gemini returned unexpected format:", data);
 				}
 			} catch (e) {
-				console.error("[AI Client] Gemini API call failed. Falling back to mock data.", e.message);
+				console.error("[AI Client] Gemini API call failed.", e.message);
+				throw e;
 			}
 		} else {
 			console.log("[AI Client] No GEMINI_API_KEY found in environment. Using fallback deterministic mock.");
@@ -115,12 +117,14 @@ class AIClient {
 				});
 				const data = await response.json();
 				if (data.candidates && data.candidates[0].content) {
-					return JSON.parse(data.candidates[0].content.parts[0].text);
+					const rawText = data.candidates[0].content.parts[0].text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
+					return JSON.parse(rawText);
 				} else {
 					console.error("[AI Client] Gemini returned unexpected format:", data);
 				}
 			} catch (e) {
-				console.error("[AI Client] Gemini API call failed. Falling back to mock data.", e.message);
+				console.error("[AI Client] Gemini API call failed.", e.message);
+				throw e;
 			}
 		}
 
