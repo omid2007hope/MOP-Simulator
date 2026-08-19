@@ -81,23 +81,30 @@ If $E_{shock} \ge E_{crit}$, the explosive fill transitions rapidly from shock t
 
 The simulation campaign comprised three distinct warhead configurations evaluated under operational constraints representing airborne delivery against ultra-hardened concrete structures.
 
-\subsection{Table 1: Parameterization of Simulated Penetrators}
-
- Parameter  \\ Cycle 1 (Mk-I)  Cycle 2 (BLU-122/B Mod 3)  \\ Cycle 3 (BLU-122/B Mod 5) |
- :  \\ :  :  \\ : |
- \textbf{Designation}  \\ Midnight Hammer Mk-I  BLU-122/B Mod 3  \\ BLU-122/B Mod 5 |
- \textbf{Total Mass (kg)}  \\ 1950  2260  \\ 2150 |
- \textbf{Length (m)}  \\ 3.85  3.85  \\ 3.92 |
- \textbf{Diameter (m)}  \\ 0.36  0.37  \\ 0.46 |
- \textbf{Casing Density (kg/m3$)}  \\ 7850  7850  \\ 15800 |
- \textbf{Wall Thickness (m)}  \\ 0.04  0.04  \\ 0.07 |
- \textbf{Elastic Modulus (GPa)}  \\ 210  210  \\ 310 |
- \textbf{Hugoniot $C_0$ (m/s)}  \\ 4570  4570  \\ 4050 |
- \textbf{Hugoniot $S$}  \\ 1.49  1.49  \\ 1.23 |
- \textbf{$E_{crit}$ (J/m2$)}  \\ $1.2 \times 10^6$  $1.8 \times 10^6$  \\ $3.4 \times 10^6$ |
- \textbf{Impact Velocity (m/s)}  \\ 455.92  929.00  \\ 1229.18 |
- \textbf{Impact Mach Number}  \\ 1.34  2.73  \\ 3.61 |
- \textbf{Obliquity Angle (\circ$)}  \\ 5.0  12.5  \\ 11.2 |
+\begin{table}[htbp]
+\caption{Parameterization of Simulated Penetrators}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Parameter} & \textbf{Cycle 1 (Mk-I)} & \textbf{Cycle 2 (Mod 3)} & \textbf{Cycle 3 (Mod 5)} \\
+\midrule
+\textbf{Designation} & Midnight Hammer Mk-I & BLU-122/B Mod 3 & BLU-122/B Mod 5 \\
+\textbf{Total Mass (kg)} & 1950 & 2260 & 2150 \\
+\textbf{Length (m)} & 3.85 & 3.85 & 3.92 \\
+\textbf{Diameter (m)} & 0.36 & 0.37 & 0.46 \\
+\textbf{Casing Density (kg/m$^3$)} & 7850 & 7850 & 15800 \\
+\textbf{Wall Thickness (m)} & 0.04 & 0.04 & 0.07 \\
+\textbf{Elastic Modulus (GPa)} & 210 & 210 & 310 \\
+\textbf{Hugoniot $C_0$ (m/s)} & 4570 & 4570 & 4050 \\
+\textbf{Hugoniot $S$} & 1.49 & 1.49 & 1.23 \\
+\textbf{$E_{crit}$ (J/m$^2$)} & $1.2 \times 10^6$ & $1.8 \times 10^6$ & $3.4 \times 10^6$ \\
+\textbf{Impact Velocity (m/s)} & 455.92 & 929.00 & 1229.18 \\
+\textbf{Impact Mach Number} & 1.34 & 2.73 & 3.61 \\
+\textbf{Obliquity Angle ($^\circ$)} & 5.0 & 12.5 & 11.2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
 
 All scenarios evaluated impacts against high-quality hardened concrete with high compression strength limits. Flight paths were steep ($> 80^\circ$ entry angles).
 
@@ -108,15 +115,13 @@ All scenarios evaluated impacts against high-quality hardened concrete with high
 \subsection{4.1 Shock Pressure Generation and Explosive Initiation}
 Across all three simulation scenarios, the impact velocities generated intense interface pressures upon initial target contact. Figure 1 and Table 2 summarize the shock dynamics calculated at impact.
 
-\subsection{Table 2: Terminal Ballistic Shock Dynamics Results}
-
 \begin{table}[htbp]
 \caption{Terminal Ballistic Shock Dynamics Results}
 \begin{center}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Variant} & \textbf{Velocity} & \textbf{Energy} & \textbf{Peak {shock}$} & \textbf{Pulse} & \textbf{Failure} & \textbf{Depth} \\
-\textbf{} & \textbf{(m/s)} & \textbf{(GJ)} & \textbf{(GPa)} & \textbf{($\mu)} & \textbf{Mode} & \textbf{(m)} \\
+\textbf{Variant} & \textbf{Velocity} & \textbf{Energy} & \textbf{Peak $P_{shock}$} & \textbf{Pulse} & \textbf{Failure} & \textbf{Depth} \\
+\textbf{} & \textbf{(m/s)} & \textbf{(GJ)} & \textbf{(GPa)} & \textbf{($\mu$s)} & \textbf{Mode} & \textbf{(m)} \\
 \midrule
 \textbf{Mk-I} & 455.92 & 0.203 & 2.84 & 19.69 & Premature SDT & 0.00 \\
 \textbf{Mod 3} & 929.00 & 0.975 & 6.68 & 19.69 & Premature SDT & 0.00 \\
@@ -125,8 +130,6 @@ Across all three simulation scenarios, the impact velocities generated intense i
 \end{tabular}
 \end{center}
 \end{table}
- \textbf{BLU-122/B Mod 3}  \\ 929.00  0.975  \\ 6.68  19.69  \\ Premature SDT  0.00  \\
- \textbf{BLU-122/B Mod 5}  \\ 1229.18  1.624  \\ 17.56  32.10  \\ Premature SDT  0.00  \\
 
 For Cycle 1 (Mk-I), impacting at Mach 1.34 generated a peak shock pressure of \textbf{2.84 GPa}. The calculated kinetic shock pulse yielded an energy density exceeding the explosive fill's critical initiation threshold of $1.2 \times 10^6 \text{ J/m}^2$, resulting in immediate premature detonation.
 
