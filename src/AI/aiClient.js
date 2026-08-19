@@ -11,6 +11,8 @@ class AIClient {
         // The prompt asks the AI to generate parameters based on `researchPrompt`.
         
         console.log(`[AI Client] Generating scenario for topic: ${researchData.title}`);
+        // Prompt template ready for real LLM integration:
+        // console.log('[AI Client] System Prompt:', researchPrompt);
 
         // Mocked response simulating the AI's structured JSON output
         return {
