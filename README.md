@@ -27,10 +27,11 @@
 ![Node.js](https://img.shields.io/badge/Node.js-v24-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Persisted-yellow.svg)
 ![AI Powered](https://img.shields.io/badge/AI-Autonomous_Research-purple.svg)
+![Machine Learning](https://img.shields.io/badge/ML-V4.0_Vision-blueviolet.svg)
 ![License](https://img.shields.io/badge/License-AGPLv3-g.svg)
-![Status](https://img.shields.io/badge/Physics-100%25%20Validated-orange.svg)
+![Physics](https://img.shields.io/badge/Physics-100%25%20Validated-orange.svg)
 
-**MOP Simulator V3.0** has evolved from a standalone native binary into a **full-stack autonomous AI research platform**. It tightly couples a high-performance C++23 terminal ballistics simulation engine with a Node.js/Express automation backend and advanced LLM AI integration.
+**MOP Simulator V3.0** has evolved from a standalone native binary into a **full-stack autonomous AI research platform**. It tightly couples a high-performance C++23 terminal ballistics simulation engine with a Node.js/Express automation backend and advanced LLM AI integration (Google Gemini 2.5 Flash).
 
 The platform is designed to autonomously hypothesize target geometries, execute massive multi-scenario penetrations (e.g., GBU-57 MOP, BLU-109, Orbital Kinetic Strikes), stream and aggregate telemetry to a MongoDB database, and automatically synthesize the findings into peer-reviewed-quality academic research articles.
 
@@ -52,17 +53,23 @@ flowchart TD
         A2 <-->|API Calls| N1
         N1 <--> N2
         N1 <--> N3
-        N2 -->|Saves Telemetry| N3
+        N2 -->|Chunks & Streams Telemetry| N3
     end
 
     subgraph CppLayer["⚙️ C++23 Physics Kernel (src/simulation)"]
-        C1[main.cpp CLI]
+        C1[main.cpp --json-input]
         C2[Numerical Solvers<br/>RK4, Forrestal, WAPM, Hugoniot]
-        C3[Telemetry Exporter<br/>JSON stdout]
-        N2 -->|Spawns sim.exe (stdin)| C1
+        C3[Telemetry Exporter<br/>Line-Delimited JSON]
+        N2 -->|Spawns mop_sim.exe| C1
         C1 --> C2
         C2 --> C3
-        C3 -->|Pipes back to Node| N2
+        C3 -->|Streams stdout| N2
+    end
+
+    subgraph FutureMLLayer["🔮 Planned C++ ML Core (src/MachineLearning)"]
+        ML1[LibTorch Neural Physics]
+        ML2[RL Smart Fuzing Agent]
+        C2 -.->|O1 Fast-Mode Surrogate| ML1
     end
 ```
 
@@ -74,14 +81,22 @@ The V3.0 architecture introduces a two-phase autonomous pipeline:
 
 ### Phase 1: Autonomous Scenario Generation (`POST /research`)
 1. **Hypothesis Generation**: The AI Research Conductor takes a research title (e.g., "Optimizing Casing Thickness for 70MPa Concrete").
-2. **Matrix Sweeping**: The AI generates a highly varied parameter matrix for multiple simulation cycles (e.g., altering velocities, target layers, casing thickness).
-3. **Headless Execution**: The Node.js `SimulationRunner` silently spawns the C++ kernel `mop_sim.exe` for each cycle.
-4. **Telemetry Ingestion**: C++ computes sub-millisecond numerical integration and pipes massive JSON frames back to Node.js, which are immediately saved into MongoDB.
+2. **Matrix Sweeping**: The AI generates a parameter matrix for multiple simulation cycles (altering velocities, target layers, casing thickness).
+3. **Headless Execution**: The Node.js `SimulationRunner` writes a temp JSON config and silently spawns `bin/mop_sim.exe --json-input <path>`.
+4. **Telemetry Ingestion**: C++ computes sub-millisecond numerical integration and pipes line-delimited JSON frames back to Node.js, which are streamed in 1,000-frame chunks into MongoDB with session scoping.
 
 ### Phase 2: Scientific Synthesis (`POST /article`)
-1. **Data Aggregation**: The Node.js backend pulls all simulation results from MongoDB and computes advanced statistical metrics (mean/max penetration, standard deviations, failure rates, regime breakdowns).
+1. **Data Aggregation**: The Node.js backend pulls all simulation results from MongoDB scoped by `research_title` and computes statistical distributions (mean/max penetration, standard deviations, failure rates, regime breakdowns).
 2. **Article Generation**: The AI Article Writer ingests the statistical telemetry.
 3. **Publishing**: It synthesizes a rigorous 4,000–12,000 word academic paper complete with an Abstract, Introduction, Methodology, Results & Discussion, and Conclusion.
+
+---
+
+## 🔮 Machine Learning Vision (V4.0)
+
+See [src/MachineLearning/MachineLearning.md](file:///h:/Omid/Code/MOP-Simulator/src/MachineLearning/MachineLearning.md) for full architectural plans:
+- **Surrogate Neural Physics**: Replacing heavy RK4 integration loops with $O(1)$ Deep Neural Networks (DNN) via **LibTorch (PyTorch C++)**.
+- **Reinforcement Learning Smart Fuze (RL)**: Microsecond-precision detonation triggering based on real-time $g$-force and shock pressure feedback.
 
 ---
 
@@ -136,8 +151,7 @@ The C++ engine natively exports `3d_visualizer.html`, providing:
 ### 1. Build the C++ Simulation Engine
 ```powershell
 # Open terminal in project root
-mingw32-make clean
-mingw32-make
+mingw32-make clean; mingw32-make
 ```
 
 ### 2. Setup Node.js & AI Environment
@@ -149,6 +163,7 @@ npm install
 
 # Create a .env file and add credentials
 echo "MONGO_URI=mongodb://127.0.0.1:27017/mop-simulator" > .env
+echo "GEMINI_API_KEY=your_gemini_api_key_here" >> .env
 ```
 
 ### 3. Start the Platform

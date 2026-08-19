@@ -1,18 +1,36 @@
-# AI Architectural Directives
+# AI & System Architectural Directives
 
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 ## System Hierarchy
-1. **Config Layer** (`include/config_loader.hpp`, `src/config_loader.cpp`):
-   - Reads `data/targets.json` and `data/projectiles.json`.
-   - Parses target/projectile database records using `nlohmann::json`.
-2. **Physics Engine Layer** (`include/simulation.hpp`, `src/simulation.cpp`):
-   - Pure, stateless simulation logic (`ImpactSimulator::simulate`).
-   - Receives an `ImpactScenario` struct and returns a comprehensive `SimulationResult`.
-   - Executes structural integrity checks, time-integrated deceleration steps, thermal/cook-off thresholds, and HTML generation.
-3. **Application Entry / CLI Layer** (`src/main.cpp`):
-   - Handles legal consent (EULA/ToS), user choices, preset/interactive prompts, and console UI reporting.
 
-## Hard Rules
-- **No Circular Dependencies**: `simulation` must never depend on `main.cpp`.
-- **Pure Physics Functions**: `ImpactSimulator` should focus exclusively on numerical integration, damage evaluation, and visualization array building.
+```
+  ┌─────────────────────────────────────────────────────────────┐
+  │ 1. AI Orchestrator Layer (src/AI)                          │
+  │    - aiClient.js (Gemini Flash 2.5 REST Client)             │
+  │    - Prompt.js (researchConductor, articleWriter)          │
+  └──────────────────────────────┬──────────────────────────────┘
+                                 │ JSON Directives / Articles
+  ┌──────────────────────────────▼──────────────────────────────┐
+  │ 2. Automation & Database Layer (src/Automation)             │
+  │    - server.js (Express REST API)                           │
+  │    - service/research.js (Multi-cycle Loop Orchestrator)    │
+  │    - service/simulationRunner.js (IPC Bridge & Chunk Stream)│
+  │    - service/articleWriter.js (Statistical Analysis)        │
+  │    - model/result.js & model/article.js (MongoDB Mongoose)  │
+  └──────────────────────────────┬──────────────────────────────┘
+                                 │ CLI Invocation (--json-input)
+  ┌──────────────────────────────▼──────────────────────────────┐
+  │ 3. Native C++23 Physics Engine (src/simulation)             │
+  │    - main.cpp (CLI Entry, JSON/Interactive Dispatcher)       │
+  │    - simulation.cpp (RK4 Integrator, WAPM, Hugoniot, DIF)   │
+  │    - telemetry_exporter.cpp (JSON Stdout Stream & HTML 3D)  │
+  │    - config_loader.cpp (JSON Database Parser)               │
+  └─────────────────────────────────────────────────────────────┘
+```
+
+## Hard Architectural Rules
+- **Pure Physics Boundary**: `ImpactSimulator` focuses exclusively on deterministic numerical integration and telemetry frame generation. It does not perform database operations or direct network calls.
+- **Session Scoping**: All telemetry frames stored in MongoDB must be scoped by `research_title` and `session_id` to prevent cross-experiment contamination.
+- **Memory Safety & Streaming**: Never buffer complete multi-thousand frame telemetry sets in memory. Stream line-by-line and batch insert in chunks of 1,000.
+- **No Circular Dependencies**: `src/simulation` must never depend on Node.js layers; `src/Automation` communicates exclusively via OS child process boundaries (`spawn`) and temporary JSON payloads.

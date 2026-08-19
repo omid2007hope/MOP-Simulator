@@ -1,8 +1,34 @@
-# Data Flow Overview (`main.cpp` to `simulation.cpp`)
+# Application Entry & Data Flow (`main.cpp` to `simulation.cpp`)
 
-The `scenarios` variable is a dynamic list (`std::vector<ImpactScenario>`) of struct instances from `simulation.hpp` that holds all simulation test conditions.
+The application entry point (`main.cpp`) supports two operational modes:
+1. **Headless JSON Mode (`--json-input`)**: For autonomous AI sweeps and Node.js backend integration.
+2. **Interactive Console Mode**: For manual user interaction with preset selection and custom terminal inputs.
 
-## 1. Setting Up Target & Projectile Data
+---
+
+## 1. Headless JSON Execution Flow (`--json-input`)
+
+When launched with `--json-input <path_to_config.json>`, `main.cpp`:
+1. Reads and parses the JSON configuration using `nlohmann::json`.
+2. Extracts projectile geometry, casing metallurgy, explosive properties, target strata, and kinematic scenario parameters.
+3. Automatically builds the `Projectile`, `Target`, and `ImpactScenario` structures.
+4. Executes the simulation without prompting for EULA/ToS or waiting for console keystrokes.
+5. Emits line-delimited JSON telemetry to `stdout` for ingestion by `simulationRunner.js`.
+
+```cpp
+if (jsonMode) {
+    std::ifstream ifs(jsonFile);
+    json config;
+    ifs >> config;
+
+    int simChoice = config.value("/Simulation/choice"_json_pointer, 3);
+    // Parse projectile, target layers, and scenario...
+}
+```
+
+---
+
+## 2. Interactive Console Data Flow
 
 ```cpp
 // Target & Projectile objects (editable variables)
@@ -20,21 +46,7 @@ customLayer.thickness = ...;
 object.layers.push_back(customLayer);
 ```
 
-## 2. Populating Test Scenarios
-
-```cpp
-std::stringstream prompt_ss;
-std::stringstream name_ss;
-
-scenarios.push_back({
-    name_ss.str(),
-    dropAltitude_ft,
-    initial_velocity,
-    fpa,
-    obliquity,
-    aoa
-});
-```
+---
 
 ## 3. Passing Data into `ImpactSimulator` (`simulation.cpp`)
 
@@ -52,23 +64,10 @@ if (choice == 1 || choice == 2) {
 }
 ```
 
-Step-by-Step Flow:
+### Step-by-Step Flow:
 
-main.cpp: Line 464
-
-cpp
-ImpactSimulator simulator(munition, object, cons);
-What happens: main.cpp instantiates the ImpactSimulator object and passes munition, object, and cons as arguments.
-
-simulation.hpp: Line 235
-
-cpp
-ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
-What happens: The class header declares the constructor contract accepting references p, t, and c.
-
-simulation.cpp: Line 15–16
-
-cpp
-ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
-: proj(p), target(t), cons(c) {}
-What happens: The implementation executes the initializer list, copying p $\rightarrow$ proj, t $\rightarrow$ target, and c $\rightarrow$ cons into the simulator's private member variables.
+1. **`main.cpp`**: Instantiates `ImpactSimulator simulator(munition, object, cons);` passing parameters.
+2. **`simulation.hpp`**: Declares constructor contract `ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);`.
+3. **`simulation.cpp`**: Executes initializer list copying `p -> proj`, `t -> target`, `c -> cons` into private members.
+4. **`ImpactSimulator::simulate(sc)`**: Runs 2-phase RK4 integration (atmospheric drop + ground penetration) and returns `SimulationResult`.
+5. **`TelemetryExporter::printReport`**: Prints ASCII visualizer and outputs full line-delimited JSON strings matching `ResultModel` schema.

@@ -7,25 +7,25 @@
 
 ## 📌 Executive Overview
 
-This document outlines the **automation architecture bridging the high-performance C++23 native simulation engine with modern JavaScript/TypeScript ecosystems** (Node.js, WebGL 3D Visualizer, Electron, and Automated Test Runners). 
+This document outlines the **automation architecture bridging the high-performance C++23 native simulation engine with modern JavaScript/TypeScript ecosystems** (Node.js, Express, MongoDB, WebGL 3D Visualizer, and AI Orchestrators). 
 
-By automating bidirectional data flow, the system eliminates manual scenario setup, executes massive headless parametric sweeps, and provides real-time streaming telemetry directly into interactive dashboards and data pipelines.
+By automating bidirectional data flow, the system eliminates manual scenario setup, executes massive headless parametric sweeps, streams telemetry directly into MongoDB in memory-safe chunks, and synthesizes comprehensive research articles.
 
 ```mermaid
 flowchart LR
     subgraph JSOrchestrator["🌐 JavaScript / Node.js Layer"]
-        A[Scenario Generator<br/>Parametric Matrix Sweep] --> B[Automation Controller<br/>Child Process / Worker Pool]
-        F[Live Dashboard / Visualizer<br/>Three.js / WebGL] <--- E[Stream Aggregator<br/>JSON / CSV Parser]
+        A[AI Scenario Generator<br/>Gemini / Parametric Sweep] --> B[Automation Controller<br/>SimulationRunner Service]
+        F[Article Synthesizer & Dashboard<br/>ArticleWriter / Three.js] <--- E[Stream Ingestion<br/>Chunked Mongo Batch Inserter]
     end
 
     subgraph IPCChannel["⚡ IPC / Stream Bridge"]
-        B -->|stdin / JSON Config Flags| C[Execution Pipe]
-        D[Stdout / Shared File Buffer] -->|High-Frequency Telemetry| E
+        B -->|--json-input config.json| C[Execution Pipe]
+        D[Line-Delimited JSON Stdout] -->|High-Frequency Telemetry| E
     end
 
     subgraph CppCore["⚙️ C++23 Simulation Engine"]
-        C --> G[CLI Entry / Headless Runner<br/>bin/sim.exe]
-        G --> H[Numerical Physics Solvers<br/>RK4 & Deceleration Engine]
+        C --> G[CLI Entry / Headless Runner<br/>bin/mop_sim.exe]
+        G --> H[Numerical Physics Solvers<br/>RK4, WAPM & Deceleration]
         H --> D
     end
 ```
@@ -35,34 +35,34 @@ flowchart LR
 ## 🔁 Automated Pipeline Architecture
 
 ```
-  [JavaScript Automation Harness]
+  [Node.js Express Controller / AI Client]
          │
-         ▼  (1) Generates & injects scenario matrices / JSON payloads
-  [C++ Simulation Engine (bin/sim.exe)]
+         ▼  (1) Generates & injects scenario JSON payloads via temp config file
+  [C++ Simulation Engine (bin/mop_sim.exe --json-input)]
          │
-         ▼  (2) Executes sub-millisecond numerical integration
-  [Telemetry Stream (JSON / CSV)]
+         ▼  (2) Executes sub-millisecond numerical integration & prints line-delimited JSON
+  [Telemetry Stream (Line-by-Line Stdout Interface)]
          │
-         ▼  (3) Automates ingestion, validation & aggregation
-  [WebGL 3D Visualizer / Analytics Reports]
+         ▼  (3) Automates ingestion, session tagging & chunked MongoDB persistence
+  [MongoDB Database ➔ AI Article Synthesizer / WebGL 3D Visualizer]
 ```
 
 ### 1. Automated Input Generation (`JS ➔ C++`)
-* **Matrix Sweeps**: JavaScript scripts dynamically generate thousands of permutations (varying velocity, strike angle, target hardness, and projectile nose shapes).
-* **Validation & Formatting**: Validates schema against strict constraints before passing configurations into `data/scenarios.json` or through command-line pipes.
-* **Non-Interactive Headless Mode**: Triggers C++ executions silently in the background with flags like `--headless --config scenario.json --output-format json`.
+* **AI Hypothesis Generation**: The AI Client (using Gemini API or deterministic mocks) synthesizes complex physical parameter sets (projectile dimensions, casing alloys, target layers, atmospheric conditions).
+* **Temp File Serialization**: Node.js serializes the JSON configuration to a temporary file (`os.tmpdir()`) and invokes `mop_sim.exe --json-input <path>`.
+* **Headless Execution**: Completely bypasses interactive console menus (`std::cin`), enabling seamless unattended execution.
 
-### 2. Execution & Multi-Process Worker Pooling
-* **Node.js Child Process Pool**: Spawns multiple parallel instances of `bin/sim.exe` across CPU cores for high-throughput batch experimentation.
-* **Lifecycle & Error Handling**: Monitors exit codes, memory footprints, and timeouts to guarantee robust crash recovery and leak-free execution.
+### 2. Execution & Lifecycle Management
+* **Watchdog Timers**: 30-second execution timeouts prevent process lockups in case of numerical instability or infinite loops.
+* **Session Scoping**: Automatically tags every frame with `session_id` and `research_title` to prevent cross-experiment data pollution.
 
 ### 3. Automated Output Ingestion (`C++ ➔ JS`)
-* **High-Throughput Streaming**: Reads stdout line-delimited JSON or memory-mapped files without disk I/O bottlenecks.
-* **Frame Parsing & Interpolation**: Decodes trajectory waypoints, deceleration loads, and material erosion arrays for immediate consumption.
+* **Asynchronous Line Streaming**: Utilizes Node.js `readline` with asynchronous `for await` loops to maintain stream backpressure.
+* **Chunked Batch Insertion**: Buffers frames into 1,000-frame batches before committing to MongoDB with `insertMany()`, preventing Out-Of-Memory (OOM) crashes and BSON document size limits.
 
 ### 4. Automated Export & Interactive Visualization
 * **Dynamic WebGL Generation**: Automatically compiles simulation outputs into standalone interactive 3D HTML reports (via Three.js).
-* **Automated Data Export**: Exports synchronized CSV tables, analytical summary cards, and raw telemetry bundles for academic papers or external analysis.
+* **Academic Article Synthesis**: Statistical aggregation of simulation batches generates structured 4,000+ word academic research articles.
 
 ---
 
@@ -70,52 +70,45 @@ flowchart LR
 
 ### 1. Headless CLI Command Interface
 ```bash
-# Automated Single Run
-./bin/sim.exe --headless --scenario "data/scenarios/salvo_test.json" --output "build/telemetry.json"
+# Automated Single Run with JSON Config
+./bin/mop_sim.exe --json-input "path/to/config.json"
 
-# Automated Matrix Batch Mode
-node scripts/automate_sweep.js --targets "UHPC,Granite" --velocities "300,450,600,1200" --workers 8
+# Automated Research REST API Invocation
+curl -X POST http://localhost:3000/research \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Optimizing Casing Thickness for 70MPa Concrete", "count": 5}'
 ```
 
-### 2. Streaming Node.js Integration Example
+### 2. Streaming Node.js Integration (`SimulationRunner`)
 
 ```javascript
-import { spawn } from 'child_process';
-import readline from 'readline';
+const { spawn } = require('child_process');
+const readline = require('readline');
+const fs = require('fs/promises');
+const ResultModel = require('../model/result');
 
-/**
- * Executes an automated simulation run and streams real-time telemetry frames.
- * @param {Object} scenarioConfig - Target and projectile parameters
- * @returns {Promise<Object>} Final simulation result
- */
-export async function runAutomatedSimulation(scenarioConfig) {
-  return new Promise((resolve, reject) => {
-    const simProcess = spawn('./bin/sim.exe', [
-      '--headless',
-      '--json-input', JSON.stringify(scenarioConfig)
-    ]);
+async function runSimulation(config, metadata) {
+    const tmpConfigPath = `/tmp/mop_config_${Date.now()}.json`;
+    await fs.writeFile(tmpConfigPath, JSON.stringify(config));
 
-    const rl = readline.createInterface({ input: simProcess.stdout });
-    const frames = [];
+    const simProcess = spawn('./bin/mop_sim.exe', ['--json-input', tmpConfigPath]);
+    const rl = readline.createInterface({ input: simProcess.stdout, crlfDelay: Infinity });
 
-    rl.on('line', (line) => {
-      try {
-        const message = JSON.parse(line);
-        if (message.type === 'FRAME') {
-          frames.push(message.data);
-        } else if (message.type === 'RESULT') {
-          resolve({ summary: message.data, frames });
+    let chunk = [];
+    for await (const line of rl) {
+        if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
+            const frame = JSON.parse(line);
+            frame.research_title = metadata.research_title;
+            frame.session_id = metadata.session_id;
+            chunk.push(frame);
+
+            if (chunk.length >= 1000) {
+                await ResultModel.insertMany(chunk);
+                chunk = [];
+            }
         }
-      } catch (err) {
-        // Non-JSON debug logs
-      }
-    });
-
-    simProcess.stderr.on('data', (data) => console.error(`[C++ Error]: ${data}`));
-    simProcess.on('close', (code) => {
-      if (code !== 0) reject(new Error(`Process exited with code ${code}`));
-    });
-  });
+    }
+    if (chunk.length > 0) await ResultModel.insertMany(chunk);
 }
 ```
 
@@ -125,23 +118,24 @@ export async function runAutomatedSimulation(scenarioConfig) {
 
 | Automation Feature | Implementation Mechanism | Benefit |
 | :--- | :--- | :--- |
-| **Parametric Sweeps** | Node.js asynchronous worker pool spawning parallel C++ instances | Runs 10,000+ simulation variants in minutes. |
-| **Real-Time Visualizer Feed** | WebSocket or local file streaming to `3d_visualizer.html` | Instantaneous 3D render updates upon simulation completion. |
-| **Automated Benchmark Suite** | Integration tests checking regression against baseline outputs | Guarantees numerical precision across physics updates. |
-| **Unified Data Schema** | Standardized JSON serialization across both C++ and JavaScript | Single source of truth with zero manual data conversion. |
+| **Direct JSON Config** | `--json-input` flag with `nlohmann::json` parser | Immune to CLI prompt changes and ordering errors. |
+| **Memory-Safe Streaming** | Asynchronous `readline` iteration + 1,000-frame chunking | Zero OOM crashes, capable of handling 100,000+ frames per run. |
+| **Session Isolation** | Multi-tenant session tags (`session_id`, `research_title`) | Zero cross-contamination during multi-topic research. |
+| **Hang Protection** | 30s process timeout watchdog | Prevents CPU lockup from numerical divergence. |
+| **Academic Synthesis** | Statistical aggregation + Gemini Flash 2.5 | Transforms raw telemetry into publication-ready research papers. |
 
 ---
 
 ## 🗺️ Engineering Milestones
 
-- [ ] **Milestone 1: Headless CLI & Direct JSON Pipe in C++**
-  - Add `--headless` and `--json-input` arguments to `src/simulation/main.cpp`.
-  - Enable direct JSON stdout streaming mode.
-- [ ] **Milestone 2: Node.js Automation Runner**
-  - Implement batch scenario generator in JavaScript.
-  - Implement worker queue for parallel execution management.
-- [ ] **Milestone 3: Automated Visualizer Bridge**
-  - Automatically update `3d_visualizer.html` with newly generated telemetry via headless script.
-  - Add instant export capabilities (GLTF 3D model, CSV, PDF summary).
-- [ ] **Milestone 4: CI/CD Automated Regression Testing**
-  - Automate physics validation checks on every commit via GitHub Actions.
+- [x] **Milestone 1: Headless CLI & Direct JSON Pipe in C++**
+  - Added `--json-input` argument to `src/simulation/penetration/main.cpp`.
+  - Direct JSON line-delimited stdout streaming with buffer flushing.
+- [x] **Milestone 2: Node.js Automation Runner & Chunked DB Streamer**
+  - Implemented `SimulationRunner` with chunked MongoDB ingestion.
+  - Implemented `Research` service with multi-cycle autonomous loops and session tagging.
+- [x] **Milestone 3: Automated Article Generation Pipeline**
+  - Statistical analysis aggregator (`articleWriter.js`).
+  - LLM integration with Gemini API and deterministic fallback.
+- [ ] **Milestone 4: C++ Machine Learning Kernel (v4.0)**
+  - LibTorch surrogate physics modeling for $O(1)$ batch simulation.
