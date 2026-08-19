@@ -27,9 +27,11 @@ app.use(express.json());
 // Routers
 const healthRouter = require('./router/health');
 const researchRouter = require('./router/research');
+const { coreHealth } = require('../../AI/core');
 
 app.use(healthRouter);
 app.use(researchRouter);
+app.get('/api/health', coreHealth);
 
 connectMongoDB()
 	.then(() => {
@@ -41,3 +43,12 @@ connectMongoDB()
 		console.error('Failed to connect to database:', error);
 		process.exit(1);
 	});
+
+// Global error handler — catches anything forwarded via next(err)
+app.use((err, req, res, _next) => {
+	const status = err.status || 500;
+	res.status(status).json({
+		error: err.message || 'Internal Server Error',
+		...(err.details !== undefined && { details: err.details }),
+	});
+});

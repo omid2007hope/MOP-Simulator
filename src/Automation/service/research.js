@@ -1,4 +1,4 @@
-const BaseService = require('./baseService/index');
+const BaseService = require('./baseservice/index');
 const aiClient = require('../../AI/aiClient');
 const simulationRunner = require('./simulationRunner');
 const ResultModel = require('../model/result'); // Assuming this exists to pass to BaseService
