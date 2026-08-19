@@ -75,20 +75,127 @@ flowchart TD
 
 ---
 
-## 🧠 The Autonomous AI Research Pipeline
+## ⚡ Complete End-to-End Workflow Demonstration
 
-The V3.0 architecture introduces a two-phase autonomous pipeline:
+The platform operates through an automated two-phase research cycle:
 
-### Phase 1: Autonomous Scenario Generation (`POST /research`)
-1. **Hypothesis Generation**: The AI Research Conductor takes a research title (e.g., "Optimizing Casing Thickness for 70MPa Concrete").
-2. **Matrix Sweeping**: The AI generates a parameter matrix for multiple simulation cycles (altering velocities, target layers, casing thickness).
-3. **Headless Execution**: The Node.js `SimulationRunner` writes a temp JSON config and silently spawns `bin/mop_sim.exe --json-input <path>`.
-4. **Telemetry Ingestion**: C++ computes sub-millisecond numerical integration and pipes line-delimited JSON frames back to Node.js, which are streamed in 1,000-frame chunks into MongoDB with session scoping.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Postman
+    participant API as Node.js API (localhost:3000)
+    participant AI as Gemini 2.5 Flash
+    participant CPP as C++ Physics Engine (mop_sim.exe)
+    participant DB as MongoDB Database
 
-### Phase 2: Scientific Synthesis (`POST /article`)
-1. **Data Aggregation**: The Node.js backend pulls all simulation results from MongoDB scoped by `research_title` and computes statistical distributions (mean/max penetration, standard deviations, failure rates, regime breakdowns).
-2. **Article Generation**: The AI Article Writer ingests the statistical telemetry.
-3. **Publishing**: It synthesizes a rigorous 4,000–12,000 word academic paper complete with an Abstract, Introduction, Methodology, Results & Discussion, and Conclusion.
+    Note over User, DB: PHASE 1: RESEARCH & SIMULATION LOOP
+    User->>API: POST /research { title, count: 3 }
+    loop For Each Requested Cycle
+        API->>AI: Generate scenario hypothesis (researchConductor)
+        AI-->>API: JSON Scenario Config (Projectile, Target, Kinematics)
+        API->>CPP: Spawn with --json-input temp_config.json
+        CPP->>CPP: Run RK4 atmospheric drop & penetration integration
+        CPP-->>API: Stream line-delimited JSON telemetry frames
+        API->>DB: Stream & insert frames in 1,000-doc chunks (session-scoped)
+    end
+    API-->>User: 200 OK { session_id, cycles: [ { status: "success", frames_saved } ] }
+
+    Note over User, DB: PHASE 2: SCIENTIFIC SYNTHESIS
+    User->>API: POST /article { title, limit: 500 }
+    API->>DB: Query telemetry scoped by research_title (sorted by latest)
+    DB-->>API: Array of SimulationResult records
+    API->>API: Compute statistical metrics (mean depth, std-dev, regime frequency)
+    API->>AI: Synthesize full academic paper (articleWriter)
+    AI-->>API: Formatted Research Article (Abstract, Methodology, Results, Citations)
+    API->>DB: Save to ArticleModel collection
+    API-->>User: 201 Created { article_id, stats, key_findings, content }
+```
+
+---
+
+### Step 1: Run Autonomous Simulation Campaign (`POST /research`)
+
+Trigger an autonomous simulation campaign by supplying a research title and the number of desired execution cycles.
+
+**Endpoint:** `POST http://localhost:3000/research`  
+**Headers:** `Content-Type: application/json`  
+**Request Payload:**
+```json
+{
+  "title": "Optimizing Casing Thickness for 70MPa Concrete",
+  "description": "Parametric evaluation of GBU-57 MOP casing wall thickness variations against ultra-high performance reinforced concrete bunkers.",
+  "count": 3
+}
+```
+
+**Real Response (`200 OK`):**
+```json
+{
+  "data": {
+    "message": "Autonomous cycles finished",
+    "session_id": "a4f8b91c",
+    "cycles": [
+      { "cycle": 1, "frames_saved": 1240, "status": "success" },
+      { "cycle": 2, "frames_saved": 1185, "status": "success" },
+      { "cycle": 3, "frames_saved": 1210, "status": "success" }
+    ]
+  }
+}
+```
+
+---
+
+### Step 2: Synthesize Academic Research Article (`POST /article`)
+
+Once the simulation telemetry is populated in MongoDB, request the AI Article Writer to synthesize the full publication.
+
+**Endpoint:** `POST http://localhost:3000/article`  
+**Headers:** `Content-Type: application/json`  
+**Request Payload:**
+```json
+{
+  "title": "Optimizing Casing Thickness for 70MPa Concrete",
+  "limit": 500
+}
+```
+
+**Real Response (`201 Created`):**
+```json
+{
+  "data": {
+    "article_id": "6a85591eea0eecc59e063895",
+    "title": "Optimizing Casing Thickness for 70MPa Concrete",
+    "word_count": 1406,
+    "scenarios_analyzed": 6,
+    "stats": {
+      "totalScenarios": 6,
+      "avgPenetrationDepth": "8.22",
+      "maxPenetrationDepth": "10.27",
+      "minPenetrationDepth": "6.17",
+      "stdDevPenetration": "2.05",
+      "avgVelocity": "537.4",
+      "avgMach": "1.58",
+      "avgEnergyGJ": "1.960",
+      "avgShockPressureGPa": "3.620",
+      "casingFailureRate": "0.0",
+      "erosionRate": "0.0",
+      "dominantRegime": "Rigid Penetration (Crater+Tunnel)",
+      "regimeDistribution": {
+        "Rigid Penetration (Crater+Tunnel)": 6
+      }
+    },
+    "key_findings": [
+      "Mean penetration depth: 8.22 m (σ = 2.05 m)",
+      "Dominant regime: Rigid Penetration (Crater+Tunnel) in 100.0% of scenarios",
+      "Casing integrity maintained in 100% of scenarios",
+      "Maximum sequential breach depth: 10.27 m",
+      "Hydrodynamic erosion onset in 0.0% of scenarios",
+      "Average impact velocity: 537.4 m/s at Mach 1.58"
+    ],
+    "content": "# Optimizing Casing Thickness for 70MPa Concrete\n\n**MOP Simulator Autonomous Research Division**\n**Date:** August 19, 2026\n**Simulation Engine:** MOP Impact Physics & Penetration Simulator v2.8\n**Total Scenarios:** 6\n\n---\n\n## Abstract\n\nThis study presents a high-fidelity computational analysis of optimizing casing thickness for 70mpa concrete conducted through 6 autonomous simulation cycles using the MOP Impact Physics & Penetration Simulator v2.8..."
+  }
+}
+```
 
 ---
 
@@ -171,7 +278,7 @@ echo "GEMINI_API_KEY=your_gemini_api_key_here" >> .env
 # Inside src/Automation
 npm start
 ```
-The server will run on `http://localhost:3000`. You can now hit the `/research` and `/article` REST endpoints to unleash the AI pipeline!
+The server will run on `http://localhost:3000`. You can now hit the `/research` and `/article` REST endpoints in Postman!
 
 ---
 
