@@ -293,7 +293,7 @@ void printReport(const std::vector<SimulationResult>& results,
 		          << ", \"shock_pressure_gpa_peak\": " << (r.dynamic_pressure / 1e9)
 		          << ", \"regime\": \"" << r.regime 
 		          << "\", \"summary\": \"" << r.outcome_summary 
-		          << "\"}\n";
+		          << "\"}" << std::endl; // std::endl flushes the pipe buffer immediately
 	}
 	std::cout << std::string(135, '-') << "\n\n";
 

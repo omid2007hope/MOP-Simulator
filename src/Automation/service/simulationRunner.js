@@ -32,18 +32,17 @@ class SimulationRunner {
             });
 
             rl.on('line', (line) => {
-                // If the C++ engine outputs JSON telemetry on stdout, we parse it here.
-                // Assuming telemetry frames are printed as single-line JSON strings:
                 if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
                     try {
                         const frame = JSON.parse(line);
                         results.push(frame);
+                        console.log(`[SimulationRunner] Frame captured: ${JSON.stringify(frame)}`);
                     } catch (e) {
-                        // Not a JSON line, or malformed
+                        console.warn(`[SimulationRunner] Failed to parse JSON line: ${line}`);
                     }
                 } else {
-                    // Pass-through standard console logs for debugging
-                    // console.log(`[SIM] ${line}`);
+                    // Pass-through all sim output for debugging
+                    console.log(`[SIM] ${line}`);
                 }
             });
 
