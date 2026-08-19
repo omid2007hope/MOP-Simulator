@@ -2,6 +2,7 @@ const BaseService = require('./baseservice/index');
 const aiClient = require('../../AI/aiClient');
 const simulationRunner = require('./simulationRunner');
 const ResultModel = require('../model/result');
+const ResearchSessionModel = require('../model/researchSession');
 const crypto = require('crypto');
 
 class Research extends BaseService {
@@ -18,6 +19,15 @@ class Research extends BaseService {
 			`[Research Loop] Initiating ${cycleCount} autonomous cycles for: ${researchData.title} (Session: ${sessionId})`,
 		);
 
+		// Create the tracking session in DB
+		const session = await ResearchSessionModel.create({
+			session_id: sessionId,
+			title: researchData.title,
+			description: researchData.description || '',
+			cycle_count: cycleCount,
+			status: 'in_progress',
+		});
+
 		let allCycleStats = [];
 
 		for (let i = 0; i < cycleCount; i++) {
@@ -26,7 +36,7 @@ class Research extends BaseService {
 			);
 			try {
 				// 1. Ask AI to generate hypothesis/scenario parameters
-				const config = await aiClient.generateScenario(researchData);
+				const config = await aiClient.generateScenario(researchData, i + 1, cycleCount);
 
 				// 2. Feed parameters into the C++ Engine and stream the telemetry out
 				console.log(`[Research Loop] Spawning C++ Physics Simulator...`);
@@ -38,6 +48,13 @@ class Research extends BaseService {
 
 				// Runner now handles DB insertion internally to prevent OOM
 				const totalFrames = await simulationRunner.runSimulation(config, metadata);
+
+				// Retrieve the most recently inserted ResultModel for this session to link it
+				const latestResult = await ResultModel.findOne({ session_id: sessionId }).sort({ createdAt: -1 });
+				if (latestResult) {
+					session.results.push(latestResult._id);
+					await session.save();
+				}
 
 				allCycleStats.push({
 					cycle: i + 1,
@@ -55,6 +72,9 @@ class Research extends BaseService {
 				});
 			}
 		}
+
+		session.status = 'completed';
+		await session.save();
 
 		console.log(`\n[Research Loop] All cycles completed for session ${sessionId}.`);
 		return {

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const articleSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true, trim: true },
+		session_id: { type: String, required: true },
 		abstract: { type: String, default: '' },
 		content: { type: String, required: true },
 		word_count: { type: Number, default: 0 },

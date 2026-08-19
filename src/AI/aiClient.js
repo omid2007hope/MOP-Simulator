@@ -6,10 +6,12 @@ class AIClient {
 	 * Generates a C++ simulation config based on the research topic.
 	 * Calls Gemini API if GEMINI_API_KEY is present, otherwise falls back to a deterministic mock.
 	 * @param {Object} researchData - { title, description, count }
+	 * @param {Number} currentCycle - The current simulation cycle number (1-indexed)
+	 * @param {Number} totalCycles - The total number of cycles requested
 	 * @returns {Object} Simulation config (Projectile, Target, Scenario, Simulation)
 	 */
-	async generateScenario(researchData) {
-		console.log(`[AI Client] Generating scenario for topic: ${researchData.title}`);
+	async generateScenario(researchData, currentCycle = 1, totalCycles = 1) {
+		console.log(`[AI Client] Generating scenario for topic: ${researchData.title} (Cycle ${currentCycle}/${totalCycles})`);
 		
 		const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 		if (GEMINI_API_KEY) {
@@ -19,7 +21,7 @@ class AIClient {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						systemInstruction: { parts: [{ text: researchConductor }] },
-						contents: [{ parts: [{ text: JSON.stringify(researchData) }] }],
+						contents: [{ parts: [{ text: JSON.stringify({ ...researchData, currentCycle, totalCycles }) }] }],
 						generationConfig: { responseMimeType: "application/json" }
 					})
 				});
@@ -91,11 +93,12 @@ class AIClient {
 	 * Synthesizes simulation data into a research article.
 	 * Calls Gemini API if GEMINI_API_KEY is present, otherwise falls back to a deterministic mock.
 	 * @param {string} title - Research title
+	 * @param {string} description - Research description/hypothesis
 	 * @param {Object} stats - Aggregate statistics from all simulation runs
 	 * @param {Array}  sampleResults - A sample of raw result documents for context
 	 * @returns {Object} { abstract, content, key_findings }
 	 */
-	async generateArticle(title, stats, sampleResults) {
+	async generateArticle(title, description, stats, sampleResults) {
 		console.log(`[AI Client] Generating research article for: "${title}"`);
 		
 		const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -106,7 +109,7 @@ class AIClient {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						systemInstruction: { parts: [{ text: articleWriter }] },
-						contents: [{ parts: [{ text: JSON.stringify({ title, stats, sampleResults }) }] }],
+						contents: [{ parts: [{ text: JSON.stringify({ title, description, stats, sampleResults }) }] }],
 						generationConfig: { responseMimeType: "application/json" }
 					})
 				});

@@ -11,35 +11,43 @@ class ArticleWriter extends BaseService {
 	}
 
 	/**
-	 * Pulls all simulation results from DB, computes statistics,
+	 * Pulls all simulation results from DB for a specific session, computes statistics,
 	 * calls the AI writer, and saves the generated article.
-	 * @param {Object} requestData - { title, limit }
+	 * @param {Object} requestData - { session_id, limit }
 	 */
 	async generateResearchArticle(requestData) {
-		const { title, limit = 500 } = requestData;
+		const { session_id, limit = 500 } = requestData;
 
-		console.log(`[ArticleWriter] Fetching simulation results for: "${title}"`);
+		console.log(`[ArticleWriter] Fetching research session: "${session_id}"`);
+		
+		const ResearchSessionModel = require('../model/researchSession');
+		const session = await ResearchSessionModel.findOne({ session_id }).populate({
+			path: 'results',
+			options: { limit, sort: { _id: -1 } }
+		}).lean();
 
-		const results = await ResultModel.find({ research_title: title })
-			.sort({ _id: -1 })
-			.limit(limit)
-			.lean();
-
-		if (results.length === 0) {
-			throw new Error('No simulation data found in database. Run POST /research first.');
+		if (!session) {
+			throw new Error(`Research session not found for ID: ${session_id}`);
 		}
 
-		console.log(`[ArticleWriter] Analyzing ${results.length} simulation results...`);
+		const results = session.results;
+
+		if (!results || results.length === 0) {
+			throw new Error('No simulation data found for this session. Ensure the research loop completed successfully.');
+		}
+
+		console.log(`[ArticleWriter] Analyzing ${results.length} simulation results for session "${session_id}"...`);
 
 		const stats = this._computeStats(results);
 
 		console.log(`[ArticleWriter] Generating research article...`);
-		const article = await aiClient.generateArticle(title, stats, results.slice(0, 5));
+		const article = await aiClient.generateArticle(session.title, session.description, stats, results.slice(0, 5));
 
 		const wordCount = article.content.split(/\s+/).length;
 
 		const saved = await this.simplePost({
-			title,
+			title: session.title,
+			session_id: session.session_id,
 			abstract: article.abstract,
 			content: article.content,
 			word_count: wordCount,
@@ -54,7 +62,8 @@ class ArticleWriter extends BaseService {
 
 		return {
 			article_id: saved._id,
-			title,
+			title: session.title,
+			session_id: session.session_id,
 			word_count: wordCount,
 			scenarios_analyzed: results.length,
 			stats,
