@@ -27,6 +27,11 @@ class SimulationRunner {
                 crlfDelay: Infinity
             });
 
+            simProcess.on('error', (err) => {
+                console.error(`[SimulationRunner] Failed to spawn process: ${err.message}`);
+                reject(err);
+            });
+
             rl.on('line', (line) => {
                 // If the C++ engine outputs JSON telemetry on stdout, we parse it here.
                 // Assuming telemetry frames are printed as single-line JSON strings:
