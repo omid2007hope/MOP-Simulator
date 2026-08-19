@@ -284,16 +284,88 @@ void printReport(const std::vector<SimulationResult>& results,
 			  << "  " << std::left << std::setw(30) << r.regime 
 			  << std::left << std::setw(20) << r.outcome_summary << "\n";
 			  
-		// Output valid JSON frame to stdout for the Node.js Automation Runner to catch
-		std::cout << "{\"name\": \"" << r.scenario_name 
-		          << "\", \"velocity\": " << r.velocity 
-		          << ", \"mach\": " << r.mach_number 
+		// Full JSON frame for Node.js Automation Runner — matches Mongoose result.js schema
+		std::cout << "{"
+		          << "\"name\": \"" << r.scenario_name << "\""
+		          << ", \"velocity\": " << r.velocity
+		          << ", \"mach\": " << r.mach_number
 		          << ", \"energy\": " << (r.kinetic_energy / 1e9)
-		          << ", \"cumulative_breach_depth\": " << r.actual_penetration_depth 
-		          << ", \"shock_pressure_gpa_peak\": " << (r.dynamic_pressure / 1e9)
-		          << ", \"regime\": \"" << r.regime 
-		          << "\", \"summary\": \"" << r.outcome_summary 
-		          << "\"}" << std::endl; // std::endl flushes the pipe buffer immediately
+		          << ", \"pressurvives\": " << (r.explosive_charge_survives ? "true" : "false")
+		          << ", \"is_kinetic\": " << (r.is_kinetic_rod ? "true" : "false")
+		          << ", \"regime\": \"" << r.regime << "\""
+		          << ", \"summary\": \"" << r.outcome_summary << "\""
+		          // Projectile
+		          << ", \"proj_name\": \"" << proj.name << "\""
+		          << ", \"proj_length\": " << proj.length
+		          << ", \"proj_diameter\": " << proj.diameter
+		          << ", \"proj_total_mass\": " << proj.total_mass
+		          << ", \"proj_curvature_noseReduce\": " << proj.curvature_noseReduce
+		          << ", \"proj_casing_density\": " << proj.casing_density
+		          << ", \"proj_casing_wall_thickness\": " << proj.casing_wall_thickness
+		          << ", \"proj_area_moment_inertia\": " << proj.area_moment_inertia
+		          << ", \"proj_elastic_modulus\": " << proj.elastic_modulus
+		          << ", \"proj_hugoniot_c0\": " << proj.hugoniot_c0
+		          << ", \"proj_hugoniot_s\": " << proj.hugoniot_s
+		          << ", \"proj_explosive_critical_energy\": " << proj.explosive_critical_energy
+		          << ", \"proj_explosive_energy_j_per_kg\": " << proj.explosive_energy_j_per_kg
+		          << ", \"proj_specific_heat\": " << proj.specific_heat
+		          << ", \"proj_melting_point\": " << proj.melting_point
+		          << ", \"proj_heat_of_fusion\": " << proj.heat_of_fusion
+		          // Target
+		          << ", \"target_name\": \"" << target.name << "\""
+		          << ", \"flight_path_angle\": " << r.flight_path_angle
+		          << ", \"obliquity_angle\": " << r.obliquity_angle
+		          << ", \"angle_of_attack\": " << r.angle_of_attack
+		          // Physics constants
+		          << ", \"cons_gravity\": " << PhysicsConstants{}.gravity
+		          << ", \"cons_pi\": " << PhysicsConstants{}.PI
+		          << ", \"cons_friction_factor\": " << PhysicsConstants{}.frictionFactor
+		          << ", \"cons_speed_of_sound\": " << PhysicsConstants{}.SpeedOfSound
+		          << ", \"cons_universalGasConstant\": " << r.cons_universalGasConstant
+		          << ", \"cons_molarMassAir\": " << r.cons_molarMassAir
+		          << ", \"cons_adiabaticIndexAir\": " << r.cons_adiabaticIndexAir
+		          << ", \"cons_earthRadius\": " << r.cons_earthRadius
+		          // Explosion & crater
+		          << ", \"explosive_mass\": " << r.explosive_mass
+		          << ", \"explosion_scale\": " << r.explosion_scale
+		          << ", \"crater_wide_radius\": " << r.crater_wide_radius
+		          << ", \"crater_narrow_radius\": " << r.crater_narrow_radius
+		          << ", \"camera_shake_magnitude\": " << r.camera_shake_magnitude
+		          << ", \"time_scale_pen\": " << r.time_scale_pen
+		          << ", \"total_explosive_yield\": " << r.total_explosive_yield
+		          << ", \"premature_detonation\": " << (r.premature_detonation ? "true" : "false")
+		          // Erosion
+		          << ", \"erosion_occurred\": " << (r.erosion_occurred ? "true" : "false")
+		          << ", \"final_rod_length\": " << r.final_rod_length
+		          << ", \"erosion_length_lost\": " << r.erosion_length_lost
+		          // Shock & dynamics
+		          << ", \"dynamic_increase_factor\": " << r.dynamic_increase_factor
+		          << ", \"bar_wave_speed\": " << r.bar_wave_speed
+		          << ", \"shock_pressure_gpa_peak\": " << r.shock_pressure_gpa_peak
+		          << ", \"shock_pulse_duration_us\": " << r.shock_pulse_duration_us
+		          << ", \"previous_strike_depth\": " << r.previous_strike_depth
+		          << ", \"cumulative_breach_depth\": " << r.actual_penetration_depth
+		          << ", \"kinetic_shock_joules\": " << r.kinetic_shock_joules
+		          // Flight kinematics
+		          << ", \"altitude_ft\": " << r.altitude_ft
+		          << ", \"x_acceleration\": " << r.x_acceleration
+		          << ", \"y_acceleration\": " << r.y_acceleration
+		          << ", \"trim_deg\": " << r.trim_deg
+		          << ", \"trim_rad\": " << r.trim_rad
+		          << ", \"fpa_rad_corrected\": " << r.fpa_rad_corrected
+		          << ", \"area\": " << r.area
+		          << ", \"boom_time\": " << r.boom_time
+		          << ", \"boom_alt\": " << r.boom_alt
+		          << ", \"impact_velocity\": " << r.impact_velocity
+		          << ", \"impact_pitch\": " << r.impact_pitch
+		          << ", \"initial_shaft_depth\": " << r.initial_shaft_depth
+		          << ", \"critical_angle_threshold\": " << r.critical_angle_threshold
+		          << ", \"average_density\": " << r.average_density
+		          // Aircraft platform
+		          << ", \"aircraft_bomber_totalMass\": " << r.aircraft_bomber_totalMass
+		          << ", \"aircraft_bomber_wingArea\": " << r.aircraft_bomber_wingArea
+		          << ", \"aircraft_bomber_liftCurveSlope\": " << r.aircraft_bomber_liftCurveSlope
+		          << "}" << std::endl;
 	}
 	std::cout << std::string(135, '-') << "\n\n";
 

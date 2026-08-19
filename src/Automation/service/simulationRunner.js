@@ -36,14 +36,12 @@ class SimulationRunner {
                     try {
                         const frame = JSON.parse(line);
                         results.push(frame);
-                        console.log(`[SimulationRunner] Frame captured: ${JSON.stringify(frame)}`);
                     } catch (e) {
-                        console.warn(`[SimulationRunner] Failed to parse JSON line: ${line}`);
+                        console.warn(`[SimulationRunner] Malformed JSON line skipped`);
                     }
-                } else {
-                    // Pass-through all sim output for debugging
-                    console.log(`[SIM] ${line}`);
                 }
+                // SIM stdout intentionally silenced — re-enable for debugging:
+                // else { console.log(`[SIM] ${line}`); }
             });
 
             simProcess.stderr.on('data', (data) => {
