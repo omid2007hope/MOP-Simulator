@@ -459,3 +459,120 @@ The platform provides a scalable foundation for academic researchers, defense en
 13. Paszke, A., et al. (2019). *PyTorch: An Imperative Style, High-Performance Deep Learning Library.* Advances in Neural Information Processing Systems (NeurIPS), 32.
 14. ISO/IEC 14882:2023. *Programming Languages — C++.* International Organization for Standardization, Geneva, Switzerland.
 15. Crockford, D. (2006). *The application/json Media Type for JavaScript Object Notation (JSON).* IETF RFC 4627.
+
+---
+
+## 🌐 Publishing Guide: Obtaining a DOI & Linking to Your ORCID Profile
+
+This section documents the recommended workflow for registering this work with a persistent **Digital Object Identifier (DOI)** and surfacing it on your **ORCID** researcher profile.
+
+> **What is an ORCID iD?** ORCID (Open Researcher and Contributor ID) is a globally unique, persistent digital identifier that distinguishes you from every other researcher. Publishing with your ORCID iD ensures your work is always attributed to you — regardless of name changes, institutional affiliations, or journal re-indexing.
+
+---
+
+### Option A — Zenodo *(Recommended · Free · Instant DOI)*
+
+Zenodo is operated by CERN and is the **gold standard for open-source software and technical preprint archiving**. It is fully integrated with ORCID.
+
+**Step 1: Compile the PDF**
+
+Open [`paper/paper.tex`](file:///h:/Omid/Code/MOP-Simulator/paper/paper.tex) in [Overleaf.com](https://www.overleaf.com), compile with **PDFLaTeX**, and download the finished `paper.pdf`.
+
+> **Tip:** Overleaf is free for single-user projects. Create a project, paste the entire `paper.tex` content, and click **Recompile**. Your IEEE two-column PDF is ready in under 30 seconds.
+
+**Step 2: Upload to Zenodo**
+
+1. Go to [zenodo.org](https://zenodo.org) and click **Log in with ORCID**.
+2. After authentication, click the **+** button → **New Upload**.
+3. Upload `paper.pdf` as the primary file. Optionally also upload `research_paper.md` and `paper.tex` as supplementary source files.
+4. Fill in the deposit metadata:
+
+| Field | Value |
+| :--- | :--- |
+| **Upload type** | `Publication → Preprint` |
+| **Title** | Autonomous Computational Framework for Multi-Phase Impact Dynamics and Terminal Ballistics in Reinforced Geomaterials |
+| **Authors** | Omid Teimory *(link your ORCID iD in the author field)* |
+| **Description** | Paste the Abstract section from this paper. |
+| **Keywords** | Terminal Ballistics, Cavity Expansion, Hydrodynamic Erosion, Hugoniot EOS, C++23, Autonomous Research |
+| **License** | `GNU Affero General Public License v3.0 (AGPL-3.0)` |
+| **Related identifiers** | Your GitHub repository URL |
+
+5. Click **Publish**. Zenodo assigns a permanent DOI immediately (e.g., `10.5281/zenodo.XXXXXXX`).
+6. Within minutes, this DOI and citation auto-syncs into your **ORCID Works** section automatically — no manual linking required.
+
+---
+
+### Option B — TechRxiv / arXiv *(Preprint Server · Peer-Reviewed Appearance)*
+
+For a more formal preprint appearance with discipline-specific indexing:
+
+**TechRxiv** is operated by **IEEE** and specifically designed for engineering and computational science preprints. It is the ideal target for this paper.
+
+1. Compile `paper/paper.tex` to PDF using Overleaf.
+2. Go to [techrxiv.org](https://www.techrxiv.org) → **Submit a Preprint**.
+3. Select subject area: **Computational Engineering / Structural Mechanics**.
+4. Upload the PDF and the `.tex` source package.
+5. Enter your **ORCID iD** in the Author Metadata field during submission.
+6. TechRxiv assigns a DOI and submits your record to IEEE Xplore's preprint index.
+
+**arXiv** is appropriate if you intend future submission to a computational physics or applied mechanics journal:
+- Submission category: `physics.comp-ph` *(Computational Physics)* or `cs.CE` *(Computational Engineering, Finance, and Science)*.
+- Go to [arxiv.org/submit](https://arxiv.org/submit), upload the `.tex` + bibliography files as a `.tar.gz` archive.
+- arXiv DOIs are permanent and indexed by Google Scholar, Semantic Scholar, and NASA ADS.
+
+---
+
+### Option C — GitHub Release with Zenodo Auto-DOI *(Best for Software Papers)*
+
+Since MOP Simulator V3.0 is a software system, you can obtain a DOI that covers both the **codebase** and the **paper** simultaneously:
+
+1. Go to your GitHub repository settings → **Integrations** → Enable **Zenodo** via GitHub OAuth.
+2. On Zenodo, go to **GitHub** → toggle your `MOP-Simulator` repository to **ON**.
+3. On GitHub, create a new **Release** (e.g., `v3.0.0`) with the following release notes:
+
+```markdown
+## MOP Simulator V3.0 — Autonomous AI Penetration Research Platform
+
+### What's new in V3.0:
+- Full-stack autonomous AI research pipeline (Gemini 2.5 Flash)
+- Headless C++ execution via --json-input flag
+- Memory-safe chunked MongoDB telemetry streaming
+- Session-scoped multi-topic research isolation
+- Interactive 3D WebGL physics visualizer
+
+### Published Research Paper:
+DOI: 10.5281/zenodo.XXXXXXX (auto-assigned on release)
+```
+
+4. Publish the release. **Zenodo automatically archives the complete repository snapshot and assigns a versioned DOI** — perfectly citing both the code and the paper from a single digital object.
+
+---
+
+### Recommended Citation Format
+
+After publishing, your work should be cited as follows:
+
+```
+Teimory, O. (2026). Autonomous Computational Framework for Multi-Phase 
+Impact Dynamics and Terminal Ballistics in Reinforced Geomaterials. 
+MOP Simulator Research Project (v3.0.0). Zenodo. 
+https://doi.org/10.5281/zenodo.XXXXXXX
+```
+
+Or in **BibTeX** format:
+
+```bibtex
+@software{teimory2026mop,
+  author       = {Omid Teimory},
+  title        = {{Autonomous Computational Framework for Multi-Phase 
+                   Impact Dynamics and Terminal Ballistics in 
+                   Reinforced Geomaterials}},
+  month        = aug,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v3.0.0},
+  doi          = {10.5281/zenodo.XXXXXXX},
+  url          = {https://doi.org/10.5281/zenodo.XXXXXXX}
+}
+```
+
