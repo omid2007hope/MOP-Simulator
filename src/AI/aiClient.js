@@ -21,8 +21,8 @@ class AIClient {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						systemInstruction: { parts: [{ text: researchConductor }] },
-						contents: [{ parts: [{ text: JSON.stringify({ ...researchData, currentCycle, totalCycles }) }] }],
-						generationConfig: { responseMimeType: "application/json" }
+						contents: [{ parts: [{ text: JSON.stringify({ ...researchData, currentCycle, totalCycles, random_seed: Math.random() }) }] }],
+						generationConfig: { responseMimeType: "application/json", temperature: 1.5 }
 					})
 				});
 				const data = await response.json();
