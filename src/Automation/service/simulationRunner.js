@@ -11,7 +11,7 @@ class SimulationRunner {
     async runSimulation(config) {
         return new Promise((resolve, reject) => {
             // Path to the compiled C++ executable
-            const simPath = path.resolve(__dirname, '../../../../bin/sim.exe'); 
+            const simPath = path.resolve(__dirname, '../../../bin/mop_sim.exe'); 
             
             console.log(`[SimulationRunner] Spawning C++ engine: ${simPath}`);
             const simProcess = spawn(simPath, [], {

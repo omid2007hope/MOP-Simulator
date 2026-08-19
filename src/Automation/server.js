@@ -20,8 +20,16 @@ if (!isTest && !process.env.PORT) {
 }
 
 const port = process.env.PORT || (isTest ? 3000 : undefined);
+
+// Middleware
+app.use(express.json());
+
+// Routers
 const healthRouter = require('./router/health');
+const researchRouter = require('./router/research');
+
 app.use(healthRouter);
+app.use(researchRouter);
 
 connectMongoDB()
 	.then(() => {
