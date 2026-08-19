@@ -9,6 +9,10 @@ const penetrationFrameSchema = require('./penetrationFrame').schema;
 
 const simulationResultSchema = new mongoose.Schema(
 	{
+		// Research Metadata
+		research_title: { type: String, default: 'Standalone Simulation' },
+		session_id: { type: String, default: '' },
+
 		// Scenario Identification & Outcomes
 		name: { type: String, required: true, trim: true },
 		velocity: { type: Number, required: true },

@@ -20,7 +20,7 @@ class ArticleWriter extends BaseService {
 
 		console.log(`[ArticleWriter] Fetching simulation results for: "${title}"`);
 
-		const results = await ResultModel.find().limit(limit).lean();
+		const results = await ResultModel.find({ research_title: title }).limit(limit).lean();
 
 		if (results.length === 0) {
 			throw new Error('No simulation data found in database. Run POST /research first.');

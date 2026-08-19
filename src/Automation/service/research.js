@@ -1,19 +1,21 @@
 const BaseService = require('./baseservice/index');
 const aiClient = require('../../AI/aiClient');
 const simulationRunner = require('./simulationRunner');
-const ResultModel = require('../model/result'); // Assuming this exists to pass to BaseService
+const ResultModel = require('../model/result');
+const crypto = require('crypto');
 
 class Research extends BaseService {
 	constructor() {
-		super(ResultModel); // Bind the Mongoose model for db saves
+		super(ResultModel);
 	}
 
 	async receiveRandomInputs(_req) {
 		const cycleCount = _req.count || 3;
 		const researchData = _req;
+		const sessionId = crypto.randomBytes(4).toString('hex');
 
 		console.log(
-			`[Research Loop] Initiating ${cycleCount} autonomous cycles for: ${researchData.title}`,
+			`[Research Loop] Initiating ${cycleCount} autonomous cycles for: ${researchData.title} (Session: ${sessionId})`,
 		);
 
 		let allCycleStats = [];
@@ -28,29 +30,18 @@ class Research extends BaseService {
 
 				// 2. Feed parameters into the C++ Engine and stream the telemetry out
 				console.log(`[Research Loop] Spawning C++ Physics Simulator...`);
-				const telemetryFrames =
-					await simulationRunner.runSimulation(config);
+				
+				const metadata = {
+					research_title: researchData.title,
+					session_id: sessionId
+				};
 
-				console.log(
-					`[Research Loop] Simulation complete. Captured ${telemetryFrames.length} telemetry frames.`,
-				);
-
-				// 3. Batch insert telemetry frames to MongoDB (avoiding 1-by-1 bottlenecks)
-				if (telemetryFrames.length > 0) {
-					console.log(`[Research Loop] Bulk saving to MongoDB...`);
-					await this.simplePost(telemetryFrames);
-					console.log(
-						`[Research Loop] Database insertion successful.`,
-					);
-				} else {
-					console.log(
-						`[Research Loop] No JSON frames detected. (Ensure sim.exe prints valid JSON output).`,
-					);
-				}
+				// Runner now handles DB insertion internally to prevent OOM
+				const totalFrames = await simulationRunner.runSimulation(config, metadata);
 
 				allCycleStats.push({
 					cycle: i + 1,
-					frames: telemetryFrames.length,
+					frames_saved: totalFrames,
 					status: 'success',
 				});
 			} catch (error) {
@@ -62,15 +53,13 @@ class Research extends BaseService {
 					error: error.message,
 					status: 'failed',
 				});
-
-				// In a real system, you might want to pass the error back to the AI to try again,
-				// but for now, we continue to the next cycle.
 			}
 		}
 
-		console.log(`\n[Research Loop] All cycles completed.`);
+		console.log(`\n[Research Loop] All cycles completed for session ${sessionId}.`);
 		return {
 			message: 'Autonomous cycles finished',
+			session_id: sessionId,
 			cycles: allCycleStats,
 		};
 	}
