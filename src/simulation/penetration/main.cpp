@@ -126,7 +126,10 @@ int main(int argc, char* argv[]) {
 			munition.hugoniot_c0 = p.value("hugoniot_c0", 4570.0);
 			munition.hugoniot_s = p.value("hugoniot_s", 1.49);
 			munition.explosive_critical_energy = p.value("explosive_critical_energy", 3.0e15);
-
+			munition.specific_heat = p.value("specific_heat", 460.0);
+			munition.melting_point = p.value("melting_point", 1800.0);
+			munition.heat_of_fusion = p.value("heat_of_fusion", 272000.0);
+			
 			auto t = config["Target"]["layers"][0];
 			object.layers.clear();
 			TargetLayer customLayer;

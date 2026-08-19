@@ -45,7 +45,7 @@ class AIClient {
 
 		// Mocked fallback response simulating the AI's structured JSON output
 		return {
-			Simulation: { choice: 3, numBombs: 2, tos_agree: true },
+			Simulation: { choice: 1, numBombs: 2, tos_agree: true },
 			Projectile: {
 				name: 'AI Generated MOP Variant',
 				length: 6.5,
