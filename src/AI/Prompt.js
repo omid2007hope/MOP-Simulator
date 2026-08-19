@@ -13,7 +13,7 @@ Input Data:
 Output Format:
   You MUST return ONLY a raw JSON object (no markdown, no backticks) with the following exact structure and keys:
   {
-    "Simulation": { "choice": 3, "numBombs": 2, "tos_agree": true },
+    "Simulation": { "choice": 1, "numBombs": 2, "tos_agree": true },
     "Projectile": {
       "name": "String", "length": 0.0, "diameter": 0.0, "curvature_noseReduce": 0.0, "total_mass": 0.0,
       "explosive_mass": 0.0, "explosive_energy_j_per_kg": 0.0, "casing_density": 0.0, "yield_strength": 0.0,

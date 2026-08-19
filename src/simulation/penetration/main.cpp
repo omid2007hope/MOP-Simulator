@@ -147,7 +147,14 @@ int main(int argc, char* argv[]) {
 			double obliq = s.value("obliquity_angle", 0.0);
 			double aoa = s.value("angle_of_attack", 0.0);
 
-			scenarios.push_back({"AI Custom Test", alt, vel, fpa, obliq, aoa});
+			int numBombs = config.value("/Simulation/numBombs"_json_pointer, 1);
+			for (int i = 0; i < numBombs; ++i) {
+				std::stringstream name_ss;
+				if (numBombs == 1) name_ss << s.value("name", "AI Custom Test");
+				else if (i == 0) name_ss << "Bomb #1 (Shaft Breaker)";
+				else name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
+				scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
+			}
 		} else if (simChoice == 3) {
 			if (auto p = ConfigLoader::getProjectileByName(projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
 				munition = *p;
