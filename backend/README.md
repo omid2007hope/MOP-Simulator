@@ -19,7 +19,7 @@
  \_________________________________________________________________________________________/
 ```
 
-# MOP Simulator V3.0 - Autonomous AI Penetration Research Platform
+# MOP Simulator V3.5.0 - Autonomous AI Penetration Research Platform
 
 // Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
@@ -31,7 +31,7 @@
 ![License](https://img.shields.io/badge/License-AGPLv3-g.svg)
 ![Physics](https://img.shields.io/badge/Physics-100%25%20Validated-orange.svg)
 
-**MOP Simulator V3.0** has evolved from a standalone native binary into a **full-stack autonomous AI
+**MOP Simulator V3.5.0** has evolved from a standalone native binary into a **full-stack autonomous AI
 research platform**. It tightly couples a high-performance C++23 terminal ballistics simulation
 engine with a Node.js/Express automation backend and advanced LLM AI integration (Google Gemini 2.5
 Flash).
@@ -205,7 +205,7 @@ the full publication.
 			"Hydrodynamic erosion onset in 0.0% of scenarios",
 			"Average impact velocity: 537.4 m/s at Mach 1.58"
 		],
-		"content": "# Optimizing Casing Thickness for 70MPa Concrete\n\n**MOP Simulator Autonomous Research Division**\n**Date:** August 19, 2026\n**Simulation Engine:** MOP Impact Physics & Penetration Simulator v2.8\n**Total Scenarios:** 6\n\n---\n\n## Abstract\n\nThis study presents a high-fidelity computational analysis of optimizing casing thickness for 70mpa concrete conducted through 6 autonomous simulation cycles using the MOP Impact Physics & Penetration Simulator v2.8..."
+		"content": "# Optimizing Casing Thickness for 70MPa Concrete\n\n**MOP Simulator Autonomous Research Division**\n**Date:** August 19, 2026\n**Simulation Engine:** MOP Impact Physics & Penetration Simulator V3.5.0\n**Total Scenarios:** 6\n\n---\n\n## Abstract\n\nThis study presents a high-fidelity computational analysis of optimizing casing thickness for 70mpa concrete conducted through 6 autonomous simulation cycles using the MOP Impact Physics & Penetration Simulator V3.5.0..."
 	}
 }
 ```

@@ -1,6 +1,7 @@
 {
   "title": "Autonomous Computational Framework for Multi-Phase Impact Dynamics and Terminal Ballistics in Reinforced Geomaterials",
-  "description": "<p>MOP Simulator (V3.0) — Autonomous AI Penetration Research Platform. A C++ application for modeling terminal ballistics, multi-phase impact dynamics, and penetration mechanics in reinforced geomaterials.</p>",
+  "description": "<p>MOP Simulator (V3.5.0) — Autonomous AI Penetration Research Platform. A C++ application for modeling terminal ballistics, multi-phase impact dynamics, and penetration mechanics in reinforced geomaterials.</p>",
+  "version": "3.5.0",
   "upload_type": "software",
   "creators": [
     {

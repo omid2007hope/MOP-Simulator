@@ -1,4 +1,6 @@
 {
+  "name": "mop-simulator-backend",
+  "version": "3.5.0",
   "scripts": {
     "start": "node -r dotenv/config src/Automation/server.js"
   },
