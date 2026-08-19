@@ -3,6 +3,10 @@
 
 const mongoose = require('mongoose');
 
+const targetLayerSchema = require('./targetLayer').schema;
+const dropFrameSchema = require('./dropFrame').schema;
+const penetrationFrameSchema = require('./penetrationFrame').schema;
+
 const simulationResultSchema = new mongoose.Schema(
 	{
 		// Scenario Identification & Outcomes
