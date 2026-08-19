@@ -101,8 +101,8 @@ sequenceDiagram
     API-->>User: 200 OK { session_id, cycles: [ { status: "success", frames_saved } ] }
 
     Note over User, DB: PHASE 2: SCIENTIFIC SYNTHESIS
-    User->>API: POST /article { title, limit: 500 }
-    API->>DB: Query telemetry scoped by research_title (sorted by latest)
+    User->>API: POST /article { session_id, limit: 500 }
+    API->>DB: Query telemetry scoped by session_id (sorted by latest)
     DB-->>API: Array of SimulationResult records
     API->>API: Compute statistical metrics (mean depth, std-dev, regime frequency)
     API->>AI: Synthesize full academic paper (articleWriter)
@@ -154,7 +154,7 @@ Once the simulation telemetry is populated in MongoDB, request the AI Article Wr
 **Request Payload:**
 ```json
 {
-  "title": "Optimizing Casing Thickness for 70MPa Concrete",
+  "session_id": "a4f8b91c",
   "limit": 500
 }
 ```
@@ -165,6 +165,7 @@ Once the simulation telemetry is populated in MongoDB, request the AI Article Wr
   "data": {
     "article_id": "6a85591eea0eecc59e063895",
     "title": "Optimizing Casing Thickness for 70MPa Concrete",
+    "session_id": "a4f8b91c",
     "word_count": 1406,
     "scenarios_analyzed": 6,
     "stats": {
