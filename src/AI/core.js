@@ -4,16 +4,16 @@ const asyncHandler = require('../Automation/util/asyncHandler');
 
 const Status = require('../Automation/libs/status');
 
-const apiKey = process.env.API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const core = new (class Core extends Status {
 	coreHealth = asyncHandler(async (req, res) => {
-		if (!apiKey) {
-			return res.status(this.error).json({ error: 'API key not configured' });
+		if (!GEMINI_API_KEY) {
+			return res.status(this.error).json({ error: 'GEMINI_API_KEY not configured' });
 		}
 		res.status(this.success).json({
 			message: 'Success',
-			key: apiKey ? 'Key loaded' : 'No key',
+			key: GEMINI_API_KEY ? 'Key loaded' : 'No key',
 		});
 	});
 })();

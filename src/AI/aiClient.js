@@ -11,10 +11,10 @@ class AIClient {
 	async generateScenario(researchData) {
 		console.log(`[AI Client] Generating scenario for topic: ${researchData.title}`);
 		
-		const API_KEY = process.env.GEMINI_API_KEY;
-		if (API_KEY) {
+		const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+		if (GEMINI_API_KEY) {
 			try {
-				const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+				const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -98,10 +98,10 @@ class AIClient {
 	async generateArticle(title, stats, sampleResults) {
 		console.log(`[AI Client] Generating research article for: "${title}"`);
 		
-		const API_KEY = process.env.GEMINI_API_KEY;
-		if (API_KEY) {
+		const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+		if (GEMINI_API_KEY) {
 			try {
-				const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+				const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
