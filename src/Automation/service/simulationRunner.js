@@ -10,16 +10,15 @@ class SimulationRunner {
      */
     async runSimulation(config) {
         return new Promise((resolve, reject) => {
-            // Path to the compiled C++ executable
-            const simPath = path.resolve(__dirname, '../../../bin/mop_sim.exe'); 
-            
+            const simPath = path.resolve(__dirname, '../../../bin/mop_sim.exe');
+            const projectRoot = path.resolve(__dirname, '../../..');
+
             console.log(`[SimulationRunner] Spawning C++ engine: ${simPath}`);
             const simProcess = spawn(simPath, [], {
-                cwd: path.dirname(simPath)
+                cwd: projectRoot
             });
 
             const results = [];
-            let jsonBuffer = '';
 
             // 1. Setup the Readline Interface for safe memory parsing (Phase 3)
             const rl = readline.createInterface({
