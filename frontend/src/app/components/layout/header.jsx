@@ -1,3 +1,5 @@
+import { Search } from "lucide-react";
+
 export default function Header() {
   return (
     <header className="flex flex-row w-full h-9/100 bg-blue-900 border-b-2 border-black z-250 fixed">
@@ -10,9 +12,11 @@ export default function Header() {
         <h1 className=""></h1>
       </div>
       {/* search bar  */}
-      <div className="h-full w-60/100 flex flex-col justify-around items-center text-white font-bold border">
-        <button className=""></button>
-        <input className=" " type="text" />
+      <div className="h-full w-60/100 flex flex-row justify-center items-center text-white font-bold border">
+        <button className="p-4 border">
+          <Search />
+        </button>
+        <input className="py-1 pl-35 pr-5 border" type="text" />
       </div>
     </header>
   );
