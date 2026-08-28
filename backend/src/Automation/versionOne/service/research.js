@@ -1,5 +1,5 @@
 const BaseService = require('./baseservice/index');
-const aiClient = require('../../AI/aiClient');
+const aiClient = require('../../AI/versionOne/aiClient');
 const simulationRunner = require('./simulationRunner');
 const ResultModel = require('../model/result');
 const ResearchSessionModel = require('../model/researchSession');

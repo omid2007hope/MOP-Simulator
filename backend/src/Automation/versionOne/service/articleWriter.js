@@ -1,7 +1,7 @@
 // © 2026 Omid Teimory. All rights reserved.
 
 const BaseService = require('./baseservice/index');
-const aiClient = require('../../AI/aiClient');
+const aiClient = require('../../AI/versionOne/aiClient');
 const ResultModel = require('../model/result');
 const ArticleModel = require('../model/article');
 

@@ -28,7 +28,7 @@ app.use(express.json());
 const healthRouter = require('./router/health');
 const researchRouter = require('./router/research');
 const articleRouter = require('./router/article');
-const { coreHealth } = require('../AI/core');
+const { coreHealth } = require('../../AI/versionOne/core');
 
 app.use(healthRouter);
 app.use(researchRouter);

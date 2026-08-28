@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 CXX ?= g++
-CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude -Iinclude/penetration
+CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude -Iinclude/penetration/versionOne/versionOne
 
 ifeq ($(OS),Windows_NT)
     EXE = .exe
@@ -35,35 +35,35 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/simulation/penetration/main.cpp include/penetration/simulation.hpp include/penetration/config_loader.hpp include/penetration/default.hpp include/penetration/telemetry_exporter.hpp
+build/main.o: src/simulation/penetration/versionOne/main.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/telemetry_exporter.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/simulation.o: src/simulation/penetration/simulation.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/environment_physics.hpp
+build/simulation.o: src/simulation/penetration/versionOne/simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/config_loader.o: src/simulation/penetration/config_loader.cpp include/penetration/config_loader.hpp include/penetration/simulation.hpp
+build/config_loader.o: src/simulation/penetration/versionOne/config_loader.cpp include/penetration/versionOne/config_loader.hpp include/penetration/versionOne/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/environment_physics.o: src/simulation/penetration/environment_physics.cpp include/penetration/environment_physics.hpp include/penetration/simulation.hpp
+build/environment_physics.o: src/simulation/penetration/versionOne/environment_physics.cpp include/penetration/versionOne/environment_physics.hpp include/penetration/versionOne/simulation.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/telemetry_exporter.o: src/simulation/penetration/telemetry_exporter.cpp include/penetration/telemetry_exporter.hpp include/penetration/simulation.hpp include/penetration/environment_physics.hpp
+build/telemetry_exporter.o: src/simulation/penetration/versionOne/telemetry_exporter.cpp include/penetration/versionOne/telemetry_exporter.hpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/test_simulation.o: tests/test_simulation.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
+build/test_simulation.o: tests/versionOne/test_simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/impactShock.o: tests/impactShock.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
+build/impactShock.o: tests/versionOne/impactShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/explosiveShock.o: tests/explosiveShock.cpp include/penetration/simulation.hpp include/penetration/default.hpp include/penetration/config_loader.hpp
+build/explosiveShock.o: tests/versionOne/explosiveShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -102,3 +102,4 @@ clean:
 	@$(RM_CLEAN)
 
 .PHONY: all test test-sim test-impact test-explosive clean
+
