@@ -1,3 +1,9 @@
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <string>
+
 void safeCin() {
 	if (!std::cin) {
 		std::cin.clear();
@@ -12,7 +18,7 @@ T getValidInput(const std::string& prompt) {
 	T data;
 
 	while (true) {
-		std::cout prompt;
+		std::cout << prompt;
 
 		if (!std::getline(std::cin, input)) {
 			std::cerr << "\n[!] Input stream closed. Exiting.\n";
@@ -20,7 +26,7 @@ T getValidInput(const std::string& prompt) {
 			std::exit(1);
 		}
 
-		std::isstringstream iss(input);
+		std::istringstream iss(input);
 		char extra;
 
 		if ((iss >> data) && !(iss >> extra)) {
@@ -28,8 +34,8 @@ T getValidInput(const std::string& prompt) {
 		}
 
 		std::cout << "Invalid input! Please enter a valid value.\n";
-	};
-};
+	}
+}
 
 
 int main() {
