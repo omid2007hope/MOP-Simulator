@@ -3,6 +3,7 @@
 #include <limits>
 #include <sstream>
 #include <string>
+#include <vector>
 
 void safeCin() {
 	if (!std::cin) {
@@ -38,7 +39,18 @@ T getValidInput(const std::string& prompt) {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
+
+	int choice = 1;
+	bool jsonMode = false;
+	std::vector<std::string> jsonFiles;
+
+	for (int i = 1; i < argc; ++i) {
+		if (std::string(argv[i]) == "--json-input" && i + 1 < argc) {
+			jsonMode = true;
+			jsonFiles.push_back(argv[++i]);
+		}
+	}
 
 	return 0;
-};
+}
