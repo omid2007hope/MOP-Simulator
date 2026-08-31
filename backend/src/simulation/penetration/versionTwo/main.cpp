@@ -52,5 +52,21 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if (argc > 0) {
+		std::error_code ec;
+
+		std::filesystem::path current =
+			std::filesystem::absolute(argv[0], ec).parent_path();
+
+		while (!current.empty() && current != current.root_path()) {
+			if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
+				basePath = current.string();
+				break;
+			}
+			current = current.parent_path();
+		}
+	}
+
+
 	return 0;
 }
