@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Omid Teimory. All Rights Reserved
 
 CXX ?= g++
-CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude -Iinclude/penetration/versionOne/versionOne
+CXXFLAGS ?= -std=c++23 -Wall -Wextra -O2 -Iinclude -Iinclude/penetration/versionOne
 
 ifeq ($(OS),Windows_NT)
     EXE = .exe
