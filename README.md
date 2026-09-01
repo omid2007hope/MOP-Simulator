@@ -43,6 +43,24 @@ peer-reviewed-quality academic research articles.
 
 ---
 
+### System Data Flow
+
+```mermaid
+flowchart TD
+    Start[Start Application] --> Config[ConfigLoader: Load Base Databases<br/>targets.json & projectiles.json]
+    Config --> Branch{Input Mode?}
+    
+    Branch -->|--json-input| AI[Automated JSON Mode<br/>Direct Parsing in main.cpp]
+    Branch -->|No Arguments| Human[Interactive Mode<br/>Console Prompts & Menus]
+    
+    AI --> Sim[ImpactSimulator<br/>Core Physics Engine]
+    Human --> Sim
+    
+    Sim --> Export[TelemetryExporter]
+    Export --> Report[Terminal ASCII Report]
+    Export --> HTML[3D HTML Visualizer]
+```
+
 ## 🚀 Architecture & Ecosystem
 
 ```mermaid
@@ -130,9 +148,9 @@ execution cycles.
 
 ```json
 {
-	"title": "Optimizing Casing Thickness for 70MPa Concrete",
-	"description": "Parametric evaluation of GBU-57 MOP casing wall thickness variations against ultra-high performance reinforced concrete bunkers.",
-	"count": 3
+  "title": "Optimizing Casing Thickness for 70MPa Concrete",
+  "description": "Parametric evaluation of GBU-57 MOP casing wall thickness variations against ultra-high performance reinforced concrete bunkers.",
+  "count": 3
 }
 ```
 
@@ -140,15 +158,15 @@ execution cycles.
 
 ```json
 {
-	"data": {
-		"message": "Autonomous cycles finished",
-		"session_id": "a4f8b91c",
-		"cycles": [
-			{ "cycle": 1, "frames_saved": 1240, "status": "success" },
-			{ "cycle": 2, "frames_saved": 1185, "status": "success" },
-			{ "cycle": 3, "frames_saved": 1210, "status": "success" }
-		]
-	}
+  "data": {
+    "message": "Autonomous cycles finished",
+    "session_id": "a4f8b91c",
+    "cycles": [
+      { "cycle": 1, "frames_saved": 1240, "status": "success" },
+      { "cycle": 2, "frames_saved": 1185, "status": "success" },
+      { "cycle": 3, "frames_saved": 1210, "status": "success" }
+    ]
+  }
 }
 ```
 
@@ -165,8 +183,8 @@ the full publication.
 
 ```json
 {
-	"session_id": "a4f8b91c",
-	"limit": 500
+  "session_id": "a4f8b91c",
+  "limit": 500
 }
 ```
 
@@ -174,39 +192,39 @@ the full publication.
 
 ```json
 {
-	"data": {
-		"article_id": "6a85591eea0eecc59e063895",
-		"title": "Optimizing Casing Thickness for 70MPa Concrete",
-		"session_id": "a4f8b91c",
-		"word_count": 1406,
-		"scenarios_analyzed": 6,
-		"stats": {
-			"totalScenarios": 6,
-			"avgPenetrationDepth": "8.22",
-			"maxPenetrationDepth": "10.27",
-			"minPenetrationDepth": "6.17",
-			"stdDevPenetration": "2.05",
-			"avgVelocity": "537.4",
-			"avgMach": "1.58",
-			"avgEnergyGJ": "1.960",
-			"avgShockPressureGPa": "3.620",
-			"casingFailureRate": "0.0",
-			"erosionRate": "0.0",
-			"dominantRegime": "Rigid Penetration (Crater+Tunnel)",
-			"regimeDistribution": {
-				"Rigid Penetration (Crater+Tunnel)": 6
-			}
-		},
-		"key_findings": [
-			"Mean penetration depth: 8.22 m (σ = 2.05 m)",
-			"Dominant regime: Rigid Penetration (Crater+Tunnel) in 100.0% of scenarios",
-			"Casing integrity maintained in 100% of scenarios",
-			"Maximum sequential breach depth: 10.27 m",
-			"Hydrodynamic erosion onset in 0.0% of scenarios",
-			"Average impact velocity: 537.4 m/s at Mach 1.58"
-		],
-		"content": "# Optimizing Casing Thickness for 70MPa Concrete\n\n**MOP Simulator Autonomous Research Division**\n**Date:** August 19, 2026\n**Simulation Engine:** MOP Impact Physics & Penetration Simulator V3.5.0\n**Total Scenarios:** 6\n\n---\n\n## Abstract\n\nThis study presents a high-fidelity computational analysis of optimizing casing thickness for 70mpa concrete conducted through 6 autonomous simulation cycles using the MOP Impact Physics & Penetration Simulator V3.5.0..."
-	}
+  "data": {
+    "article_id": "6a85591eea0eecc59e063895",
+    "title": "Optimizing Casing Thickness for 70MPa Concrete",
+    "session_id": "a4f8b91c",
+    "word_count": 1406,
+    "scenarios_analyzed": 6,
+    "stats": {
+      "totalScenarios": 6,
+      "avgPenetrationDepth": "8.22",
+      "maxPenetrationDepth": "10.27",
+      "minPenetrationDepth": "6.17",
+      "stdDevPenetration": "2.05",
+      "avgVelocity": "537.4",
+      "avgMach": "1.58",
+      "avgEnergyGJ": "1.960",
+      "avgShockPressureGPa": "3.620",
+      "casingFailureRate": "0.0",
+      "erosionRate": "0.0",
+      "dominantRegime": "Rigid Penetration (Crater+Tunnel)",
+      "regimeDistribution": {
+        "Rigid Penetration (Crater+Tunnel)": 6
+      }
+    },
+    "key_findings": [
+      "Mean penetration depth: 8.22 m (σ = 2.05 m)",
+      "Dominant regime: Rigid Penetration (Crater+Tunnel) in 100.0% of scenarios",
+      "Casing integrity maintained in 100% of scenarios",
+      "Maximum sequential breach depth: 10.27 m",
+      "Hydrodynamic erosion onset in 0.0% of scenarios",
+      "Average impact velocity: 537.4 m/s at Mach 1.58"
+    ],
+    "content": "# Optimizing Casing Thickness for 70MPa Concrete\n\n**MOP Simulator Autonomous Research Division**\n**Date:** August 19, 2026\n**Simulation Engine:** MOP Impact Physics & Penetration Simulator V3.5.0\n**Total Scenarios:** 6\n\n---\n\n## Abstract\n\nThis study presents a high-fidelity computational analysis of optimizing casing thickness for 70mpa concrete conducted through 6 autonomous simulation cycles using the MOP Impact Physics & Penetration Simulator V3.5.0..."
+  }
 }
 ```
 
