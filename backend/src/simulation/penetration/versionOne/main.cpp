@@ -109,91 +109,18 @@ int main(int argc, char* argv[]) {
 	// JSON CONFIG MODE (Automation Pipeline)
 	// ==========================================
 	if (jsonMode) {
-		std::ifstream ifs(jsonFile);
-		if (!ifs.is_open()) {
-			std::cerr << "Failed to open config file: " << jsonFile << std::endl;
+		try {
+			SimulationConfig simConfig =
+				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
+			choice = simConfig.choice;
+			munition = simConfig.munition;
+			object = simConfig.object;
+			scenarios = simConfig.scenarios;
+		} catch (const std::exception& e) {
+			std::cerr << "Failed to parse simulation config: " << e.what() << std::endl;
 			return 1;
 		}
-		json config;
-		ifs >> config;
-
-		int simChoice = config.value("/Simulation/choice"_json_pointer, 3);
-		choice = simChoice;
-
-		if (simChoice == 1) {
-			auto p = config["Projectile"];
-			munition.name = p.value("name", "AI Custom Projectile");
-			munition.length = p.value("length", 6.2);
-			munition.diameter = p.value("diameter", 0.8);
-			munition.curvature_noseReduce = p.value("curvature_noseReduce", 1.2);
-			munition.total_mass = p.value("total_mass", 14000.0);
-			munition.explosive_mass = p.value("explosive_mass", 2500.0);
-			munition.explosive_energy_j_per_kg =
-				p.value("explosive_energy_j_per_kg", 5e6);
-			munition.casing_density = p.value("casing_density", 7850.0);
-			munition.yield_strength = p.value("yield_strength", 1.5e9);
-			munition.area_moment_inertia = p.value("area_moment_inertia", 0.02);
-			munition.elastic_modulus = p.value("elastic_modulus", 200e9);
-			munition.casing_wall_thickness = p.value("casing_wall_thickness", 0.05);
-			munition.hugoniot_c0 = p.value("hugoniot_c0", 4570.0);
-			munition.hugoniot_s = p.value("hugoniot_s", 1.49);
-			munition.explosive_critical_energy =
-				p.value("explosive_critical_energy", 3.0e15);
-			munition.specific_heat = p.value("specific_heat", 460.0);
-			munition.melting_point = p.value("melting_point", 1800.0);
-			munition.heat_of_fusion = p.value("heat_of_fusion", 272000.0);
-
-			auto t = config["Target"]["layers"][0];
-			object.layers.clear();
-			TargetLayer customLayer;
-			customLayer.material_name = "AI Custom Layer";
-			customLayer.thickness = t.value("thickness", 60.0);
-			customLayer.rebar_volume_fraction = t.value("rebar_volume_fraction", 0.02);
-			customLayer.rebar_yield_strength = t.value("rebar_yield_strength", 400e6);
-			customLayer.density = t.value("density", 2400.0);
-			customLayer.compressive_strength = t.value("compressive_strength", 70e6);
-			customLayer.hugoniot_c0 = t.value("hugoniot_c0", 3200.0);
-			customLayer.hugoniot_s = t.value("hugoniot_s", 1.9);
-			object.layers.push_back(customLayer);
-
-			auto s = config["Scenario"];
-			double alt = s.value("altitude_ft", 40000.0);
-			double vel = s.value("velocity", 0.0);
-			double fpa = s.value("flight_path_angle", 90.0);
-			double obliq = s.value("obliquity_angle", 0.0);
-			double aoa = s.value("angle_of_attack", 0.0);
-
-			int numBombs = config.value("/Simulation/numBombs"_json_pointer, 1);
-			for (int i = 0; i < numBombs; ++i) {
-				std::stringstream name_ss;
-				if (numBombs == 1)
-					name_ss << s.value("name", "AI Custom Test");
-				else if (i == 0)
-					name_ss << "Bomb #1 (Shaft Breaker)";
-				else
-					name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-				scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
-			}
-		} else if (simChoice == 3) {
-			if (auto p = ConfigLoader::getProjectileByName(
-				    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
-				munition = *p;
-			} else {
-				munition = Midnight_Hammer_projectile;
-			}
-			object = Midnight_Hammer_Target;
-			int numBombs = config.value("/Simulation/numBombs"_json_pointer, 2);
-			for (int i = 0; i < numBombs; ++i) {
-				std::stringstream name_ss;
-				if (i == 0)
-					name_ss << "Bomb #1 (Shaft Breaker)";
-				else
-					name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-				scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
-			}
-		}
-	}
-	// ==========================================
+	} // ==========================================
 	// INTERACTIVE MODE
 	// ==========================================
 	else {
