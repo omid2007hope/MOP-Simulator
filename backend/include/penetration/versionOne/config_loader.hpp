@@ -11,6 +11,13 @@
 // files
 #include "simulation.hpp"
 
+struct SimulationConfig {
+	int choice;
+	Projectile munition;
+	Target object;
+	std::vector<ImpactScenario> scenarios;
+};
+
 
 // ! Class for loading and parsing simulation targets and projectiles configuration data
 class ConfigLoader {
@@ -28,7 +35,9 @@ public:
 	// Find a projectile by name (returns std::nullopt if not found)
 	static std::optional<Projectile> getProjectileByName(const std::vector<Projectile>& projectiles,
 							     const std::string& name);
+
+	// Parse JSON input specifically for the AI/automation pipeline
+	static SimulationConfig loadSimulationConfig(const std::string& filepath, const std::vector<Projectile>& projectilesDb);
 };
 
 #endif // CONFIG_LOADER_HPP
-

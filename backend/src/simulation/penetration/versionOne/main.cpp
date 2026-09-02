@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 	// ==========================================
 	// JSON CONFIG MODE (Automation Pipeline)
 	// ==========================================
-	if (jsonMode) {
+	if (jsonMode == true) {
 		try {
 			SimulationConfig simConfig =
 				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
