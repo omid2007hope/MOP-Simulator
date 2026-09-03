@@ -282,6 +282,104 @@ initiation energy $P^2 \tau \ge E_c$.
 
 ---
 
+## 📋 Data Dictionary & Simulation Parameters
+
+The platform operates across defined C++ structures containing both user-prompted variables (in interactive mode) and internal physics constants/governing thresholds:
+
+### 1. `struct Projectile` (Munition Specifications)
+- **Name:** `munition.name` — **[User Input]**
+- **Length:** `munition.length` (meters) — **[User Input]**
+- **Diameter:** `munition.diameter` (meters) — **[User Input]**
+- **Nose Curvature Radius:** `munition.curvature_noseReduce` (meters) — **[User Input]**
+- **Total Mass:** `munition.total_mass` (kg) — **[User Input]**
+- **Explosive Mass:** `munition.explosive_mass` (kg) — **[User Input]**
+- **Explosive Energy:** `munition.explosive_energy_j_per_kg` (J/kg) — **[User Input]**
+- **Casing Density:** `munition.casing_density` (kg/m³) — **[User Input]**
+- **Yield Strength:** `munition.yield_strength` (GPa $\to$ Pa) — **[User Input]**
+- **Area Moment of Inertia:** `munition.area_moment_inertia` (m⁴) — **[User Input]**
+- **Elastic Modulus:** `munition.elastic_modulus` (GPa $\to$ Pa) — **[User Input]**
+- **Casing Wall Thickness:** `munition.casing_wall_thickness` (meters) — **[User Input]**
+- **Hugoniot $C_0$:** `munition.hugoniot_c0` (m/s) — **[User Input]**
+- **Hugoniot $S$:** `munition.hugoniot_s` — **[User Input]**
+- **Explosive Critical Energy ($E_c$):** `munition.explosive_critical_energy` (Pa²·s) — **[User Input]**
+- **Specific Heat ($c_p$):** `munition.specific_heat` = `460.0 J/(kg·K)` — **[Code / Internal]**
+- **Melting Point ($T_m$):** `munition.melting_point` = `1800.0 K` — **[Code / Internal]**
+- **Heat of Fusion ($L_f$):** `munition.heat_of_fusion` = `272,000.0 J/kg` — **[Code / Internal]**
+- **Initial Temperature:** $T_{\text{init}} = 300.0\text{ K}$ — **[Code / Internal]**
+- **Thermal Ablation Failure:** Mass $< 10\%$ total mass — **[Code / Internal]**
+- **Erosion Burnout Failure:** Length $< 5\%$ total length — **[Code / Internal]**
+
+### 2. `struct Target` & `struct TargetLayer` (Geological Strata)
+- **Layer Name:** `customLayer.material_name` ("Custom Layer") — **[Code / Internal]**
+- **Layer Thickness:** `customLayer.thickness` (meters) — **[User Input]**
+- **Concrete Density:** `customLayer.density` (kg/m³) — **[User Input]**
+- **Compressive Strength:** `customLayer.compressive_strength` (MPa $\to$ Pa) — **[User Input]**
+- **Rebar Volume Fraction:** `customLayer.rebar_volume_fraction` (0.0–1.0) — **[User Input]**
+- **Rebar Yield Strength:** `customLayer.rebar_yield_strength` (MPa $\to$ Pa) — **[User Input]**
+- **Hugoniot $C_0$:** `customLayer.hugoniot_c0` (m/s) — **[User Input]**
+- **Hugoniot $S$:** `customLayer.hugoniot_s` — **[User Input]**
+- **Layer Count Limit:** Single layer in Mode 1 — **[Code / Internal]**
+- **Initial Pulverized Depth:** `0.0 m` — **[Code / Internal]**
+- **Damaged Strata Degradation:** Strength = `5.0 MPa`, Density = `70%` — **[Code / Internal]**
+
+### 3. `struct ImpactScenario` (Drop & Trajectory Conditions)
+- **Scenario Count:** Number of scenarios (1 to 5) — **[User Input]**
+- **Scenario Name:** Auto-generated label (`"Custom Test #i"`) — **[Code / Internal]**
+- **Drop Altitude:** `scenario.altitude_ft` (feet) — **[User Input]**
+- **Initial Velocity:** `scenario.velocity` (m/s) — **[User Input]**
+- **Obliquity Angle:** `scenario.obliquity_angle` (degrees) — **[User Input]**
+- **Flight Path Angle (FPA):** `scenario.flight_path_angle` (degrees) — **[User Input]**
+- **Angle of Attack (AoA):** `scenario.angle_of_attack` (degrees) — **[User Input]**
+- **Guidance Steering Pull:** `1.5 G` lateral acceleration — **[Code / Internal]**
+
+### 4. `struct PhysicsConstants` (Universal Physical Constants)
+- **Gravity ($g$):** `9.81 m/s²` — **[Code / Internal]**
+- **Pi ($\pi$):** `std::numbers::pi` (~`3.14159...`) — **[Code / Internal]**
+- **Friction Factor:** `0.1` — **[Code / Internal]**
+- **Universal Gas Constant ($R$):** `8.31432 J/(mol·K)` — **[Code / Internal]**
+- **Molar Mass of Air ($M$):** `0.0289644 kg/mol` — **[Code / Internal]**
+- **Adiabatic Index of Air ($\gamma$):** `1.4` — **[Code / Internal]**
+- **Earth Radius ($r_0$):** `6,356,766.0 m` — **[Code / Internal]**
+- **Sea-Level Speed of Sound:** `343.0 m/s` — **[Code / Internal]**
+
+### 5. `struct Aircraft` (Release Platform Specifications)
+- **Aircraft Model:** B-2 Spirit Strategic Bomber — **[Code / Internal]**
+- **Bomber Total Mass:** `152,634.0 kg` — **[Code / Internal]**
+- **Bomber Wing Area:** `478.0 m²` — **[Code / Internal]**
+- **Bomber Lift Curve Slope:** `5.74 /rad` — **[Code / Internal]**
+
+### 6. `struct AtmosphereState` & Aerodynamics (Atmospheric Model)
+- **Base State (Sea Level):** `288.15 K`, `101,325 Pa`, `1.225 kg/m³`, `340.3 m/s` — **[Code / Internal]**
+- **Layer Boundaries:** US Standard Atmosphere 1976 (7 lapse-rate layers) — **[Code / Internal]**
+- **Atmospheric Ceiling:** `84,852.0 m` — **[Code / Internal]**
+- **G7 Drag Function:** 31 Mach reference points ($C_d$ `0.1198`–`0.2465`) — **[Code / Internal]**
+- **Hypersonic Newtonian Transition:** Mach 5.0 to 8.0 cosine blend — **[Code / Internal]**
+
+### 7. Penetration & Shock Physics Models (`ImpactSimulator`)
+- **CEB-FIP Dynamic Increase Factor:** Ref strain rate `30.0e-6 s⁻¹`, ref stress `10.0 MPa` — **[Code / Internal]**
+- **Forrestal Concrete Resistance:** Empirical coefficient formula $S = 82.6 \cdot f_c^{-0.544}$ — **[Code / Internal]**
+- **Crater Entry Form Depth:** Transition boundary at $2.0 \times \text{diameter}$ — **[Code / Internal]**
+- **Critical Ricochet Threshold:** $65^\circ$ ($50^\circ$ below 200 m/s) — **[Code / Internal]**
+- **Shock Transmission Ratio:** `0.25` (25% Hugoniot shock to explosive charge) — **[Code / Internal]**
+- **Explosive Coupling Efficiency:** `1.0` (100% confined coupling) — **[Code / Internal]**
+- **Crater & Shake Scaling:** Wide/narrow radius and camera shake formulas — **[Code / Internal]**
+
+### 8. Numerical Integrator & Solver Settings
+- **Drop Time Step (`dt_drop`):** `0.01 s` (RK4) — **[Code / Internal]**
+- **Ground Penetration Time Step (`dt`):** `1.0e-5 s` (RK4) — **[Code / Internal]**
+- **Maximum Penetration Duration:** `10.0 s` cutoff — **[Code / Internal]**
+- **Drop Telemetry Interval:** Every `0.1 s` (10 steps) — **[Code / Internal]**
+- **Penetration Telemetry Interval:** Every `0.2 ms` (20 steps) — **[Code / Internal]**
+- **Visualizer Animation Target:** `6.0 s` wall-clock baseline — **[Code / Internal]**
+
+### 9. Application CLI & Program Flow Control
+- **Terms of Service Agreement:** `Y` / `N` — **[User Input]**
+- **Simulation Mode Selection:** Mode `1`, `2`, or `3` — **[User Input]**
+- **Salvo Configuration:** 2, 4, or 6 bombs (Mode 3 only) — **[User Input]**
+- **Exit Termination:** Press Enter — **[User Input]**
+
+---
+
 ## 🌐 Interactive 3D WebGL Physics Visualizer
 
 The C++ engine natively exports `3d_visualizer.html`, providing:
