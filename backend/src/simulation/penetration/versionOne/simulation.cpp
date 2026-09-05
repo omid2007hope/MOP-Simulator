@@ -72,7 +72,7 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 	// which is the unmodified fpa_rad. Subtracting trim_rad here would apply
 	// the aircraft's aerodynamic correction to the ballistic projectile — physically impossible.
 	double current_vx = velocity * std::cos(fpa_rad);
-	double current_vy = velocity * std::sin(fpa_rad);
+	double current_vy = -velocity * std::sin(fpa_rad);
 
 	AngleSimulationResult res;
 	res.trim_deg = trim_deg;
@@ -697,8 +697,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		double bending_moment = 0.0;
 		double max_bending_stress = 0.0;
 		if (std::abs(obliquity_radians) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
+			double depth_ratio = std::clamp(current_depth / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
+			double active_obliquity = obliquity_radians * (1.0 - depth_ratio);
 			asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
-					   std::sin(obliquity_radians + angleOfAttack_radians);
+					   std::sin(active_obliquity + angleOfAttack_radians);
 			bending_moment = std::abs(asymmetric_force) * (proj.length / 2.0);
 
 			if (proj.area_moment_inertia > 0) {
@@ -735,8 +737,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 			double lateral_force = 0.0;
 			if (std::abs(theta) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
+				double depth_ratio = std::clamp(z / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
+				double active_theta = theta * (1.0 - depth_ratio);
 				lateral_force = (0.5 * baseDensity * vSq * area) *
-						std::sin(theta + angleOfAttack_radians);
+						std::sin(active_theta + angleOfAttack_radians);
 			}
 			double safeMass = std::max(0.001, m);
 			double gravity_component = cons.gravity * std::cos(theta);
@@ -788,7 +792,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 				double erosion_heat_rate = 0.5 * baseDensity * (v - u) * (v - u) *
 							   area * std::fabs(v - u);
-				d.dT = erosion_heat_rate / (safeMass * proj.specific_heat);
+				double heat_partition_fraction = 0.05; // 5% of energy conducts into the rod
+				d.dT = (erosion_heat_rate * heat_partition_fraction) / (safeMass * proj.specific_heat);
 			}
 
 			if (v > 0.1) {
