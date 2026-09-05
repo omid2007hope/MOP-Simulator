@@ -24,19 +24,19 @@ struct SimulationConfig {
 // ! Class for loading and parsing simulation targets and projectiles configuration data
 class ConfigLoader {
 public:
-	static std::vector<PhysicsConstants> loadPhysicsConstants(const std::string& filepath);
-
 	static std::vector<ImpactScenario> loadImpactScenario(const std::string& filepath);
+
+	static std::vector<PhysicsConstants> loadPhysicsConstants(const std::string& filepath);
 
 	static std::vector<AtmosphereState> loadAtmosphereState(const std::string& filepath);
 
 	static std::vector<Aircraft> loadAircraft(const std::string& filepath);
 
-	// Load targets from a JSON file
-	static std::vector<Target> loadTargets(const std::string& filepath);
-
 	// Load projectiles from a JSON file
 	static std::vector<Projectile> loadProjectiles(const std::string& filepath);
+
+	// Load targets from a JSON file
+	static std::vector<Target> loadTargets(const std::string& filepath);
 
 	// Find a target by name (returns std::nullopt if not found)
 	static std::optional<Target> getTargetByName(const std::vector<Target>& targets,
