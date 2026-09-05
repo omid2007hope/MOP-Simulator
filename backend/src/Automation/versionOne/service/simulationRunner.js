@@ -59,7 +59,7 @@ class SimulationRunner {
             let streamError = null;
 
             // Handle lines asynchronously for backpressure support (Prevents Node.js OOM)
-            (async () => {
+            const processStream = (async () => {
                 try {
                     for await (const line of rl) {
                         if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
@@ -96,8 +96,18 @@ class SimulationRunner {
 
             simProcess.on('close', async (code) => {
                 clearTimeout(timeout);
+                
+                // Wait for DB insertion to finish before resolving
+                try {
+                    await processStream;
+                } catch (e) {
+                    streamError = streamError || e;
+                }
+
                 // Clean up temp file
-                await fs.unlink(tmpConfigPath).catch(() => {});
+                if (fsSync.existsSync(tmpConfigPath)) {
+                    await fs.unlink(tmpConfigPath).catch(() => {});
+                }
                 
                 if (streamError) {
                     return reject(streamError);
