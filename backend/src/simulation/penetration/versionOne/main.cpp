@@ -83,18 +83,14 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	// Load databases
-	auto targetsDb = ConfigLoader::loadTargets(basePath + "/data/targets.json");
-	auto projectilesDb = ConfigLoader::loadProjectiles(basePath + "/data/projectiles.json");
-
 	// Default target
-	Target object = CONCRETE_DEFAULT;
+	Target object;
 	if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
 		object = *t;
 	}
 
 	// Default projectile (GBU-57 MOP)
-	Projectile munition = MOP_DEFAULT;
+	Projectile munition;
 	if (auto p = ConfigLoader::getProjectileByName(
 		    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
 		munition = *p;
@@ -197,14 +193,13 @@ int main(int argc, char* argv[]) {
 			projectileName = "Undefined Projectile";
 		munition.name = projectileName;
 
-		munition.length = getValidInput<double>(
-			"Enter Projectile Length L (meters): ", false);
-		munition.diameter = getValidInput<double>(
-			"Enter Projectile Diameter d (meters): ", false);
+		munition.length =
+			getValidInput<double>("Enter Projectile Length L (meters): ", false);
+		munition.diameter =
+			getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
 		munition.curvature_noseReduce = getValidInput<double>(
 			"Enter Projectile Nose Curvature Radius R (meters): ", true);
-		munition.total_mass =
-			getValidInput<double>("Enter Total Mass m (kg): ", false);
+		munition.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
 
 		while (true) {
 			munition.explosive_mass =
@@ -216,51 +211,48 @@ int main(int argc, char* argv[]) {
 
 		munition.explosive_energy_j_per_kg =
 			getValidInput<double>("Enter Explosive Energy (j/kg): ", true);
-		munition.casing_density = getValidInput<double>(
-			"Enter Casing Density rho_p (kg/m^3): ", false);
-		double yield = getValidInput<double>(
-			"Enter Casing Yield Strength sigma_y (GPa): ", true);
+		munition.casing_density =
+			getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
+		double yield =
+			getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa): ", true);
 		munition.yield_strength = yield * 1e9;
 		munition.area_moment_inertia = getValidInput<double>(
 			"Enter Area Moment of Inertia (m^4) [e.g., 0.02]: ", true);
-		double modulus = getValidInput<double>(
-			"Enter Elastic Modulus E (GPa) [e.g., 200]: ", true);
+		double modulus =
+			getValidInput<double>("Enter Elastic Modulus E (GPa) [e.g., 200]: ", true);
 		if (modulus > 0)
 			munition.elastic_modulus = modulus * 1e9;
 		munition.casing_wall_thickness = getValidInput<double>(
 			"Enter Casing Wall Thickness (meters) [e.g., 0.05]: ", true);
 		munition.hugoniot_c0 = getValidInput<double>(
 			"Enter Projectile Hugoniot C0 (m/s) [e.g., 4570]: ", true);
-		munition.hugoniot_s = getValidInput<double>(
-			"Enter Projectile Hugoniot S [e.g., 1.49]: ", true);
+		munition.hugoniot_s =
+			getValidInput<double>("Enter Projectile Hugoniot S [e.g., 1.49]: ", true);
 		double ec = getValidInput<double>(
-			"Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ",
-			true);
+			"Enter Explosive Critical Energy Ec (1e15 Pa^2*s) [e.g., 3.0]: ", true);
 		if (ec > 0)
 			munition.explosive_critical_energy = ec * 1e15;
 
 		object.layers.clear();
 		TargetLayer customLayer;
 		customLayer.material_name = "Custom Layer";
-		customLayer.thickness = getValidInput<double>(
-			"Enter Target Layer Thickness (meters): ", false);
+		customLayer.thickness =
+			getValidInput<double>("Enter Target Layer Thickness (meters): ", false);
 		customLayer.rebar_volume_fraction = getValidInput<double>(
-			"Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ",
-			true);
+			"Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
 		double rebarYield = getValidInput<double>(
 			"Enter Target Rebar Yield Strength (MPa, e.g., 400): ", true);
 		customLayer.rebar_yield_strength = rebarYield * 1e6;
 		customLayer.density = getValidInput<double>(
 			"Enter Target Concrete Density rho_t (kg/m^3): ", false);
-		double targetStrength = getValidInput<double>(
-			"Enter Target Compressive Strength (MPa): ", false);
+		double targetStrength =
+			getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
 		customLayer.compressive_strength = targetStrength * 1e6;
-		double tc0 = getValidInput<double>(
-			"Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ", true);
+		double tc0 = getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ",
+						   true);
 		if (tc0 > 0)
 			customLayer.hugoniot_c0 = tc0;
-		double ts = getValidInput<double>("Enter Target Hugoniot S [e.g., 1.9]: ",
-						  true);
+		double ts = getValidInput<double>("Enter Target Hugoniot S [e.g., 1.9]: ", true);
 		if (ts > 0)
 			customLayer.hugoniot_s = ts;
 
@@ -268,10 +260,8 @@ int main(int argc, char* argv[]) {
 
 		int numScenarios = 1;
 		while (true) {
-			std::cout
-				<< "Enter number of custom impact velocities to test [1 to 5]: ";
-			if (std::cin >> numScenarios && numScenarios >= 1 &&
-			    numScenarios <= 5) {
+			std::cout << "Enter number of custom impact velocities to test [1 to 5]: ";
+			if (std::cin >> numScenarios && numScenarios >= 1 && numScenarios <= 5) {
 				safeCin();
 				break;
 			}
@@ -288,8 +278,7 @@ int main(int argc, char* argv[]) {
 			std::stringstream prompt_ss;
 			prompt_ss << "  -> Enter Drop Altitude #" << (i + 1)
 				  << " (feet) [e.g., 50000, 20000, 15]: ";
-			double dropAltitude_ft =
-				getValidInput<double>(prompt_ss.str(), true);
+			double dropAltitude_ft = getValidInput<double>(prompt_ss.str(), true);
 
 			std::stringstream vel_ss;
 			vel_ss << "  -> Enter Initial Velocity #" << (i + 1)
@@ -307,8 +296,7 @@ int main(int argc, char* argv[]) {
 			double fpa = getValidInput<double>(fpa_ss.str(), true);
 
 			std::stringstream aoa_ss;
-			aoa_ss << "  -> Enter Angle of Attack #" << (i + 1)
-			       << " (Degrees): ";
+			aoa_ss << "  -> Enter Angle of Attack #" << (i + 1) << " (Degrees): ";
 			double aoa = getValidInput<double>(aoa_ss.str(), true);
 
 			std::stringstream name_ss;
@@ -328,8 +316,7 @@ int main(int argc, char* argv[]) {
 			results.push_back(simulator.simulate(sc));
 		}
 		TelemetryExporter::printReport(results, munition, object);
-		TelemetryExporter::generateHtml3DVisualizer(
-			results, munition, object, basePath);
+		TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
 
 
 		// Only wait for Enter key if running interactively
