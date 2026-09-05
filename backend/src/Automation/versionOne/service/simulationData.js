@@ -1,7 +1,7 @@
 // © 2026 Omid Teimory. All rights reserved.
 
 const BaseService = require('./baseservice/index');
-const aiClient = require('../../AI/versionOne/aiClient');
+const aiClient = require('../../../AI/versionOne/aiClient');
 const RawDatasetModel = require('../model/result/rawDataset');
 
 // Raw C++ input models (not used directly in save but imported for reference/validation)

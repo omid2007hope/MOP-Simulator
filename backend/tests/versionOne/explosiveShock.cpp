@@ -22,10 +22,11 @@ int main() {
 	ImpactSimulator simulator(mop, concrete, cons);
 
 	// Test case 1: explosiveMass = 2400 kg, explosiveEnergy = 5.2e6 J/kg
-	// explosiveShock = 2400 * 5.2e6 * 1.0 (couplingEfficiency) = 1.248e10
+	// couplingEfficiency = 0.25 (empirical acoustic impedance coupling, documented in simulation.cpp)
+	// explosiveShock = 2400 * 5.2e6 * 0.25 = 3.12e9
 	double expMass1 = 2400.0;
 	double expEnergy1 = 5.2e6;
-	double expected1 = expMass1 * expEnergy1 * 1.0;
+	double expected1 = expMass1 * expEnergy1 * 0.25;
 	double result1 = simulator.explosiveShockwave(expMass1, expEnergy1);
 	std::cout << "Test 1 (explosiveShockwave): Expected " << expected1 << ", Got " << result1 << std::endl;
 	assert(approxEqual(result1, expected1));
