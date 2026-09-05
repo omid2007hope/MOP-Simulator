@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 
@@ -46,9 +47,15 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 		char extra;
 
 		if ((iss >> data) && !(iss >> extra)) {
-			if (data > 0 || (allowZero == true && data == 0)) {
+			if constexpr (std::is_arithmetic_v<T>) {
+				// Numeric types: enforce positive-only or allow zero constraint
+				if (data > 0 || (allowZero && data == 0)) {
+					return data;
+				}
+			} else {
+				// Non-numeric types (e.g. std::string): accept any non-empty value
 				return data;
-			};
+			}
 		}
 
 		std::cout << "Invalid input! Please enter a valid value.\n";
