@@ -17,7 +17,6 @@ using json = nlohmann::json;
 
 // files
 #include "penetration/versionOne/config_loader.hpp"
-#include "penetration/versionOne/default.hpp"
 #include "penetration/versionOne/simulation.hpp"
 #include "penetration/versionOne/telemetry_exporter.hpp"
 
@@ -82,6 +81,13 @@ int main(int argc, char* argv[]) {
 			current = current.parent_path();
 		}
 	}
+
+	// Load Databases
+	std::string targetsPath = basePath + "/data/targets.json";
+	std::string projectilesPath = basePath + "/data/projectiles.json";
+	
+	std::vector<Target> targetsDb = ConfigLoader::loadTargets(targetsPath);
+	std::vector<Projectile> projectilesDb = ConfigLoader::loadProjectiles(projectilesPath);
 
 	// Default target
 	Target object;
