@@ -122,10 +122,6 @@ int main(int argc, char* argv[]) {
 				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
 
 			scenarios = simConfig.scenarios;
-			cons = simConfig.cons;
-			int numBombs = simConfig.numBombs > 0 ? simConfig.numBombs : 1;
-			AtmosphereState atmos = simConfig.atmos;
-			Aircraft bomber = simConfig.bomber;
 			munition = simConfig.munition;
 			object = simConfig.object;
 

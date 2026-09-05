@@ -33,10 +33,11 @@ double ImpactSimulator::impactShockwave(double totalMass, double velocityUponImp
 // ! ********************
 double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiveEnergy) {
 
-	// Because the explosion is buried in dense rock (impedance matching),
-	// energy is not lost to the atmosphere (which would normally be 10-50% efficiency).
-	// ! NEEDS TO BE CALCULATED ! IMPORTANT ASF !
-	double couplingEfficiency = 1.0; // "nearly 100%"
+	// Empirical acoustic impedance coupling for a buried detonation.
+	// Even with excellent rock impedance matching, energy is still partitioned
+	// into heat, vaporization, cavity expansion, and fracturing.
+	// A value of 0.25 is a conservative but physically realistic lower bound.
+	double couplingEfficiency = 0.25;
 
 
 	double explosiveShock = explosiveMass * explosiveEnergy * couplingEfficiency;
@@ -66,15 +67,17 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 
 	double trim_rad = trim_deg * cons.PI / 180.0;
 
-	double fpa_rad_corrected = fpa_rad - trim_rad;
-
-	double current_vx = velocity * std::cos(fpa_rad_corrected);
-	double current_vy = velocity * std::sin(fpa_rad_corrected);
+	// The bomber trims AFTER the bomb is released to re-establish lift.
+	// The bomb inherits the bomber's velocity vector at the moment of release,
+	// which is the unmodified fpa_rad. Subtracting trim_rad here would apply
+	// the aircraft's aerodynamic correction to the ballistic projectile — physically impossible.
+	double current_vx = velocity * std::cos(fpa_rad);
+	double current_vy = velocity * std::sin(fpa_rad);
 
 	AngleSimulationResult res;
 	res.trim_deg = trim_deg;
 	res.trim_rad = trim_rad;
-	res.fpa_rad_corrected = fpa_rad_corrected;
+	res.fpa_rad_corrected = fpa_rad;
 	res.current_vx = current_vx;
 	res.current_vy = current_vy;
 	return res;
@@ -715,13 +718,20 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		auto derivative =
 			[&](double v, double z, double theta, double T, double L, double m)
 			-> PenDeriv {
-			(void)T; // Suppress unused parameter warning
 			PenDeriv d;
 			double vSq = v * v;
 			double strain_rate = std::fabs(v) / std::max(0.01, proj.diameter);
 			double dif = EnvironmentPhysics::computeDIF(strain_rate, baseStrength);
 			res.dynamic_increase_factor = dif;
 			double effective_strength = baseStrength * dif;
+
+			// Thermal softening (Johnson-Cook inspired):
+			// As the casing heats toward its melting point, yield strength drops.
+			// Factor goes from 1.0 (cold) to 0.0 (at melting point).
+			double melt = std::max(1.0, proj.melting_point);
+			double T_ratio = std::clamp(T / melt, 0.0, 1.0);
+			double thermal_softening = 1.0 - (T_ratio * T_ratio);
+			double softened_yield = proj.yield_strength * thermal_softening;
 
 			double lateral_force = 0.0;
 			if (std::abs(theta) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
@@ -767,10 +777,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 					v,
 					proj.casing_density,
 					baseDensity,
-					proj.yield_strength,
+					softened_yield,
 					effective_strength);
 				double Le = std::max(0.01, L);
-				d.dv = -(proj.yield_strength / (proj.casing_density * Le)) *
+				d.dv = -(softened_yield / (proj.casing_density * Le)) *
 					       (1.0 + (v - u) / bar_wave_speed) +
 				       gravity_component;
 				d.dz = u * std::cos(theta);
