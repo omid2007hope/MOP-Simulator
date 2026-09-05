@@ -60,7 +60,7 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 
 // ! Main application entry point for launching impact physics simulations
 int main(int argc, char* argv[]) {
-	int choice = 2;
+	int choice = 1;
 	std::string basePath = ".";
 	bool jsonMode = false;
 	std::string jsonFile = "";
@@ -122,11 +122,21 @@ int main(int argc, char* argv[]) {
 			munition = simConfig.munition;
 			object = simConfig.object;
 
+			for (const auto& sc : scenarios) {
+				ImpactSimulator simulator(munition, object, cons);
+				results.push_back(simulator.simulate(sc));
+			}
+			TelemetryExporter::printReport(results, munition, object);
+			TelemetryExporter::generateHtml3DVisualizer(
+				results, munition, object, basePath);
+
 		} catch (const std::exception& e) {
 			std::cerr << "Failed to parse simulation config: " << e.what() << std::endl;
 			return 1;
 		}
-	} // ==========================================
+	}
+
+	// ==========================================
 	// INTERACTIVE MODE
 	// ==========================================
 	else {
@@ -400,34 +410,40 @@ int main(int argc, char* argv[]) {
 				scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
 			}
 		}
-	} // end interactive mode
 
-	// Run simulations
-	PhysicsConstants cons;
-	std::vector<SimulationResult> results;
 
-	if (choice == 1 || choice == 2) {
-		for (const auto& sc : scenarios) {
+		// Run simulations
+		PhysicsConstants cons;
+		std::vector<SimulationResult> results;
+
+		if (choice == 1 || choice == 2) {
+			for (const auto& sc : scenarios) {
+				ImpactSimulator simulator(munition, object, cons);
+				results.push_back(simulator.simulate(sc));
+			}
+			TelemetryExporter::printReport(results, munition, object);
+			TelemetryExporter::generateHtml3DVisualizer(
+				results, munition, object, basePath);
+		}
+
+		else {
 			ImpactSimulator simulator(munition, object, cons);
-			results.push_back(simulator.simulate(sc));
-		}
-		TelemetryExporter::printReport(results, munition, object);
-		TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);
-	} else {
-		ImpactSimulator simulator(munition, object, cons);
-		for (const auto& sc : scenarios) {
-			results.push_back(simulator.simulate(sc));
-		}
-		TelemetryExporter::printReport(results, munition, simulator.getTarget());
-		TelemetryExporter::generateHtml3DVisualizer(
-			results, munition, simulator.getTarget(), basePath);
-	}
+			for (const auto& sc : scenarios) {
+				results.push_back(simulator.simulate(sc));
+			}
 
-	// Only wait for Enter key if running interactively
-	if (!jsonMode) {
-		std::cout << "\nPress Enter to exit...";
-		std::cin.get();
-	}
+			TelemetryExporter::printReport(results, munition, simulator.getTarget());
+			TelemetryExporter::generateHtml3DVisualizer(
+				results, munition, simulator.getTarget(), basePath);
+		}
+
+
+		// Only wait for Enter key if running interactively
+		if (!jsonMode) {
+			std::cout << "\nPress Enter to exit...";
+			std::cin.get();
+		}
+	} // end interactive mode
 
 	return 0;
 }
