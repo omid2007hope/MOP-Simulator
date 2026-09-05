@@ -57,7 +57,7 @@ class Research extends BaseService {
 				const totalFrames = await simulationRunner.runSimulation(config, metadata);
 
 				// 3. Link ALL inserted result frames for this cycle to the session
-				const newlyInsertedResults = await ResultModel.find({ rawDataset_id });
+				const newlyInsertedResults = await ResultModel.find({ rawDataset_id: String(rawDataset_id) });
 				if (newlyInsertedResults && newlyInsertedResults.length > 0) {
 					session.results.push(...newlyInsertedResults.map(r => r._id));
 					session.rawDatasets.push(rawDataset_id); // arch.md Item 4: bidirectional linkage
