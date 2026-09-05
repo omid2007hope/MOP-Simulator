@@ -68,6 +68,7 @@ class SimulationRunner {
                                 // Inject session metadata to prevent cross-contamination
                                 frame.research_title = metadata.research_title || 'Unknown';
                                 frame.session_id = metadata.session_id || 'Unknown';
+                                frame.rawDataset_id = metadata.rawDataset_id ? String(metadata.rawDataset_id) : '';
                                 
                                 chunk.push(frame);
                                 totalFrames++;

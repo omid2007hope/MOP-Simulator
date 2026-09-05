@@ -60,6 +60,7 @@ class Research extends BaseService {
 				const latestResult = await ResultModel.findOne({ session_id: sessionId }).sort({ createdAt: -1 });
 				if (latestResult) {
 					session.results.push(latestResult._id);
+					session.rawDatasets.push(rawDataset_id); // arch.md Item 4: bidirectional linkage
 					await session.save();
 				}
 

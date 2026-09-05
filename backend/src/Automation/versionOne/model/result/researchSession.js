@@ -9,7 +9,8 @@ const researchSessionSchema = new mongoose.Schema(
 		description: { type: String, default: '' },
 		cycle_count: { type: Number, required: true },
 		status: { type: String, enum: ['in_progress', 'completed', 'failed'], default: 'in_progress' },
-		results: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SimulationResultSchema' }]
+		results: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SimulationResultSchema' }],
+		rawDatasets: [{ type: mongoose.Schema.Types.ObjectId, ref: 'RawDataset' }], // Links each cycle's raw config to this session
 	},
 	{ timestamps: true }
 );

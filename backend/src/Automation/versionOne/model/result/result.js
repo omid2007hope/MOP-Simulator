@@ -12,6 +12,7 @@ const simulationResultSchema = new mongoose.Schema(
 		// Research Metadata
 		research_title: { type: String, default: 'Standalone Simulation' },
 		session_id: { type: String, default: '' },
+		rawDataset_id: { type: String, default: '' }, // Links this result to its exact AI-generated driving parameters
 
 		// Scenario Identification & Outcomes
 		name: { type: String, required: true, trim: true },
