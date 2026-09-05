@@ -9,7 +9,7 @@ const impactScenarioSchema = new mongoose.Schema(
 		obliquity_angle: { type: Number, default: 0.0 },
 		angle_of_attack: { type: Number, default: 0.0 },
 	},
-	{ timestamps: true }
+	{ timestamps: true },
 );
 
 module.exports = mongoose.model('ImpactScenario', impactScenarioSchema);
