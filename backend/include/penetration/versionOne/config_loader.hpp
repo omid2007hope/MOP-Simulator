@@ -13,11 +13,13 @@
 
 struct SimulationConfig {
 	int numBombs = 1;
-	Projectile munition;
-	Target object;
+
 	std::vector<ImpactScenario> scenarios;
 	PhysicsConstants cons;
+	AtmosphereState atmos;
 	Aircraft bomber;
+	Projectile munition;
+	Target object;
 };
 
 
@@ -37,6 +39,10 @@ public:
 
 	// Load targets from a JSON file
 	static std::vector<Target> loadTargets(const std::string& filepath);
+
+	// ************
+	// By name
+	// ************
 
 	// Find a target by name (returns std::nullopt if not found)
 	static std::optional<Target> getTargetByName(const std::vector<Target>& targets,
