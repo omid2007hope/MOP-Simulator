@@ -2,8 +2,8 @@
 
 const BaseService = require('./baseservice/index');
 const aiClient = require('../../AI/versionOne/aiClient');
-const ResultModel = require('../model/result');
-const ArticleModel = require('../model/article');
+const ResultModel = require('../model/result/result');
+const ArticleModel = require('../model/result/article');
 
 class ArticleWriter extends BaseService {
 	constructor() {
@@ -20,7 +20,7 @@ class ArticleWriter extends BaseService {
 
 		console.log(`[ArticleWriter] Fetching research session: "${session_id}"`);
 		
-		const ResearchSessionModel = require('../model/researchSession');
+		const ResearchSessionModel = require('../model/result/researchSession');
 		const session = await ResearchSessionModel.findOne({ session_id }).populate({
 			path: 'results',
 			options: { limit, sort: { _id: -1 } }

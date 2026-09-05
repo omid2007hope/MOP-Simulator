@@ -85,7 +85,7 @@ curl -X POST http://localhost:3000/research \
 const { spawn } = require('child_process');
 const readline = require('readline');
 const fs = require('fs/promises');
-const ResultModel = require('../model/result');
+const ResultModel = require('../model/result/result');
 
 async function runSimulation(config, metadata) {
     const tmpConfigPath = `/tmp/mop_config_${Date.now()}.json`;

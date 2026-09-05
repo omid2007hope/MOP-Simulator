@@ -4,7 +4,7 @@ const readline = require('readline');
 const fs = require('fs/promises');
 const os = require('os');
 const crypto = require('crypto');
-const ResultModel = require('../model/result');
+const ResultModel = require('../model/result/result');
 
 class SimulationRunner {
     /**

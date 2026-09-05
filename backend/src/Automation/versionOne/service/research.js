@@ -1,8 +1,8 @@
 const BaseService = require('./baseservice/index');
 const aiClient = require('../../AI/versionOne/aiClient');
 const simulationRunner = require('./simulationRunner');
-const ResultModel = require('../model/result');
-const ResearchSessionModel = require('../model/researchSession');
+const ResultModel = require('../model/result/result');
+const ResearchSessionModel = require('../model/result/researchSession');
 const crypto = require('crypto');
 
 class Research extends BaseService {
