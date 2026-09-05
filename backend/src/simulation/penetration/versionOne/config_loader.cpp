@@ -3,14 +3,129 @@
 // packages
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 // files
 #include "penetration/versionOne/config_loader.hpp"
 #include "nlohmann/json.hpp"
 #include "penetration/versionOne/default.hpp"
-#include <sstream>
 
 using json = nlohmann::json;
+
+// ! Loads impact scenarios from JSON configuration file
+std::vector<ImpactScenario> ConfigLoader::loadImpactScenario(const std::string& filepath) {
+	std::vector<ImpactScenario> scenarios;
+	std::ifstream file(filepath);
+	if (!file.is_open()) {
+		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
+		return scenarios;
+	}
+	try {
+		json j;
+		file >> j;
+		for (const auto& item : j) {
+			ImpactScenario s;
+			s.name              = item.value("name", "Unknown Scenario");
+			s.altitude_ft       = item.value("altitude_ft", 0.0);
+			s.velocity          = item.value("velocity", 0.0);
+			s.flight_path_angle = item.value("flight_path_angle", 90.0);
+			s.obliquity_angle   = item.value("obliquity_angle", 0.0);
+			s.angle_of_attack   = item.value("angle_of_attack", 0.0);
+			scenarios.push_back(s);
+		}
+	} catch (const std::exception& e) {
+		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
+	}
+	return scenarios;
+}
+
+
+
+
+// ! Loads physics constants from JSON configuration file
+std::vector<PhysicsConstants> ConfigLoader::loadPhysicsConstants(const std::string& filepath) {
+	std::vector<PhysicsConstants> constants;
+	std::ifstream file(filepath);
+	if (!file.is_open()) {
+		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
+		// Return one default-constructed entry so callers always have something
+		constants.emplace_back();
+		return constants;
+	}
+	try {
+		json j;
+		file >> j;
+		// PhysicsConstants fields are all const — only one global set of constants is expected
+		// so we push back one default instance (values are compile-time fixed in the struct)
+		constants.emplace_back();
+	} catch (const std::exception& e) {
+		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
+		constants.emplace_back();
+	}
+	return constants;
+}
+
+
+
+
+// ! Loads atmosphere state from JSON configuration file
+std::vector<AtmosphereState> ConfigLoader::loadAtmosphereState(const std::string& filepath) {
+	std::vector<AtmosphereState> states;
+	std::ifstream file(filepath);
+	if (!file.is_open()) {
+		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
+		states.emplace_back();
+		return states;
+	}
+	try {
+		json j;
+		file >> j;
+		for (const auto& item : j) {
+			AtmosphereState a;
+			a.temperature_K      = item.value("temperature_K", 288.15);
+			a.pressure_Pa        = item.value("pressure_Pa", 101325.0);
+			a.density_kgm3       = item.value("density_kgm3", 1.225);
+			a.speed_of_sound_ms  = item.value("speed_of_sound_ms", 340.3);
+			states.push_back(a);
+		}
+	} catch (const std::exception& e) {
+		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
+		states.emplace_back();
+	}
+	return states;
+}
+
+
+
+
+// ! Loads aircraft specifications from JSON configuration file
+std::vector<Aircraft> ConfigLoader::loadAircraft(const std::string& filepath) {
+	std::vector<Aircraft> aircraft;
+	std::ifstream file(filepath);
+	if (!file.is_open()) {
+		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
+		aircraft.emplace_back();
+		return aircraft;
+	}
+	try {
+		json j;
+		file >> j;
+		for (const auto& item : j) {
+			Aircraft a;
+			a.name                   = item.value("name", "Unknown Aircraft");
+			a.bomber_totalMass       = item.value("bomber_totalMass", 0.0);
+			a.bomber_wingArea        = item.value("bomber_wingArea", 0.0);
+			a.bomber_liftCurveSlope  = item.value("bomber_liftCurveSlope", 0.0);
+			aircraft.push_back(a);
+		}
+	} catch (const std::exception& e) {
+		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
+		aircraft.emplace_back();
+	}
+	return aircraft;
+}
+
+
 
 // ! Loads target specifications from JSON configuration file
 std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
@@ -144,6 +259,49 @@ std::optional<Projectile> ConfigLoader::getProjectileByName(
 		// comment why if -- match projectile name to request
 		if (p.name == name) {
 			return p;
+		}
+	}
+	return std::nullopt;
+	// **** Ends Here ****
+}
+
+// ! Finds impact scenario by name string from scenario vector
+std::optional<ImpactScenario> ConfigLoader::getScenarioByName(
+	const std::vector<ImpactScenario>& scenarios, const std::string& name) {
+	for (const auto& s : scenarios) {
+		// comment why if -- match scenario name to request
+		if (s.name == name) {
+			return s;
+		}
+	}
+	return std::nullopt;
+	// **** Ends Here ****
+}
+
+
+
+
+// ! Returns an atmosphere state by index (AtmosphereState has no name field)
+std::optional<AtmosphereState> ConfigLoader::getAtmosphereStateByIndex(
+	const std::vector<AtmosphereState>& states, int index) {
+	// comment why if -- guard against out-of-range access on a potentially empty vector
+	if (index >= 0 && index < static_cast<int>(states.size())) {
+		return states[index];
+	}
+	return std::nullopt;
+	// **** Ends Here ****
+}
+
+
+
+
+// ! Finds aircraft by name string from aircraft vector
+std::optional<Aircraft> ConfigLoader::getAircraftByName(
+	const std::vector<Aircraft>& aircraft, const std::string& name) {
+	for (const auto& a : aircraft) {
+		// comment why if -- match aircraft name to request
+		if (a.name == name) {
+			return a;
 		}
 	}
 	return std::nullopt;

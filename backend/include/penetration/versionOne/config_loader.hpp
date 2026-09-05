@@ -13,6 +13,7 @@
 
 struct SimulationConfig {
 	int numBombs = 1;
+	int choice = 3;
 
 	std::vector<ImpactScenario> scenarios;
 	PhysicsConstants cons;
@@ -55,6 +56,14 @@ public:
 	// Find an impact scenario by name (returns std::nullopt if not found)
 	static std::optional<ImpactScenario> getScenarioByName(
 		const std::vector<ImpactScenario>& scenarios, const std::string& name);
+
+	// Find an atmosphere state by name index (returns std::nullopt if out of range)
+	static std::optional<AtmosphereState> getAtmosphereStateByIndex(
+		const std::vector<AtmosphereState>& states, int index);
+
+	// Find an aircraft by name (returns std::nullopt if not found)
+	static std::optional<Aircraft> getAircraftByName(
+		const std::vector<Aircraft>& aircraft, const std::string& name);
 
 	// Parse JSON input specifically for the AI/automation pipeline
 	static SimulationConfig loadSimulationConfig(const std::string& filepath,

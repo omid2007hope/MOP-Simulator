@@ -50,6 +50,7 @@ struct AtmosphereState {
 
 
 struct Aircraft {
+	std::string name;
 	double bomber_totalMass = 0.0;
 	double bomber_wingArea = 0.0;
 	double bomber_liftCurveSlope = 0.0;
