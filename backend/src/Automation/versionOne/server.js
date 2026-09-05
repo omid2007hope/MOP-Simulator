@@ -28,11 +28,15 @@ app.use(express.json());
 const healthRouter = require('./router/health');
 const researchRouter = require('./router/research');
 const articleRouter = require('./router/article');
+const simulationDataRouter = require('./router/simulationData');
+const pipelineRouter = require('./router/pipeline');
 const { coreHealth } = require('../../AI/versionOne/core');
 
 app.use(healthRouter);
 app.use(researchRouter);
 app.use(articleRouter);
+app.use(simulationDataRouter);
+app.use(pipelineRouter);
 app.get('/api/health', coreHealth);
 
 connectMongoDB()
