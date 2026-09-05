@@ -112,10 +112,16 @@ int main(int argc, char* argv[]) {
 		try {
 			SimulationConfig simConfig =
 				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
-			choice = simConfig.choice;
+
+			numBombs = simConfig.numBombs || 1;
+
+			scenarios = simConfig.scenarios;
+			cons = simConfig.cons;
+			atmos = simConfig.atmos;
+			bomber = simConfig.bomber;
 			munition = simConfig.munition;
 			object = simConfig.object;
-			scenarios = simConfig.scenarios;
+
 		} catch (const std::exception& e) {
 			std::cerr << "Failed to parse simulation config: " << e.what() << std::endl;
 			return 1;
