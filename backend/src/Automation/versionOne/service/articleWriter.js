@@ -40,8 +40,13 @@ class ArticleWriter extends BaseService {
 
 		const stats = this._computeStats(results);
 
+		// Step 1: AI analyzes raw stats and extracts physics insights (researchAnalyst prompt)
+		console.log(`[ArticleWriter] Running research analysis...`);
+		const analysis = await aiClient.analyzeResults(session.title, session.description, stats, results.slice(0, 5));
+
+		// Step 2: AI synthesizes the analysis into a full scientific article (articleWriter prompt)
 		console.log(`[ArticleWriter] Generating research article...`);
-		const article = await aiClient.generateArticle(session.title, session.description, stats, results.slice(0, 5));
+		const article = await aiClient.generateArticle(session.title, session.description, stats, analysis, results.slice(0, 5));
 
 		const wordCount = article.content.split(/\s+/).length;
 

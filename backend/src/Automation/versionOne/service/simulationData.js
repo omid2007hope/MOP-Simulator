@@ -1,22 +1,22 @@
+// © 2026 Omid Teimory. All rights reserved.
+
 const BaseService = require('./baseservice/index');
+const aiClient = require('../../AI/versionOne/aiClient');
+const RawDatasetModel = require('../model/result/rawDataset');
 
-const { generateScenario } = require('../../../AI/versionOne/aiClient');
-
-// 1. Import all the raw models
+// Raw C++ input models (not used directly in save but imported for reference/validation)
 const Aircraft = require('../model/raw/Aircraft');
 const AtmosphereState = require('../model/raw/AtmosphereState');
 const PhysicsConstants = require('../model/raw/PhysicsConstants');
 const Projectile = require('../model/raw/Projectile');
 const Scenarios = require('../model/raw/Scenarios');
-const { Target } = require('../model/raw/Target'); // Destructure because Target.js exports an object
+const { Target } = require('../model/raw/Target');
 
 class SimulationData extends BaseService {
 	constructor() {
-		// 2. Pass your primary model to super() if this service manages one specific collection
-		// (For example, if you create a RawDataset model to hold all these together, you'd pass super(RawDatasetModel))
-		super();
+		super(RawDatasetModel);
 
-		// 3. Attach them to the instance so you can access them anywhere in this service via this.rawModels
+		// Raw model references accessible within this service
 		this.rawModels = {
 			Aircraft,
 			AtmosphereState,
@@ -27,8 +27,36 @@ class SimulationData extends BaseService {
 		};
 	}
 
-	async receiveRawData(context) {
-		const ai = await generateScenario(context);
+	/**
+	 * Generates a simulation config via the AI and persists it to the database.
+	 * Satisfies arch.md: "Raw Data Storage — AI-generated raw datasets are saved into the database."
+	 * @param {Object} researchData - { title, description, count }
+	 * @param {Number} currentCycle - Current cycle index (1-indexed)
+	 * @param {Number} totalCycles - Total number of cycles
+	 * @param {String} session_id - Parent session ID for data linkage
+	 * @returns {{ config: Object, rawDataset_id: ObjectId }} AI config payload and its DB record ID
+	 */
+	async generateAndSave(researchData, currentCycle, totalCycles, session_id) {
+		// 1. Ask the AI to generate the full simulation config
+		const config = await aiClient.generateScenario(researchData, currentCycle, totalCycles);
+
+		// 2. Persist the raw config to DB before it reaches the C++ engine
+		const saved = await this.simplePost({
+			session_id,
+			cycle: currentCycle,
+			payload: {
+				PhysicsConstants: config.PhysicsConstants || {},
+				AtmosphereState: config.AtmosphereState || {},
+				Aircraft: config.Aircraft || {},
+				Projectile: config.Projectile || {},
+				Target: config.Target || {},
+				Scenarios: config.Scenarios || [],
+			},
+		});
+
+		console.log(`[SimulationData] Raw dataset saved for cycle ${currentCycle} (ID: ${saved._id})`);
+
+		return { config, rawDataset_id: saved._id };
 	}
 }
 

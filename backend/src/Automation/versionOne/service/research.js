@@ -1,5 +1,7 @@
+// © 2026 Omid Teimory. All rights reserved.
+
 const BaseService = require('./baseservice/index');
-const aiClient = require('../../AI/versionOne/aiClient');
+const simulationData = require('./simulationData');
 const simulationRunner = require('./simulationRunner');
 const ResultModel = require('../model/result/result');
 const ResearchSessionModel = require('../model/result/researchSession');
@@ -35,21 +37,26 @@ class Research extends BaseService {
 				`\n--- [Research Loop] Starting Cycle ${i + 1} of ${cycleCount} ---`,
 			);
 			try {
-				// 1. Ask AI to generate hypothesis/scenario parameters
-				const config = await aiClient.generateScenario(researchData, i + 1, cycleCount);
+				// 1. Generate AI config and persist the raw dataset to DB (arch.md Item 3)
+				const { config, rawDataset_id } = await simulationData.generateAndSave(
+					researchData,
+					i + 1,
+					cycleCount,
+					sessionId,
+				);
 
-				// 2. Feed parameters into the C++ Engine and stream the telemetry out
+				// 2. Feed config into the C++ Engine, streaming telemetry into MongoDB
 				console.log(`[Research Loop] Spawning C++ Physics Simulator...`);
-				
+
 				const metadata = {
 					research_title: researchData.title,
-					session_id: sessionId
+					session_id: sessionId,
+					rawDataset_id, // arch.md Item 4: link results back to their driving parameters
 				};
 
-				// Runner now handles DB insertion internally to prevent OOM
 				const totalFrames = await simulationRunner.runSimulation(config, metadata);
 
-				// Retrieve the most recently inserted ResultModel for this session to link it
+				// 3. Link the most recently inserted result frame to the session
 				const latestResult = await ResultModel.findOne({ session_id: sessionId }).sort({ createdAt: -1 });
 				if (latestResult) {
 					session.results.push(latestResult._id);
@@ -59,6 +66,7 @@ class Research extends BaseService {
 				allCycleStats.push({
 					cycle: i + 1,
 					frames_saved: totalFrames,
+					rawDataset_id,
 					status: 'success',
 				});
 			} catch (error) {
