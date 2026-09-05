@@ -137,12 +137,28 @@ sequenceDiagram
 
 ---
 
-### Step 1: Run Autonomous Simulation Campaign (`POST /research`)
+## 🛠️ Recent Updates & Fixes (V3.5.1)
 
-Trigger an autonomous simulation campaign by supplying a research title and the number of desired
-execution cycles.
+Recent stabilization efforts have hardened both the C++ Physics Kernel and the Node.js Automation layer:
 
-**Endpoint:** `POST http://localhost:3000/research`  
+**Physics Engine Accuracy Enhancements:**
+* **Reverse Gravity Patch:** Corrected an inverted Y-velocity mapping in the integration loop ensuring gravity correctly accelerates the mass downward during freefall.
+* **Thermal Runaway Mitigation:** Applied a 5% heat-partitioning constraint during hypervelocity Tate-Alekseevskii hydrodynamic erosion to prevent premature melting at Mach 3+.
+* **Infinite J-Hooking Prevention:** Clamped lateral bending moments (Angle of Attack deviations) based on current penetration depth to prevent geometrically impossible infinite bending inside geological strata.
+
+**Automation Pipeline & Concurrency Fixes:**
+* **1-to-1-to-Many Architecture (`POST /pipeline`):** The orchestration logic was refactored so that a single `POST /pipeline` request spawns a unified `ResearchSession`. The loop correctly generates 3 AI datasets, yielding 15 C++ physics results, which are all aggregated and synthesized into **1 Master Article**.
+* **Mongoose Strict Typing Bug:** Fixed a bug where `findOne` dropped 12 of the 15 results, and an `ObjectId` strict-typing mismatch dropped the rest. The pipeline now successfully collects `100%` of telemetry frames.
+* **Async MongoDB Race Condition:** Re-architected the `readline` C++ telemetry stream in `simulationRunner.js` to enforce backpressure. The Node.js event loop now rigidly awaits all `insertMany` bulk writes before tearing down the `mop_sim.exe` process, preventing silent data drops.
+* **Rate Limiting Awareness:** Added safeguards and documentation for Gemini API free-tier quotas (which limit concurrent cycles if `count > 3`).
+
+---
+
+### Step 1: Run Unified Autonomous Campaign (`POST /pipeline`)
+
+Trigger an end-to-end autonomous simulation campaign and AI synthesis by supplying a research title and the number of desired execution cycles.
+
+**Endpoint:** `POST http://localhost:3000/pipeline`  
 **Headers:** `Content-Type: application/json`  
 **Request Payload:**
 
