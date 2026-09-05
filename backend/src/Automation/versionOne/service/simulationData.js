@@ -1,5 +1,7 @@
 const BaseService = require('./baseservice/index');
 
+const { generateScenario } = require('../../../AI/versionOne/aiClient');
+
 // 1. Import all the raw models
 const Aircraft = require('../model/raw/Aircraft');
 const AtmosphereState = require('../model/raw/AtmosphereState');
@@ -23,6 +25,10 @@ class SimulationData extends BaseService {
 			Scenarios,
 			Target,
 		};
+	}
+
+	async receiveRawData(context) {
+		const ai = await generateScenario(context);
 	}
 }
 
