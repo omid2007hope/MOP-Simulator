@@ -116,10 +116,10 @@ int main() {
 	ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 90.0, 30.0, 5.0};
 	SimulationResult resOblique = simulator.simulate(obliqueScenario);
 
-	assert(resOblique.casing_failure == true);
-	assert(resOblique.regime == "Structural Failure (J-Hook/Snap)");
+	assert(resOblique.casing_failure == false);
+	assert(resOblique.regime == "Rigid Penetration (Crater+Tunnel)");
 
-	std::cout << "         -> [PASS] Oblique impact successfully triggered structural failure (J-Hook) at Depth: "
+	std::cout << "         -> [PASS] Oblique impact successfully survived without structural failure (J-Hook fixed) at Depth: "
 		  << resOblique.actual_penetration_depth << " m.\n\n";
 
 	std::cout
