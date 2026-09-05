@@ -21,7 +21,7 @@ class SimulationRunner {
         await fs.writeFile(tmpConfigPath, JSON.stringify(config));
 
         return new Promise((resolve, reject) => {
-            const simPath = path.resolve(__dirname, '../../../bin/mop_sim.exe');
+            const simPath = path.resolve(__dirname, '../../../../bin/mop_sim.exe');
             const projectRoot = path.resolve(__dirname, '../../..');
 
             console.log(`[SimulationRunner] Spawning C++ engine: ${simPath} --json-input`);
