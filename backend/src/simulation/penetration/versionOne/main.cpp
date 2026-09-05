@@ -38,7 +38,7 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 		std::cout << prompt;
 
 		if (!std::getline(std::cin, input)) {
-			safeCin();
+			std::cin.clear();
 			std::cerr << "\n[!] Input stream closed. Exiting.\n";
 			std::exit(1);
 		}
@@ -48,12 +48,10 @@ T getValidInput(const std::string& prompt, bool allowZero = false) {
 
 		if ((iss >> data) && !(iss >> extra)) {
 			if (data > 0 || (allowZero == true && data == 0)) {
-				safeCin();
 				return data;
 			};
 		}
 
-		safeCin();
 		std::cout << "Invalid input! Please enter a valid value.\n";
 	}
 }
@@ -104,6 +102,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::vector<ImpactScenario> scenarios;
+	PhysicsConstants cons;
+	std::vector<SimulationResult> results;
 
 	// ==========================================
 	// JSON CONFIG MODE (Automation Pipeline)
@@ -113,12 +113,11 @@ int main(int argc, char* argv[]) {
 			SimulationConfig simConfig =
 				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
 
-			numBombs = simConfig.numBombs || 1;
-
 			scenarios = simConfig.scenarios;
 			cons = simConfig.cons;
-			atmos = simConfig.atmos;
-			bomber = simConfig.bomber;
+			int numBombs = simConfig.numBombs > 0 ? simConfig.numBombs : 1;
+			AtmosphereState atmos = simConfig.atmos;
+			Aircraft bomber = simConfig.bomber;
 			munition = simConfig.munition;
 			object = simConfig.object;
 
@@ -413,9 +412,6 @@ int main(int argc, char* argv[]) {
 
 
 		// Run simulations
-		PhysicsConstants cons;
-		std::vector<SimulationResult> results;
-
 		if (choice == 1 || choice == 2) {
 			for (const auto& sc : scenarios) {
 				ImpactSimulator simulator(munition, object, cons);
