@@ -11,7 +11,7 @@ class SimulationRunner {
      * Executes the C++ simulator with the given AI-generated configuration.
      * Integrates hang protection, OOM streaming to MongoDB, and file-based JSON config.
      * @param {Object} config - The JSON configuration from the AI Client.
-     * @param {Object} metadata - { research_title, session_id }
+     * @param {Object} metadata - { research_title, session_id, rawDataset_id }
      * @returns {Promise<number>} - Resolves with the total number of frames saved.
      */
     async runSimulation(config, metadata) {
