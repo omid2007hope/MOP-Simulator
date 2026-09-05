@@ -105,8 +105,10 @@ class SimulationRunner {
                 }
 
                 // Clean up temp file
-                if (fsSync.existsSync(tmpConfigPath)) {
-                    await fs.unlink(tmpConfigPath).catch(() => {});
+                try {
+                    await fs.unlink(tmpConfigPath);
+                } catch (err) {
+                    // Ignore error if file doesn't exist
                 }
                 
                 if (streamError) {
