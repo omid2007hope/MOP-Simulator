@@ -306,7 +306,6 @@ void printReport(const std::vector<SimulationResult>& results,
 		          << ", \"proj_elastic_modulus\": " << proj.elastic_modulus
 		          << ", \"proj_hugoniot_c0\": " << proj.hugoniot_c0
 		          << ", \"proj_hugoniot_s\": " << proj.hugoniot_s
-		          << ", \"proj_explosive_critical_energy\": " << proj.explosive_critical_energy
 		          << ", \"proj_explosive_energy_j_per_kg\": " << proj.explosive_energy_j_per_kg
 		          << ", \"proj_specific_heat\": " << proj.specific_heat
 		          << ", \"proj_melting_point\": " << proj.melting_point
@@ -512,7 +511,6 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		     << ", proj_elastic_modulus: " << proj.elastic_modulus
 		     << ", proj_hugoniot_c0: " << proj.hugoniot_c0
 		     << ", proj_hugoniot_s: " << proj.hugoniot_s
-		     << ", proj_explosive_critical_energy: " << proj.explosive_critical_energy
 		     << ", proj_explosive_energy_j_per_kg: " << proj.explosive_energy_j_per_kg
 		     << ", proj_specific_heat: " << proj.specific_heat
 		     << ", proj_melting_point: " << proj.melting_point
