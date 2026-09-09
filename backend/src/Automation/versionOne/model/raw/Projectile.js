@@ -15,11 +15,10 @@ const projectileSchema = new mongoose.Schema(
 		casing_wall_thickness: { type: Number, default: 0.0 },
 		hugoniot_c0: { type: Number, default: 0.0 },
 		hugoniot_s: { type: Number, default: 0.0 },
-		explosive_critical_energy: { type: Number, default: 0.0 },
 		explosive_energy_j_per_kg: { type: Number, default: 0.0 },
-		specific_heat: { type: Number, default: 460.0 },
-		melting_point: { type: Number, default: 1800.0 },
-		heat_of_fusion: { type: Number, default: 272000.0 },
+		specific_heat: { type: Number, default: 0.0 },
+		melting_point: { type: Number, default: 0.0 },
+		heat_of_fusion: { type: Number, default: 0.0 },
 	},
 	{ timestamps: true }
 );

@@ -36,7 +36,6 @@ const simulationResultSchema = new mongoose.Schema(
 		proj_elastic_modulus: { type: Number, default: 0 },
 		proj_hugoniot_c0: { type: Number, default: 0 },
 		proj_hugoniot_s: { type: Number, default: 0 },
-		proj_explosive_critical_energy: { type: Number, default: 0 },
 		proj_explosive_energy_j_per_kg: { type: Number, default: 0 },
 		proj_specific_heat: { type: Number, default: 0 },
 		proj_melting_point: { type: Number, default: 0 },
@@ -116,4 +115,4 @@ const simulationResultSchema = new mongoose.Schema(
 	},
 );
 
-module.exports = mongoose.model('SimulationResultSchema', simulationResultSchema);
+module.exports = mongoose.model('SimulationResult', simulationResultSchema);

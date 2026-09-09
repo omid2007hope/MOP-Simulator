@@ -4,27 +4,10 @@ const BaseService = require('./baseservice/index');
 const aiClient = require('../../../AI/versionOne/aiClient');
 const RawDatasetModel = require('../model/result/rawDataset');
 
-// Raw C++ input models (not used directly in save but imported for reference/validation)
-const Aircraft = require('../model/raw/Aircraft');
-const AtmosphereState = require('../model/raw/AtmosphereState');
-const PhysicsConstants = require('../model/raw/PhysicsConstants');
-const Projectile = require('../model/raw/Projectile');
-const Scenarios = require('../model/raw/Scenarios');
-const { Target } = require('../model/raw/Target');
 
 class SimulationData extends BaseService {
 	constructor() {
 		super(RawDatasetModel);
-
-		// Raw model references accessible within this service
-		this.rawModels = {
-			Aircraft,
-			AtmosphereState,
-			PhysicsConstants,
-			Projectile,
-			Scenarios,
-			Target,
-		};
 	}
 
 	/**

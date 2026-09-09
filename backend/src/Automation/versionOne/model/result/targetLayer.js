@@ -14,6 +14,9 @@ const targetLayerSchema = new mongoose.Schema(
 		pulverized_depth: { type: Number, default: 0 },
 		hugoniot_c0: { type: Number, default: 0 },
 		hugoniot_s: { type: Number, default: 0 },
+		specific_heat: { type: Number, default: 0 },
+		melting_point: { type: Number, default: 0 },
+		heat_of_fusion: { type: Number, default: 0 },
 	},
 	{ _id: false },
 );

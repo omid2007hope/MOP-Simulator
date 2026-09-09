@@ -11,6 +11,9 @@ const targetLayerSchema = new mongoose.Schema(
 		pulverized_depth: { type: Number, default: 0.0 },
 		hugoniot_c0: { type: Number, default: 0.0 },
 		hugoniot_s: { type: Number, default: 0.0 },
+		specific_heat: { type: Number, default: 0.0 },
+		melting_point: { type: Number, default: 0.0 },
+		heat_of_fusion: { type: Number, default: 0.0 },
 	},
 	{ _id: false } // Typically subdocuments might not need an ID unless specified, but leaving default is fine, let's keep it simple without id false for now. Wait, I will just let mongoose default to true.
 );
