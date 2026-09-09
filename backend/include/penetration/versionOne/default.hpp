@@ -37,6 +37,7 @@ inline const AtmosphereState Midnight_Hammer_Atmosphere = {
 
 
 inline const Aircraft B2_Sprit_Strategic_Bomber = {
+	.name = "B-2 Spirit Strategic Bomber",
 	.bomber_totalMass = 152634.0,
 	.bomber_wingArea = 478.0,
 	.bomber_liftCurveSlope = 5.74,
