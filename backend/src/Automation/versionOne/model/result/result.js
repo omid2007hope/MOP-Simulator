@@ -3,9 +3,9 @@
 
 const mongoose = require('mongoose');
 
-const targetLayerSchema = require('./targetLayer').schema;
-const dropFrameSchema = require('./dropFrame').schema;
-const penetrationFrameSchema = require('./penetrationFrame').schema;
+const targetLayerSchema = require('./targetLayer');
+const dropFrameSchema = require('./dropFrame');
+const penetrationFrameSchema = require('./penetrationFrame');
 
 const simulationResultSchema = new mongoose.Schema(
 	{

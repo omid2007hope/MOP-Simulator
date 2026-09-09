@@ -20,4 +20,4 @@ const dropFrameSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
-module.exports = mongoose.model('DropFrameSchema', dropFrameSchema);
+module.exports = dropFrameSchema;

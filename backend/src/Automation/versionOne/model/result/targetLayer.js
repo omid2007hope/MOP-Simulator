@@ -21,4 +21,4 @@ const targetLayerSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
-module.exports = mongoose.model('TargetLayerSchema', targetLayerSchema);
+module.exports = targetLayerSchema;

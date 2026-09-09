@@ -4,7 +4,6 @@ const BaseService = require('./baseservice/index');
 const aiClient = require('../../../AI/versionOne/aiClient');
 const RawDatasetModel = require('../model/result/rawDataset');
 
-
 class SimulationData extends BaseService {
 	constructor() {
 		super(RawDatasetModel);

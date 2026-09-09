@@ -38,4 +38,4 @@ const penetrationFrameSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
-module.exports = mongoose.model('PenetrationFrameSchema', penetrationFrameSchema);
+module.exports = penetrationFrameSchema;

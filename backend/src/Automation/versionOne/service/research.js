@@ -82,7 +82,8 @@ class Research extends BaseService {
 			}
 		}
 
-		session.status = 'completed';
+		const allFailed = allCycleStats.every((c) => c.status === 'failed');
+		session.status = allFailed ? 'failed' : 'completed';
 		await session.save();
 
 		console.log(`\n[Research Loop] All cycles completed for session ${sessionId}.`);
