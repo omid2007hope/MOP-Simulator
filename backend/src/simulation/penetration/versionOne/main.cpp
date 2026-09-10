@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
-		std::cout << "Enter Projectile Name [or word like Custom_Rod]: ";
+		std::cout << "Enter Projectile Name [e.g., GBU-57 MOP]: ";
 		std::string projectileName;
 		getline(std::cin, projectileName);
 		if (projectileName.empty())
@@ -203,27 +203,27 @@ int main(int argc, char* argv[]) {
 		munition.name = projectileName;
 
 		munition.length =
-			getValidInput<double>("Enter Projectile Length L (meters): ", false);
+			getValidInput<double>("Enter Projectile Length L (meters) [e.g., 6.2]: ", false);
 		munition.diameter =
-			getValidInput<double>("Enter Projectile Diameter d (meters): ", false);
+			getValidInput<double>("Enter Projectile Diameter d (meters) [e.g., 0.8]: ", false);
 		munition.curvature_noseReduce = getValidInput<double>(
-			"Enter Projectile Nose Curvature Radius R (meters): ", true);
-		munition.total_mass = getValidInput<double>("Enter Total Mass m (kg): ", false);
+			"Enter Projectile Nose Curvature Radius R (meters) [e.g., 0.4]: ", true);
+		munition.total_mass = getValidInput<double>("Enter Total Mass m (kg) [e.g., 14000]: ", false);
 
 		while (true) {
 			munition.explosive_mass =
-				getValidInput<double>("Enter Explosive Mass (kg): ", true);
+				getValidInput<double>("Enter Explosive Mass (kg) [e.g., 2400]: ", true);
 			if (munition.explosive_mass <= munition.total_mass)
 				break;
 			std::cout << "Error: Explosive mass cannot exceed total mass!\n";
 		}
 
 		munition.explosive_energy_j_per_kg =
-			getValidInput<double>("Enter Explosive Energy (j/kg): ", true);
+			getValidInput<double>("Enter Explosive Energy (j/kg) [e.g., 4.5e6]: ", true);
 		munition.casing_density =
-			getValidInput<double>("Enter Casing Density rho_p (kg/m^3): ", false);
+			getValidInput<double>("Enter Casing Density rho_p (kg/m^3) [e.g., 7850]: ", false);
 		double yield =
-			getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa): ", true);
+			getValidInput<double>("Enter Casing Yield Strength sigma_y (GPa) [e.g., 1.5]: ", true);
 		munition.yield_strength = yield * 1e9;
 		munition.area_moment_inertia = getValidInput<double>(
 			"Enter Area Moment of Inertia (m^4) [e.g., 0.02]: ", true);
@@ -246,16 +246,16 @@ int main(int argc, char* argv[]) {
 		TargetLayer customLayer;
 		customLayer.material_name = "Custom Layer";
 		customLayer.thickness =
-			getValidInput<double>("Enter Target Layer Thickness (meters): ", false);
+			getValidInput<double>("Enter Target Layer Thickness (meters) [e.g., 60.0]: ", false);
 		customLayer.rebar_volume_fraction = getValidInput<double>(
-			"Enter Target Rebar Volume Fraction (0.0 to 1.0, e.g., 0.02): ", true);
+			"Enter Target Rebar Volume Fraction (0.0 to 1.0) [e.g., 0.02]: ", true);
 		double rebarYield = getValidInput<double>(
-			"Enter Target Rebar Yield Strength (MPa, e.g., 400): ", true);
+			"Enter Target Rebar Yield Strength (MPa) [e.g., 400]: ", true);
 		customLayer.rebar_yield_strength = rebarYield * 1e6;
 		customLayer.density = getValidInput<double>(
-			"Enter Target Concrete Density rho_t (kg/m^3): ", false);
+			"Enter Target Concrete Density rho_t (kg/m^3) [e.g., 2400]: ", false);
 		double targetStrength =
-			getValidInput<double>("Enter Target Compressive Strength (MPa): ", false);
+			getValidInput<double>("Enter Target Compressive Strength (MPa) [e.g., 35]: ", false);
 		customLayer.compressive_strength = targetStrength * 1e6;
 		double tc0 = getValidInput<double>("Enter Target Hugoniot C0 (m/s) [e.g., 3200]: ",
 						   true);
@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
 		for (int i = 0; i < numScenarios; ++i) {
 			std::stringstream prompt_ss;
 			prompt_ss << "  -> Enter Drop Altitude #" << (i + 1)
-				  << " (feet) [e.g., 50000, 20000, 15]: ";
+				  << " (feet) [e.g., 40000, 20000, 15]: ";
 			double dropAltitude_ft = getValidInput<double>(prompt_ss.str(), true);
 
 			std::stringstream vel_ss;
@@ -301,11 +301,11 @@ int main(int argc, char* argv[]) {
 
 			std::stringstream fpa_ss;
 			fpa_ss << "  -> Enter Flight Path Angle #" << (i + 1)
-			       << " (Degrees, 0=horizontal, 90=down vertical, 270=up vertical): ";
+			       << " (Degrees, 0=horizontal, 90=down vertical) [e.g., 90]: ";
 			double fpa = getValidInput<double>(fpa_ss.str(), true);
 
 			std::stringstream aoa_ss;
-			aoa_ss << "  -> Enter Angle of Attack #" << (i + 1) << " (Degrees): ";
+			aoa_ss << "  -> Enter Angle of Attack #" << (i + 1) << " (Degrees) [e.g., 0]: ";
 			double aoa = getValidInput<double>(aoa_ss.str(), true);
 
 			std::stringstream name_ss;
