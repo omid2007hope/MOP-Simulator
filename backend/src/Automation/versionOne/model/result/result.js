@@ -109,6 +109,18 @@ const simulationResultSchema = new mongoose.Schema(
 		// High-Frequency Drop & Penetration Telemetry Frames
 		drop_frames: [dropFrameSchema],
 		pen_frames: [penetrationFrameSchema],
+
+		// C++ Schema sync fields
+		casing_failure: { type: Boolean, default: false },
+		hydro_penetration: { type: Number, default: 0 },
+		rigid_penetration: { type: Number, default: 0 },
+		actual_penetration_depth: { type: Number, default: 0 },
+		shock_damage_prob_percent: { type: Number, default: 0 },
+		dynamic_pressure: { type: Number, default: 0 },
+		explosive_charge_survives: { type: Boolean, default: true },
+		outcome_summary: { type: String, default: '' },
+		kinetic_energy: { type: Number, default: 0 },
+		penetration_frames: [penetrationFrameSchema],
 	},
 	{
 		timestamps: true,

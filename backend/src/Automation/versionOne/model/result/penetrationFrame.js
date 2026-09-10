@@ -34,6 +34,13 @@ const penetrationFrameSchema = new mongoose.Schema(
 		eh: { type: Number, default: 0 }, // excess_heat
 		ml: { type: Number, default: 0 }, // mass_loss
 		eld: { type: Number, default: 0 }, // effective_linear_density
+
+		// C++ Schema sync fields
+		sb: { type: Boolean, default: false }, // is_sonic_boom
+		pr: { type: Number, default: 0 }, // pitch_rad
+		dc: { type: Number, default: 0 }, // drag_coefficient
+		df: { type: Number, default: 0 }, // drag_force
+		gp: { type: Number, default: 0 }, // guidance_pull
 	},
 	{ _id: false },
 );

@@ -98,6 +98,9 @@ struct TargetLayer {
 	double pulverized_depth = 0.0;
 	double hugoniot_c0 = 0.0;
 	double hugoniot_s = 0.0;
+	double specific_heat = 0.0;
+	double melting_point = 0.0;
+	double heat_of_fusion = 0.0;
 };
 
 
@@ -226,6 +229,33 @@ struct SimulationResult {
 	double cons_earthRadius = 0.0;
 	std::vector<TelemetryFrame> drop_frames;
 	std::vector<TelemetryFrame> penetration_frames;
+
+	// JS Schema sync fields
+	double energy = 0.0;
+	bool pressurvives = true;
+	bool is_kinetic = false;
+	std::string summary;
+	std::string proj_name;
+	double proj_length = 0.0;
+	double proj_diameter = 0.0;
+	double proj_total_mass = 0.0;
+	double proj_curvature_noseReduce = 0.0;
+	double proj_casing_density = 0.0;
+	double proj_casing_wall_thickness = 0.0;
+	double proj_area_moment_inertia = 0.0;
+	double proj_elastic_modulus = 0.0;
+	double proj_hugoniot_c0 = 0.0;
+	double proj_hugoniot_s = 0.0;
+	double proj_explosive_energy_j_per_kg = 0.0;
+	double proj_specific_heat = 0.0;
+	double proj_melting_point = 0.0;
+	double proj_heat_of_fusion = 0.0;
+	std::string target_name;
+	double cons_gravity = 0.0;
+	double cons_pi = 0.0;
+	double cons_friction_factor = 0.0;
+	double cons_speed_of_sound = 0.0;
+	std::vector<TargetLayer> target_layers;
 };
 
 
