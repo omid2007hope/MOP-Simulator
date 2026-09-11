@@ -41,31 +41,31 @@ The platform is designed to autonomously hypothesize target geometries, execute 
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["🖥️ Next.js Web UI (frontend/)"]
-        UI1[Next.js App Router]
-        UI2[Tailwind CSS Dashboard]
+    subgraph Frontend ["Next.js Web UI (frontend)"]
+        UI1["Next.js App Router"]
+        UI2["Tailwind CSS Dashboard"]
         UI1 <-->|REST API Calls| N1
     end
 
-    subgraph NodeLayer["🌐 Node.js Orchestrator (backend/src/Automation)"]
-        N1[Express API / Controllers]
-        N2[Simulation Runner]
-        N3[(MongoDB - Result & Article Models)]
+    subgraph NodeLayer ["Node.js Orchestrator (backend/src/Automation)"]
+        N1["Express API Controllers"]
+        N2["Simulation Runner"]
+        N3[("MongoDB Result & Article Models")]
         N1 <--> N2
         N1 <--> N3
         N2 -->|Chunks & Streams Telemetry| N3
     end
 
-    subgraph AILayer["🧠 Autonomous AI Layer (backend/src/AI)"]
-        A1[Research Conductor] -->|Generates Scenarios| A2[aiClient.js]
-        A3[Article Writer] -->|Synthesizes Findings| A2
+    subgraph AILayer ["Autonomous AI Layer (backend/src/AI)"]
+        A1["Research Conductor"] -->|Generates Scenarios| A2["aiClient.js"]
+        A3["Article Writer"] -->|Synthesizes Findings| A2
         A2 <-->|API Calls| N1
     end
 
-    subgraph CppLayer["⚙️ C++23 Physics Kernel (backend/src/simulation)"]
-        C1[main.cpp --json-input]
-        C2[Numerical Solvers<br/>RK4, Forrestal, WAPM, Hugoniot]
-        C3[Telemetry Exporter<br/>Line-Delimited JSON]
+    subgraph CppLayer ["C++23 Physics Kernel (backend/src/simulation)"]
+        C1["main.cpp --json-input"]
+        C2["Numerical Solvers (RK4, Forrestal, WAPM, Hugoniot)"]
+        C3["Telemetry Exporter (Line-Delimited JSON)"]
         N2 -->|Spawns mop_sim.exe| C1
         C1 --> C2
         C2 --> C3
@@ -83,32 +83,32 @@ The platform operates through an automated two-phase research cycle:
 sequenceDiagram
     autonumber
     actor User as Next.js Web UI / Postman
-    participant API as Node.js API (localhost:3000)
+    participant API as Node.js API
     participant AI as Gemini Flash AI
-    participant CPP as C++ Physics Engine (mop_sim.exe)
+    participant CPP as C++ Physics Engine
     participant DB as MongoDB Database
 
     Note over User, DB: PHASE 1: RESEARCH & SIMULATION LOOP
-    User->>API: POST /pipeline { title, count: 3 }
+    User->>API: POST /pipeline
     loop For Each Requested Cycle
-        API->>AI: Generate scenario hypothesis (researchConductor)
-        AI-->>API: JSON Scenario Config (Projectile, Target, Kinematics)
-        API->>CPP: Spawn with --json-input temp_config.json
+        API->>AI: Generate scenario hypothesis
+        AI-->>API: JSON Scenario Config
+        API->>CPP: Spawn with --json-input
         CPP->>CPP: Run RK4 atmospheric drop & penetration integration
         CPP-->>API: Stream line-delimited JSON telemetry frames
-        API->>DB: Stream & insert frames in 1,000-doc chunks (session-scoped)
+        API->>DB: Stream & insert frames in chunks
     end
-    API-->>User: 200 OK { session_id, cycles: [ { status: "success", frames_saved } ] }
+    API-->>User: 200 OK (session_id, cycles)
 
     Note over User, DB: PHASE 2: SCIENTIFIC SYNTHESIS
-    User->>API: POST /article { session_id, limit: 500 }
-    API->>DB: Query telemetry scoped by session_id (sorted by latest)
+    User->>API: POST /article
+    API->>DB: Query telemetry scoped by session_id
     DB-->>API: Array of SimulationResult records
-    API->>API: Compute statistical metrics (mean depth, std-dev, regime frequency)
-    API->>AI: Synthesize full academic paper (articleWriter)
-    AI-->>API: Formatted Research Article (Abstract, Methodology, Results, Citations)
+    API->>API: Compute statistical metrics
+    API->>AI: Synthesize full academic paper
+    AI-->>API: Formatted Research Article
     API->>DB: Save to ArticleModel collection
-    API-->>User: 201 Created { article_id, stats, key_findings, content }
+    API-->>User: 201 Created (article_id, stats)
 ```
 
 ---
