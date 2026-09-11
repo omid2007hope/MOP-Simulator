@@ -19,7 +19,12 @@ int main() {
 	Projectile mop = MOP_DEFAULT;
 
 	PhysicsConstants cons;
-	ImpactSimulator simulator(mop, concrete, cons);
+	AtmosphereState atmos;
+	atmos.density_kgm3 = 1.225;
+	atmos.speed_of_sound_ms = 340.3;
+	atmos.pressure_Pa = 101325.0;
+	atmos.temperature_K = 288.15;
+	ImpactSimulator simulator(mop, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
 
 	// Test case 1: totalMass = 13600 kg, velocity = 500 m/s
 	// kineticShock = 0.5 * 13600 * 500^2 = 1.7e9 Joules

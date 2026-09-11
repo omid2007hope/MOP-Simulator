@@ -19,7 +19,12 @@ int main() {
 	Projectile mop = MOP_DEFAULT;
 
 	PhysicsConstants cons;
-	ImpactSimulator simulator(mop, concrete, cons);
+	AtmosphereState atmos;
+	atmos.density_kgm3 = 1.225;
+	atmos.speed_of_sound_ms = 340.3;
+	atmos.pressure_Pa = 101325.0;
+	atmos.temperature_K = 288.15;
+	ImpactSimulator simulator(mop, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
 
 	// Test case 1: explosiveMass = 2400 kg, explosiveEnergy = 5.2e6 J/kg
 	// couplingEfficiency = 0.25 (empirical acoustic impedance coupling, documented in simulation.cpp)

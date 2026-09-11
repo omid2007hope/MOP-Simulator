@@ -26,7 +26,12 @@ int main() {
 	Projectile mop = MOP_DEFAULT;
 
 	PhysicsConstants cons;
-	ImpactSimulator simulator(mop, concrete, cons);
+	AtmosphereState atmos;
+	atmos.density_kgm3 = 0.01; // Low density for testing to prevent drag from slowing down hypervelocity strikes
+	atmos.speed_of_sound_ms = 340.3;
+	atmos.pressure_Pa = 101325.0;
+	atmos.temperature_K = 288.15;
+	ImpactSimulator simulator(mop, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
 
 	// Test 1: Subsonic Operational Impact (Mach ~1.0, 340 m/s)
 	std::cout << "[Test 1] Testing Subsonic Rigid Penetration (340 m/s)...\n";
@@ -80,7 +85,7 @@ int main() {
 	std::cout
 		<< "[Test 3] Testing Orbital Tungsten Kinetic Rod (3400 m/s) for WAPM Erosion...\n";
 	Projectile rod = RODS_FROM_GOD_DEFAULT;
-	ImpactSimulator rodSim(rod, concrete, cons);
+	ImpactSimulator rodSim(rod, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
 	ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 90.0, 0.0, 0.0};
 	SimulationResult resRod = rodSim.simulate(rodScenario);
 
