@@ -195,6 +195,14 @@ int main(int argc, char* argv[]) {
 		}
 
 		std::cout << "\n--- INTERACTIVE CUSTOM PARAMETER INPUT ---\n";
+		
+		std::cout << "Enter Target Name [e.g., Hardened Bunker]: ";
+		std::string targetName;
+		getline(std::cin, targetName);
+		if (targetName.empty())
+			targetName = "Undefined Target";
+		object.name = targetName;
+
 		std::cout << "Enter Projectile Name [e.g., GBU-57 MOP]: ";
 		std::string projectileName;
 		getline(std::cin, projectileName);
@@ -242,9 +250,22 @@ int main(int argc, char* argv[]) {
 		if (ec > 0)
 			munition.explosive_critical_energy = ec * 1e15;
 
+		munition.specific_heat = getValidInput<double>(
+			"Enter Projectile Specific Heat (J/kg*K) [e.g., 460.0]: ", true);
+		munition.melting_point = getValidInput<double>(
+			"Enter Projectile Melting Point (K) [e.g., 1800.0]: ", true);
+		munition.heat_of_fusion = getValidInput<double>(
+			"Enter Projectile Heat of Fusion (J/kg) [e.g., 272000.0]: ", true);
+
 		object.layers.clear();
 		TargetLayer customLayer;
-		customLayer.material_name = "Custom Layer";
+		
+		std::cout << "Enter Target Layer Material Name [e.g., Reinforced Concrete]: ";
+		std::string materialName;
+		getline(std::cin, materialName);
+		if (materialName.empty())
+			materialName = "Custom Layer";
+		customLayer.material_name = materialName;
 		customLayer.thickness =
 			getValidInput<double>("Enter Target Layer Thickness (meters) [e.g., 60.0]: ", false);
 		customLayer.rebar_volume_fraction = getValidInput<double>(
@@ -265,7 +286,31 @@ int main(int argc, char* argv[]) {
 		if (ts > 0)
 			customLayer.hugoniot_s = ts;
 
+		customLayer.specific_heat = getValidInput<double>(
+			"Enter Target Layer Specific Heat (J/kg*K) [e.g., 880.0]: ", true);
+		customLayer.melting_point = getValidInput<double>(
+			"Enter Target Layer Melting Point (K) [e.g., 1500.0]: ", true);
+		customLayer.heat_of_fusion = getValidInput<double>(
+			"Enter Target Layer Heat of Fusion (J/kg) [e.g., 400000.0]: ", true);
+
 		object.layers.push_back(customLayer);
+
+		std::cout << "\n--- AIRCRAFT & ATMOSPHERE PARAMETERS ---\n";
+		Aircraft aircraft;
+		aircraft.bomber_totalMass = getValidInput<double>(
+			"Enter Bomber Total Mass (kg) [e.g., 152200]: ", false);
+		aircraft.bomber_wingArea = getValidInput<double>(
+			"Enter Bomber Wing Area (m^2) [e.g., 478]: ", false);
+		aircraft.bomber_liftCurveSlope = getValidInput<double>(
+			"Enter Bomber Lift Curve Slope (per radian) [e.g., 4.5]: ", false);
+
+		AtmosphereState atmos;
+		atmos.density_kgm3 = getValidInput<double>(
+			"Enter Air Density (kg/m^3) [e.g., 1.225]: ", false);
+		atmos.pressure_Pa = getValidInput<double>(
+			"Enter Air Pressure (Pa) [e.g., 101325]: ", false);
+		atmos.temperature_K = getValidInput<double>(
+			"Enter Air Temperature (K) [e.g., 288.15]: ", false);
 
 		int numScenarios = 1;
 		while (true) {
