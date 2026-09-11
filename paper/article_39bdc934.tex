@@ -16,6 +16,11 @@
 
 \maketitle
 
+\begin{center}
+\textbf{NOTICE: This is an early example and alpha test conducted by this simulation. This is not a real research paper, but rather a promotional example formatted as research. This repository was created by Omid Teimory.} \\
+\url{https://github.com/omid2007hope/MOP-Simulator}
+\end{center}
+
 \section{Introduction}
 The defeat of deeply buried, hardened target sets—such as command facilities, storage bunkers, and strategic infrastructure housed within crystalline geologic formations—presents a formidable challenge in terminal ballistics engineering. Heavy earth-penetrating weapons, exemplified by the GBU-57A/B Massive Ordnance Penetrator (MOP), are engineered to deliver immense kinetic energy to breach thick subterranean shielding before detonating an internal explosive payload.
 
@@ -61,7 +66,7 @@ P^2 t = K_c
 \end{equation}
 where $P$ is the peak Hugoniot shock pressure at the casing fill interface, $t$ is the shock pulse duration, and $K_c$ is the critical threshold constant for the specific secondary explosive. The transient impact shock pulse duration $\tau_p$ is governed by the two-way shock wave transit time across the nose assembly, modeled as:
 \begin{equation}
-\tau_p = \frac{2 t_w}{U_s} \approx 37.2\text{ \mu s}
+\tau_p = \frac{2 t_w}{U_s} \approx 37.2\mu\text{s}
 \end{equation}
 
 If the initial planar contact pressure $P_{shock}$ generated at boundary contact exceeds $P_{crit} = \sqrt{K_c / \tau_p}$, the regime transitions to instantaneous \textbf{Shock Initiation (Walker-Wasley)}, causing catastrophic casing disruption and immediate detonation.
@@ -136,9 +141,9 @@ P  3.8 +--------------------+------------------+
 At 551.02 m/s (Scenario 34), the lowest velocity test generated a peak Hugoniot shock of 3.55 GPa. In Scenario 33, releasing the penetrator from 45,000 ft yielded an impact velocity of 644.69 m/s (Mach 1.89) and a kinetic energy of 2.56 GJ, driving the peak shock pressure up to 4.23 GPa.
 
 \subsection{Mechanism of Premature Initiation}
-Across 100.0\% of the simulated scenarios, the peak contact pressure substantially exceeded the explosive's critical Hugoniot initiation threshold. Within $\tau_p = 37.2\text{ \mu s}$, the intense stress wave propagating through the casing wall converted shock energy into local hot-spot heating within the explosive matrix. This induced immediate Shock-to-Detonation Transition (SDT).
+Across 100.0\% of the simulated scenarios, the peak contact pressure substantially exceeded the explosive's critical Hugoniot initiation threshold. Within $\tau_p = 37.2\mu\text{s}$, the intense stress wave propagating through the casing wall converted shock energy into local hot-spot heating within the explosive matrix. This induced immediate Shock-to-Detonation Transition (SDT).
 
-Because explosive detonation occurred at $t = 37.2\text{ \mu s}$ following boundary touch, the energetic fill reacted fully while the nose of the weapon was still situated at the physical interface ($z = 0.00\text{ m}$). The casing suffered catastrophic structural fragmentation ($100.0\%\text{ casing failure}$). 
+Because explosive detonation occurred at $t = 37.2\mu\text{s}$ following boundary touch, the energetic fill reacted fully while the nose of the weapon was still situated at the physical interface ($z = 0.00\text{ m}$). The casing suffered catastrophic structural fragmentation ($100.0\%\text{ casing failure}$). 
 
 Consequently, the projectile was completely consumed before mechanical work could be performed on the granitic target. No hydrodynamic penetration phase or rigid body deceleration phase was achieved, resulting in an observed erosion rate of $0.0\%$.
 
@@ -154,7 +159,7 @@ The principal findings are as follows:
 \begin{enumerate}
 \item \textbf{Zero Depth Penetration:} Across all tested configurations, the weapon achieved 0.00 m penetration depth due to prompt surface detonation.
 \item \textbf{Shock Initiation Dominance:} Initial surface impact at velocities between 551.02 m/s and 644.69 m/s produced planar shock pressures averaging 3.822 GPa (peaking at 4.23 GPa), triggering 100.0\% initiation under the Walker-Wasley regime.
-\item \textbf{Casing Disruption:} The energetic payload detonated within a $37.2\text{ \mu s}$ pulse window, destroying the steel casing prior to target displacement.
+\item \textbf{Casing Disruption:} The energetic payload detonated within a $37.2\mu\text{s}$ pulse window, destroying the steel casing prior to target displacement.
 \item \textbf{Obliquity Ineffectiveness:} Increasing strike obliquity up to $32.0^\circ$ did not lower transient shock pressures below critical initiation levels.
 \end{enumerate}
 
@@ -175,6 +180,6 @@ To achieve physical penetration into ultra-hard geologic media, penetrator desig
 \end{enumerate}
 
 \section*{Disclaimer / Acknowledgement}
-This entire research paper—including all physics simulations, data aggregation, parameter exploration, and text synthesis—was 100\% autonomously generated by the MOP Simulator V3.0. To view the source code and run your own autonomous defense engineering AI, visit: \url{https://github.com/Omid-Teimory/MOP-Simulator}
+This entire research paper—including all physics simulations, data aggregation, parameter exploration, and text synthesis—was 100\% autonomously generated by the MOP Simulator V3.0. To view the source code and run your own autonomous defense engineering AI, visit: \url{https://github.com/omid2007hope/MOP-Simulator}
 
 \end{document}
