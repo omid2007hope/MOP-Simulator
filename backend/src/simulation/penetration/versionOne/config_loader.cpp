@@ -24,7 +24,7 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath)
 	simConfig.choice = simChoice;
 
 	if (simChoice == 1) {
-		auto p = config["Projectile"];
+		auto p = config.contains("Projectile") ? config["Projectile"] : json::object();
 		simConfig.munition.name = p.value("name", "AI Custom Projectile");
 		simConfig.munition.length = p.value("length", 6.2);
 		simConfig.munition.diameter = p.value("diameter", 0.8);
@@ -106,23 +106,35 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath)
 			simConfig.atmos.speed_of_sound_ms = 340.3;
 		}
 
-		auto s = config["Scenario"];
-		double alt = s.value("altitude_ft", 40000.0);
-		double vel = s.value("velocity", 0.0);
-		double fpa = s.value("flight_path_angle", 90.0);
-		double obliq = s.value("obliquity_angle", 0.0);
-		double aoa = s.value("angle_of_attack", 0.0);
+		if (config.contains("Scenarios") && config["Scenarios"].is_array()) {
+			for (const auto& s : config["Scenarios"]) {
+				double alt = s.value("altitude_ft", 40000.0);
+				double vel = s.value("velocity", 0.0);
+				double fpa = s.value("flight_path_angle", 90.0);
+				double obliq = s.value("obliquity_angle", 0.0);
+				double aoa = s.value("angle_of_attack", 0.0);
+				std::string name = s.value("name", "AI Custom Test");
+				simConfig.scenarios.push_back({name, alt, vel, fpa, obliq, aoa});
+			}
+		} else {
+			auto s = config.contains("Scenario") ? config["Scenario"] : json::object();
+			double alt = s.value("altitude_ft", 40000.0);
+			double vel = s.value("velocity", 0.0);
+			double fpa = s.value("flight_path_angle", 90.0);
+			double obliq = s.value("obliquity_angle", 0.0);
+			double aoa = s.value("angle_of_attack", 0.0);
 
-		int numBombs = config.value("/Simulation/numBombs"_json_pointer, 1);
-		for (int i = 0; i < numBombs; ++i) {
-			std::stringstream name_ss;
-			if (numBombs == 1)
-				name_ss << s.value("name", "AI Custom Test");
-			else if (i == 0)
-				name_ss << "Bomb #1 (Shaft Breaker)";
-			else
-				name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-			simConfig.scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
+			int numBombs = config.value("/Simulation/numBombs"_json_pointer, 1);
+			for (int i = 0; i < numBombs; ++i) {
+				std::stringstream name_ss;
+				if (numBombs == 1)
+					name_ss << s.value("name", "AI Custom Test");
+				else if (i == 0)
+					name_ss << "Bomb #1 (Shaft Breaker)";
+				else
+					name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
+				simConfig.scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
+			}
 		}
 	} else {
 		throw std::runtime_error("simChoice > 1 relies on internal hardcoded data which has been removed. Use simChoice = 1 with a full JSON configuration payload.");
