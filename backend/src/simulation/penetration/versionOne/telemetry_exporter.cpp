@@ -594,8 +594,10 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 
 	std::cout << "\n[+] Successfully generated 3D WebGL Interactive Visualizer: " << filename
 		  << "\n";
-	std::cout << "    -> Open " << filename
-		  << " in your web browser to view the 3D simulation scene!\n";
+	std::cout << "    -> Note: Modern browsers block local file security (CORS) by default.\n";
+	std::cout << "    -> To view the 3D simulation scene, run a local web server in the directory:\n";
+	std::cout << "       python -m http.server 8000\n";
+	std::cout << "    -> Then open http://localhost:8000/3d_visualizer.html in your browser!\n";
 }
 
 } // namespace TelemetryExporter

@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
 		munition.diameter = getValidInput<double>(
 			"Enter Projectile Diameter d (meters) [e.g., 0.8]: ", false);
 		munition.curvature_noseReduce = getValidInput<double>(
-			"Enter Projectile Nose Curvature Radius R (meters) [e.g., 0.4]: ", true);
+			"Enter Projectile Nose Curvature Radius R (meters) [e.g., 2.0 (Ogive)]: ", true);
 		munition.total_mass =
 			getValidInput<double>("Enter Total Mass m (kg) [e.g., 14000]: ", false);
 
