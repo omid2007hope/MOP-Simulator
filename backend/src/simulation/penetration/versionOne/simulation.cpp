@@ -54,7 +54,7 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 						       double bomber_liftCurveSlope,
 						       double bomber_wingArea) {
 
-	AtmosphereState atmos;
+	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(altitude / 3.28084, cons);
 
 	double fpa_rad = flightPathAngle * cons.PI / 180.0;
 
@@ -106,7 +106,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	(void)dt; // Suppress unused parameter warning
 
 
-	AtmosphereState atmos;
+	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
 
 	double current_altitude = scenario.altitude_ft;
 	double current_velocity = scenario.velocity;
@@ -134,7 +134,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 		double y_m = current_altitude / 3.28084;
 
 		auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
-			AtmosphereState atm;
+			AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
 			double v_mag = std::hypot(vx, vy);
 			double mach = v_mag / atm.speed_of_sound_ms;
 			double cd = EnvironmentPhysics::getMachDependentDrag(
@@ -196,7 +196,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 			}
 
 			current_altitude = y_m * 3.28084;
-			AtmosphereState current_atm;
+			AtmosphereState current_atm = EnvironmentPhysics::standardAtmosphere(y_m, cons);
 
 			double current_density = current_atm.density_kgm3;
 
@@ -972,7 +972,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 // ! ********************
 SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario, const Aircraft& dropAircraft, const AtmosphereState& atmos) {
 
-
+	(void)atmos; // Suppress unused parameter warning
 
 	SimulationResult res;
 	res.scenario_name = scenario.name;
