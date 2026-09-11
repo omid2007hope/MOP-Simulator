@@ -35,11 +35,11 @@ $(TARGET): $(OBJS)
 	@$(MKDIR_BIN)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-build/main.o: src/simulation/penetration/versionOne/main.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/telemetry_exporter.hpp
+build/main.o: src/simulation/penetration/versionOne/main.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp include/penetration/versionOne/telemetry_exporter.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/simulation.o: src/simulation/penetration/versionOne/simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/environment_physics.hpp
+build/simulation.o: src/simulation/penetration/versionOne/simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/environment_physics.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -55,15 +55,15 @@ build/telemetry_exporter.o: src/simulation/penetration/versionOne/telemetry_expo
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/test_simulation.o: tests/versionOne/test_simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
+build/test_simulation.o: tests/versionOne/test_simulation.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/impactShock.o: tests/versionOne/impactShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
+build/impactShock.o: tests/versionOne/impactShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-build/explosiveShock.o: tests/versionOne/explosiveShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/default.hpp include/penetration/versionOne/config_loader.hpp
+build/explosiveShock.o: tests/versionOne/explosiveShock.cpp include/penetration/versionOne/simulation.hpp include/penetration/versionOne/config_loader.hpp
 	@$(MKDIR_BUILD)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 

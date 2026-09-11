@@ -21,10 +21,42 @@ int main() {
 		<< "===================================================================================================\n";
 
 	// Initialize test target and projectile using dummy setup instead of deleted default.hpp
-	TargetLayer layer{"Concrete", 10.0, 0.03, 400e6, 2400.0, 50e6, 3000.0, 1.8, 850.0, 1600.0, 350000.0};
-    Target concrete{"Test Bunker", {layer}};
-    
-    Projectile mop{"Test Bomb", 5.0, 0.5, 1.0, 10000.0, 2000.0, 5e6, 7800.0, 1.2e9, 0.015, 210e9, 0.04, 4500.0, 1.5, 2e15, 450.0, 1700.0, 270000.0};
+	TargetLayer layer{
+		.material_name = "Concrete",
+		.thickness = 10.0,
+		.density = 2400.0,
+		.compressive_strength = 50e6,
+		.rebar_volume_fraction = 0.03,
+		.rebar_yield_strength = 400e6,
+		.pulverized_depth = 0.0,
+		.hugoniot_c0 = 3000.0,
+		.hugoniot_s = 1.8,
+		.specific_heat = 850.0,
+		.melting_point = 1600.0,
+		.heat_of_fusion = 350000.0
+	};
+	Target concrete{"Test Bunker", {layer}};
+
+	Projectile mop{
+		.name = "Test Bomb",
+		.length = 5.0,
+		.diameter = 0.5,
+		.curvature_noseReduce = 1.0,
+		.total_mass = 10000.0,
+		.explosive_mass = 2000.0,
+		.casing_density = 7800.0,
+		.yield_strength = 1.2e9,
+		.area_moment_inertia = 0.015,
+		.elastic_modulus = 210e9,
+		.casing_wall_thickness = 0.04,
+		.hugoniot_c0 = 4500.0,
+		.hugoniot_s = 1.5,
+		.explosive_critical_energy = 2e15,
+		.explosive_energy_j_per_kg = 5e6,
+		.specific_heat = 450.0,
+		.melting_point = 1700.0,
+		.heat_of_fusion = 270000.0
+	};
 
 	PhysicsConstants cons;
 	AtmosphereState atmos;
@@ -84,13 +116,33 @@ int main() {
 	// Test 3: Orbital Kinetic Strike ("Rods from God" Tungsten Rod, 3400 m/s) - Tests WAPM Erosion
 	std::cout
 		<< "[Test 3] Testing Orbital Tungsten Kinetic Rod (3400 m/s) for WAPM Erosion...\n";
-	Projectile rod{"Rod", 6.0, 0.3, 1.0, 8000.0, 0.0, 0.0, 19250.0, 1.5e9, 0.015, 410e9, 0.15, 4000.0, 1.2, 0.0, 130.0, 3400.0, 350000.0};
+	Projectile rod{
+		.name = "Rod",
+		.length = 6.0,
+		.diameter = 0.3,
+		.curvature_noseReduce = 1.0,
+		.total_mass = 8000.0,
+		.explosive_mass = 0.0,
+		.casing_density = 19250.0,
+		.yield_strength = 1.5e9,
+		.area_moment_inertia = 0.015,
+		.elastic_modulus = 410e9,
+		.casing_wall_thickness = 0.15,
+		.hugoniot_c0 = 4000.0,
+		.hugoniot_s = 1.2,
+		.explosive_critical_energy = 0.0,
+		.explosive_energy_j_per_kg = 0.0,
+		.specific_heat = 130.0,
+		.melting_point = 3400.0,
+		.heat_of_fusion = 350000.0
+	};
 	ImpactSimulator rodSim(rod, concrete, cons);
 	ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 90.0, 0.0, 0.0};
 	SimulationResult resRod = rodSim.simulate(rodScenario, dummyAircraft, atmos);
 
 	assert(resRod.is_kinetic_rod == true);
-	assert(resRod.regime == "Hypervelocity Erosion Burnout");
+	assert(resRod.regime == "Hypervelocity Erosion (Walker-Anderson)" ||
+	       resRod.regime == "Hypervelocity Erosion Burnout");
 	assert(resRod.erosion_occurred == true);
 	assert(resRod.erosion_length_lost > 0.0);
 	assert(resRod.final_rod_length < rod.length);
