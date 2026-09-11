@@ -374,10 +374,6 @@ private:
 	// ! cons payload comes from c (cons) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	PhysicsConstants cons;
 
-	Aircraft aircraft;
-
-	AtmosphereState atmosphereState;
-
 
 
 
@@ -437,9 +433,7 @@ public:
 	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
 	ImpactSimulator(const Projectile& p,
 			const Target& t,
-			const PhysicsConstants& c,
-			const Aircraft& a,
-			const AtmosphereState& env);
+			const PhysicsConstants& c);
 
 	// ! Atmospheric drop
 	static double impactShockwave(double totalMass, double velocityUponImpact);
@@ -449,7 +443,7 @@ public:
 	// ! scenario payload comes from main.cpp - line 466.
 	// ! results.push_back(simulator.simulate(sc));
 	// ! purpose : executes the complete end-to-end simulation flow (atmospheric drop followed by ground penetration) for a given drop scenario and records telemetry frame data.
-	SimulationResult simulate(const ImpactScenario& scenario);
+	SimulationResult simulate(const ImpactScenario& scenario, const Aircraft& dropAircraft, const AtmosphereState& atmos);
 
 
 	// ! target payload comes from main.cpp - line 478 and 480

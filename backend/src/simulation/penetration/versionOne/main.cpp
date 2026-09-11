@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 		std::filesystem::path current =
 			std::filesystem::absolute(argv[0], ec).parent_path();
 		while (!current.empty() && current != current.root_path()) {
-			if (std::filesystem::exists(current / "data" / "targets.json", ec)) {
+			if (std::filesystem::exists(current / "src", ec)) {
 				basePath = current.string();
 				break;
 			}
@@ -89,26 +89,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	// Load Databases
-	std::string targetsPath = basePath + "/data/targets.json";
-	std::string projectilesPath = basePath + "/data/projectiles.json";
-
-	std::vector<Target> targetsDb = ConfigLoader::loadTargets(targetsPath);
-	std::vector<Projectile> projectilesDb = ConfigLoader::loadProjectiles(projectilesPath);
-
-	// Default target
 	Target object;
-	if (auto t = ConfigLoader::getTargetByName(targetsDb, "High-Quality Hardened Concrete")) {
-		object = *t;
-	}
-
-	// Default projectile (GBU-57 MOP)
 	Projectile munition;
-	if (auto p = ConfigLoader::getProjectileByName(
-		    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
-		munition = *p;
-	}
-
 	std::vector<ImpactScenario> scenarios;
 	PhysicsConstants cons;
 	std::vector<SimulationResult> results;
@@ -119,17 +101,17 @@ int main(int argc, char* argv[]) {
 	if (jsonMode == true) {
 		try {
 			SimulationConfig simConfig =
-				ConfigLoader::loadSimulationConfig(jsonFile, projectilesDb);
+				ConfigLoader::loadSimulationConfig(jsonFile);
 
 			scenarios = simConfig.scenarios;
 			munition = simConfig.munition;
 			object = simConfig.object;
-			aircraft = simConfig.bomber;
-			atmos = simConfig.atmos;
+			Aircraft aircraft = simConfig.bomber;
+			AtmosphereState atmos = simConfig.atmos;
 
 			for (const auto& sc : scenarios) {
-				ImpactSimulator simulator(munition, object, cons, aircraft, atmos);
-				results.push_back(simulator.simulate(sc));
+				ImpactSimulator simulator(munition, object, cons);
+				results.push_back(simulator.simulate(sc, aircraft, atmos));
 			}
 			TelemetryExporter::printReport(results, munition, object);
 			TelemetryExporter::generateHtml3DVisualizer(
@@ -300,6 +282,12 @@ int main(int argc, char* argv[]) {
 
 		std::cout << "\n--- AIRCRAFT & ATMOSPHERE PARAMETERS ---\n";
 		Aircraft aircraft;
+		std::cout << "Enter Aircraft Name [e.g., B-2 Spirit]: ";
+		std::string aircraftName;
+		getline(std::cin, aircraftName);
+		if (aircraftName.empty()) aircraftName = "Custom Aircraft";
+		aircraft.name = aircraftName;
+		
 		aircraft.bomber_totalMass = getValidInput<double>(
 			"Enter Bomber Total Mass (kg) [e.g., 152200]: ", false);
 		aircraft.bomber_wingArea =
@@ -314,6 +302,8 @@ int main(int argc, char* argv[]) {
 			getValidInput<double>("Enter Air Pressure (Pa) [e.g., 101325]: ", false);
 		atmos.temperature_K =
 			getValidInput<double>("Enter Air Temperature (K) [e.g., 288.15]: ", false);
+		atmos.speed_of_sound_ms =
+			getValidInput<double>("Enter Speed of Sound (m/s) [e.g., 340.3]: ", false);
 
 		int numScenarios = 1;
 		while (true) {
@@ -370,8 +360,8 @@ int main(int argc, char* argv[]) {
 
 		// Run simulations
 		for (const auto& sc : scenarios) {
-			ImpactSimulator simulator(munition, object, cons, aircraft, atmos);
-			results.push_back(simulator.simulate(sc));
+			ImpactSimulator simulator(munition, object, cons);
+			results.push_back(simulator.simulate(sc, aircraft, atmos));
 		}
 		TelemetryExporter::printReport(results, munition, object);
 		TelemetryExporter::generateHtml3DVisualizer(results, munition, object, basePath);

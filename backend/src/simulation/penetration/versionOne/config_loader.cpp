@@ -8,315 +8,10 @@
 // files
 #include "nlohmann/json.hpp"
 #include "penetration/versionOne/config_loader.hpp"
-#include "penetration/versionOne/default.hpp"
-
-
+// ! Parse JSON input specifically for the AI/automation pipeline
 using json = nlohmann::json;
 
-// ! Loads impact scenarios from JSON configuration file
-std::vector<ImpactScenario> ConfigLoader::loadImpactScenario(const std::string& filepath) {
-	std::vector<ImpactScenario> scenarios;
-	std::ifstream file(filepath);
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		return scenarios;
-	}
-	try {
-		json j;
-		file >> j;
-		for (const auto& item : j) {
-			ImpactScenario s;
-			s.name = item.value("name", "Unknown Scenario");
-			s.altitude_ft = item.value("altitude_ft", 0.0);
-			s.velocity = item.value("velocity", 0.0);
-			s.flight_path_angle = item.value("flight_path_angle", 90.0);
-			s.obliquity_angle = item.value("obliquity_angle", 0.0);
-			s.angle_of_attack = item.value("angle_of_attack", 0.0);
-			scenarios.push_back(s);
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-	}
-	return scenarios;
-}
-
-
-
-
-// ! Loads physics constants from JSON configuration file
-std::vector<PhysicsConstants> ConfigLoader::loadPhysicsConstants(const std::string& filepath) {
-	std::vector<PhysicsConstants> constants;
-	std::ifstream file(filepath);
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		// Return one default-constructed entry so callers always have something
-		constants.emplace_back();
-		return constants;
-	}
-	try {
-		json j;
-		file >> j;
-		// PhysicsConstants fields are all const — only one global set of constants is expected
-		// so we push back one default instance (values are compile-time fixed in the struct)
-		constants.emplace_back();
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-		constants.emplace_back();
-	}
-	return constants;
-}
-
-
-
-
-// ! Loads atmosphere state from JSON configuration file
-std::vector<AtmosphereState> ConfigLoader::loadAtmosphereState(const std::string& filepath) {
-	std::vector<AtmosphereState> states;
-	std::ifstream file(filepath);
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		states.emplace_back();
-		return states;
-	}
-	try {
-		json j;
-		file >> j;
-		for (const auto& item : j) {
-			AtmosphereState a;
-			a.temperature_K = item.value("temperature_K", 288.15);
-			a.pressure_Pa = item.value("pressure_Pa", 101325.0);
-			a.density_kgm3 = item.value("density_kgm3", 1.225);
-			a.speed_of_sound_ms = item.value("speed_of_sound_ms", 340.3);
-			states.push_back(a);
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-		states.emplace_back();
-	}
-	return states;
-}
-
-
-
-
-// ! Loads aircraft specifications from JSON configuration file
-std::vector<Aircraft> ConfigLoader::loadAircraft(const std::string& filepath) {
-	std::vector<Aircraft> aircraft;
-	std::ifstream file(filepath);
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		aircraft.emplace_back();
-		return aircraft;
-	}
-	try {
-		json j;
-		file >> j;
-		for (const auto& item : j) {
-			Aircraft a;
-			a.name = item.value("name", "Unknown Aircraft");
-			a.bomber_totalMass = item.value("bomber_totalMass", 0.0);
-			a.bomber_wingArea = item.value("bomber_wingArea", 0.0);
-			a.bomber_liftCurveSlope = item.value("bomber_liftCurveSlope", 0.0);
-			aircraft.push_back(a);
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-		aircraft.emplace_back();
-	}
-	return aircraft;
-}
-
-
-
-// ! Loads target specifications from JSON configuration file
-std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
-	std::vector<Target> targets;
-	std::ifstream file(filepath);
-	// comment why if -- warn user and return fallback target list if config file is missing
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		return targets;
-	}
-
-	try {
-		json j;
-		file >> j;
-		for (const auto& item : j) {
-			Target t;
-			t.name = item.value("name", "Unknown Target");
-			// comment why if -- parse multi-layer array if present, otherwise build legacy single layer
-			if (item.contains("layers") && item["layers"].is_array()) {
-				for (const auto& l : item["layers"]) {
-					TargetLayer layer;
-					layer.material_name =
-						l.value("material_name", "Unknown Material");
-					layer.thickness = l.value("thickness", 1.0);
-					layer.density = l.value("density", 2500.0);
-					layer.compressive_strength =
-						l.value("compressive_strength", 60.0e6);
-					layer.rebar_volume_fraction =
-						l.value("rebar_volume_fraction", 0.0);
-					layer.rebar_yield_strength =
-						l.value("rebar_yield_strength", 0.0);
-					layer.hugoniot_c0 = l.value("hugoniot_c0", 3200.0);
-					layer.hugoniot_s = l.value("hugoniot_s", 1.9);
-					layer.specific_heat = l.value("specific_heat", 880.0);
-					layer.melting_point = l.value("melting_point", 1500.0);
-					layer.heat_of_fusion = l.value("heat_of_fusion", 400000.0);
-					t.layers.push_back(layer);
-				}
-			} else {
-				TargetLayer layer;
-				layer.material_name = "Legacy Material";
-				layer.thickness = 100.0; // Assume semi-infinite
-				layer.density = item.value("density", 2500.0);
-				layer.compressive_strength =
-					item.value("compressive_strength", 60.0e6);
-				layer.rebar_volume_fraction = 0.0;
-				layer.rebar_yield_strength = 0.0;
-				layer.hugoniot_c0 = item.value("hugoniot_c0", 3200.0);
-				layer.hugoniot_s = item.value("hugoniot_s", 1.9);
-				layer.specific_heat = item.value("specific_heat", 880.0);
-				layer.melting_point = item.value("melting_point", 1500.0);
-				layer.heat_of_fusion = item.value("heat_of_fusion", 400000.0);
-				t.layers.push_back(layer);
-			}
-			targets.push_back(t);
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-	}
-
-	return targets;
-	// **** Ends Here ****
-}
-
-
-
-
-// ! Loads projectile specifications from JSON configuration file
-std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepath) {
-	std::vector<Projectile> projectiles;
-	std::ifstream file(filepath);
-	// comment why if -- handle missing projectile dataset file safely
-	if (!file.is_open()) {
-		std::cerr << "Warning: Could not open " << filepath << ". Using defaults.\n";
-		return projectiles;
-	}
-
-	try {
-		json j;
-		file >> j;
-		for (const auto& item : j) {
-			Projectile p;
-			p.name = item.value("name", "Unknown Projectile");
-			p.length = item.value("length", 1.0);
-			p.diameter = item.value("diameter", 0.1);
-			p.curvature_noseReduce =
-				item.value("curvature_noseReduce", 6.0 * p.diameter);
-			p.total_mass = item.value("total_mass", 100.0);
-			p.explosive_mass = item.value("explosive_mass", 0.0);
-			p.casing_density = item.value("casing_density", 7800.0);
-			p.yield_strength = item.value("yield_strength", 1.0e9);
-			p.specific_heat = item.value("specific_heat", 460.0);
-			p.melting_point = item.value("melting_point", 1800.0);
-			p.heat_of_fusion = item.value("heat_of_fusion", 272000.0);
-			p.area_moment_inertia = item.value("area_moment_inertia", 0.02);
-			p.elastic_modulus = item.value("elastic_modulus", 200.0e9);
-			p.casing_wall_thickness = item.value("casing_wall_thickness", 0.05);
-			p.hugoniot_c0 = item.value("hugoniot_c0", 4570.0);
-			p.hugoniot_s = item.value("hugoniot_s", 1.49);
-			p.explosive_critical_energy =
-				item.value("explosive_critical_energy", 3.0e15);
-			p.explosive_energy_j_per_kg = item.value(
-				"explosive_energy_j_per_kg", p.explosive_mass > 0.0 ? 5.2e6 : 0.0);
-			projectiles.push_back(p);
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "Error parsing JSON in " << filepath << ": " << e.what() << "\n";
-	}
-
-	return projectiles;
-	// **** Ends Here ****
-}
-
-
-
-
-// ! Finds target by name string from target vector
-std::optional<Target> ConfigLoader::getTargetByName(const std::vector<Target>& targets,
-						    const std::string& name) {
-	for (const auto& t : targets) {
-		// comment why if -- match target name to request
-		if (t.name == name) {
-			return t;
-		}
-	}
-	return std::nullopt;
-	// **** Ends Here ****
-}
-
-
-
-
-// ! Finds projectile by name string from projectile vector
-std::optional<Projectile> ConfigLoader::getProjectileByName(
-	const std::vector<Projectile>& projectiles, const std::string& name) {
-	for (const auto& p : projectiles) {
-		// comment why if -- match projectile name to request
-		if (p.name == name) {
-			return p;
-		}
-	}
-	return std::nullopt;
-	// **** Ends Here ****
-}
-
-// ! Finds impact scenario by name string from scenario vector
-std::optional<ImpactScenario> ConfigLoader::getScenarioByName(
-	const std::vector<ImpactScenario>& scenarios, const std::string& name) {
-	for (const auto& s : scenarios) {
-		// comment why if -- match scenario name to request
-		if (s.name == name) {
-			return s;
-		}
-	}
-	return std::nullopt;
-	// **** Ends Here ****
-}
-
-
-
-
-// ! Returns an atmosphere state by index (AtmosphereState has no name field)
-std::optional<AtmosphereState> ConfigLoader::getAtmosphereStateByIndex(
-	const std::vector<AtmosphereState>& states, int index) {
-	// comment why if -- guard against out-of-range access on a potentially empty vector
-	if (index >= 0 && index < static_cast<int>(states.size())) {
-		return states[index];
-	}
-	return std::nullopt;
-	// **** Ends Here ****
-}
-
-
-
-
-// ! Finds aircraft by name string from aircraft vector
-std::optional<Aircraft> ConfigLoader::getAircraftByName(const std::vector<Aircraft>& aircraft,
-							const std::string& name) {
-	for (const auto& a : aircraft) {
-		// comment why if -- match aircraft name to request
-		if (a.name == name) {
-			return a;
-		}
-	}
-	return std::nullopt;
-	// **** Ends Here ****
-}
-
-SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
-						    const std::vector<Projectile>& projectilesDb) {
+SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath) {
 	SimulationConfig simConfig;
 	std::ifstream ifs(filepath);
 	if (!ifs.is_open()) {
@@ -325,7 +20,7 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 	json config;
 	ifs >> config;
 
-	int simChoice = config.value("/Simulation/choice"_json_pointer, 3);
+	int simChoice = config.value("/Simulation/choice"_json_pointer, 1);
 	simConfig.choice = simChoice;
 
 	if (simChoice == 1) {
@@ -352,21 +47,38 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 		simConfig.munition.heat_of_fusion = p.value("heat_of_fusion", 272000.0);
 
 		simConfig.object.name = config.contains("Target") ? config["Target"].value("name", "AI Custom Target") : "AI Custom Target";
-		auto t = config["Target"]["layers"][0];
 		simConfig.object.layers.clear();
-		TargetLayer customLayer;
-		customLayer.material_name = t.value("material_name", "AI Custom Layer");
-		customLayer.thickness = t.value("thickness", 60.0);
-		customLayer.rebar_volume_fraction = t.value("rebar_volume_fraction", 0.02);
-		customLayer.rebar_yield_strength = t.value("rebar_yield_strength", 400e6);
-		customLayer.density = t.value("density", 2400.0);
-		customLayer.compressive_strength = t.value("compressive_strength", 70e6);
-		customLayer.hugoniot_c0 = t.value("hugoniot_c0", 3200.0);
-		customLayer.hugoniot_s = t.value("hugoniot_s", 1.9);
-		customLayer.specific_heat = t.value("specific_heat", 880.0);
-		customLayer.melting_point = t.value("melting_point", 1500.0);
-		customLayer.heat_of_fusion = t.value("heat_of_fusion", 400000.0);
-		simConfig.object.layers.push_back(customLayer);
+		if (config.contains("Target") && config["Target"].contains("layers") && config["Target"]["layers"].is_array() && !config["Target"]["layers"].empty()) {
+			for (const auto& t : config["Target"]["layers"]) {
+				TargetLayer customLayer;
+				customLayer.material_name = t.value("material_name", "AI Custom Layer");
+				customLayer.thickness = t.value("thickness", 60.0);
+				customLayer.rebar_volume_fraction = t.value("rebar_volume_fraction", 0.02);
+				customLayer.rebar_yield_strength = t.value("rebar_yield_strength", 400e6);
+				customLayer.density = t.value("density", 2400.0);
+				customLayer.compressive_strength = t.value("compressive_strength", 70e6);
+				customLayer.hugoniot_c0 = t.value("hugoniot_c0", 3200.0);
+				customLayer.hugoniot_s = t.value("hugoniot_s", 1.9);
+				customLayer.specific_heat = t.value("specific_heat", 880.0);
+				customLayer.melting_point = t.value("melting_point", 1500.0);
+				customLayer.heat_of_fusion = t.value("heat_of_fusion", 400000.0);
+				simConfig.object.layers.push_back(customLayer);
+			}
+		} else {
+			TargetLayer customLayer;
+			customLayer.material_name = "AI Custom Layer (Fallback)";
+			customLayer.thickness = 60.0;
+			customLayer.rebar_volume_fraction = 0.02;
+			customLayer.rebar_yield_strength = 400e6;
+			customLayer.density = 2400.0;
+			customLayer.compressive_strength = 70e6;
+			customLayer.hugoniot_c0 = 3200.0;
+			customLayer.hugoniot_s = 1.9;
+			customLayer.specific_heat = 880.0;
+			customLayer.melting_point = 1500.0;
+			customLayer.heat_of_fusion = 400000.0;
+			simConfig.object.layers.push_back(customLayer);
+		}
 
 		if (config.contains("Aircraft")) {
 			auto a = config["Aircraft"];
@@ -375,7 +87,10 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 			simConfig.bomber.bomber_wingArea = a.value("bomber_wingArea", 478.0);
 			simConfig.bomber.bomber_liftCurveSlope = a.value("bomber_liftCurveSlope", 4.5);
 		} else {
-			simConfig.bomber = B2_Sprit_Strategic_Bomber; // fallback
+			simConfig.bomber.name = "Unknown Aircraft";
+			simConfig.bomber.bomber_totalMass = 0.0;
+			simConfig.bomber.bomber_wingArea = 0.0;
+			simConfig.bomber.bomber_liftCurveSlope = 0.0;
 		}
 
 		if (config.contains("AtmosphereState")) {
@@ -409,24 +124,8 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 				name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
 			simConfig.scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
 		}
-	} else if (simChoice == 3) {
-		if (auto p = ConfigLoader::getProjectileByName(
-			    projectilesDb, "GBU-57 Massive Ordnance Penetrator (MOP)")) {
-			simConfig.munition = *p;
-		} else {
-			simConfig.munition = Midnight_Hammer_projectile;
-		}
-		simConfig.object = Midnight_Hammer_Target;
-		int numBombs = config.value("/Simulation/numBombs"_json_pointer, 2);
-		for (int i = 0; i < numBombs; ++i) {
-			std::stringstream name_ss;
-			if (i == 0)
-				name_ss << "Bomb #1 (Shaft Breaker)";
-			else
-				name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-			simConfig.scenarios.push_back(
-				{name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
-		}
+	} else {
+		throw std::runtime_error("simChoice > 1 relies on internal hardcoded data which has been removed. Use simChoice = 1 with a full JSON configuration payload.");
 	}
 
 	return simConfig;

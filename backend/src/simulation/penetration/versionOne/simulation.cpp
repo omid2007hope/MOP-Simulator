@@ -7,7 +7,6 @@
 #include <iostream>
 
 // files
-#include "penetration/versionOne/default.hpp"
 #include "penetration/versionOne/environment_physics.hpp"
 #include "penetration/versionOne/simulation.hpp"
 
@@ -16,10 +15,8 @@
 // ! Constructor
 ImpactSimulator::ImpactSimulator(const Projectile& p,
 				 const Target& t,
-				 const PhysicsConstants& c,
-				 const Aircraft& a,
-				 const AtmosphereState& atmos)
-    : proj(p), target(t), cons(c), aircraft(a), atmosphereState(atmos) {}
+				 const PhysicsConstants& c)
+    : proj(p), target(t), cons(c) {}
 
 
 // ! ********************
@@ -597,7 +594,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 
 
-	const double groundSpeedOfSound = this->custom_atmosphere.speed_of_sound_ms;
+	const double groundSpeedOfSound = EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
 	res.mach_number = current_velocity / groundSpeedOfSound;
 
 	double rho_t = target.layers.empty() ? 2500.0 : target.layers[0].density;
@@ -973,7 +970,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 // ! ********************
 // ! End Result
 // ! ********************
-SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
+SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario, const Aircraft& dropAircraft, const AtmosphereState& atmos) {
 
 
 
@@ -998,7 +995,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 
 	double dt = 1e-5;
 
-	simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt, aircraft);
+	simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt, dropAircraft);
 
 	simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 
