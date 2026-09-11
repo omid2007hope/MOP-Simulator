@@ -14,9 +14,12 @@
 
 // ! ********************
 // ! Constructor
-// ! ********************
-ImpactSimulator::ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c)
-    : proj(p), target(t), cons(c) {}
+ImpactSimulator::ImpactSimulator(const Projectile& p,
+				 const Target& t,
+				 const PhysicsConstants& c,
+				 const Aircraft& a,
+				 const AtmosphereState& atmos)
+    : proj(p), target(t), cons(c), aircraft(a), atmosphereState(atmos) {}
 
 
 // ! ********************
@@ -50,20 +53,21 @@ double ImpactSimulator::explosiveShockwave(double explosiveMass, double explosiv
 AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 						       double flightPathAngle,
 						       double velocity,
-						       double bombTotalMass) {
+						       double bombTotalMass,
+						       double bomber_liftCurveSlope,
+						       double bomber_wingArea) {
 
-	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(altitude / 3.28084, cons);
+	AtmosphereState atmos;
 
 	double fpa_rad = flightPathAngle * cons.PI / 180.0;
 
-	double trim_deg = EnvironmentPhysics::flightControlTrim(
-		flightPathAngle,
-		velocity,
-		bombTotalMass,
-		B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope,
-		B2_Sprit_Strategic_Bomber.bomber_wingArea,
-		atmos.density_kgm3,
-		cons);
+	double trim_deg = EnvironmentPhysics::flightControlTrim(flightPathAngle,
+								velocity,
+								bombTotalMass,
+								bomber_liftCurveSlope,
+								bomber_wingArea,
+								atmos.density_kgm3,
+								cons);
 
 	double trim_rad = trim_deg * cons.PI / 180.0;
 
@@ -90,20 +94,22 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 					      SimulationResult& res,
 					      double& impact_velocity,
 					      double& impact_pitch,
-					      double dt) {
+					      double dt,
+					      const Aircraft& dropAircraft) {
 
 	// ! Pass data to - for angle simulation.
 	AngleSimulationResult angleRes = angleSimulation(scenario.altitude_ft,
 							 scenario.flight_path_angle,
 							 scenario.velocity,
-							 proj.total_mass);
+							 proj.total_mass,
+							 dropAircraft.bomber_liftCurveSlope,
+							 dropAircraft.bomber_wingArea);
 
 
 	(void)dt; // Suppress unused parameter warning
 
 
-	AtmosphereState atmos =
-		EnvironmentPhysics::standardAtmosphere(scenario.altitude_ft / 3.28084, cons);
+	AtmosphereState atmos;
 
 	double current_altitude = scenario.altitude_ft;
 	double current_velocity = scenario.velocity;
@@ -119,7 +125,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	if (current_altitude > 0.0) {
 		std::cout << "\n--- Simulating Atmospheric Drop from " << current_altitude
 			  << " ft ---\n";
-		
+
 		res.mach_number = current_velocity / atmos.speed_of_sound_ms;
 
 		double dt_drop = 0.01;
@@ -131,7 +137,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 		double y_m = current_altitude / 3.28084;
 
 		auto calc_derivs = [&](double alt_m, double vx, double vy) -> DropDeriv {
-			AtmosphereState atm = EnvironmentPhysics::standardAtmosphere(alt_m, cons);
+			AtmosphereState atm;
 			double v_mag = std::hypot(vx, vy);
 			double mach = v_mag / atm.speed_of_sound_ms;
 			double cd = EnvironmentPhysics::getMachDependentDrag(
@@ -193,8 +199,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 			}
 
 			current_altitude = y_m * 3.28084;
-			AtmosphereState current_atm =
-				EnvironmentPhysics::standardAtmosphere(y_m, cons);
+			AtmosphereState current_atm;
 
 			double current_density = current_atm.density_kgm3;
 
@@ -290,9 +295,9 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 	res.area = area;
 	res.impact_velocity = impact_velocity;
 	res.impact_pitch = impact_pitch;
-	res.aircraft_bomber_totalMass = B2_Sprit_Strategic_Bomber.bomber_totalMass;
-	res.aircraft_bomber_wingArea = B2_Sprit_Strategic_Bomber.bomber_wingArea;
-	res.aircraft_bomber_liftCurveSlope = B2_Sprit_Strategic_Bomber.bomber_liftCurveSlope;
+	res.aircraft_bomber_totalMass = dropAircraft.bomber_totalMass;
+	res.aircraft_bomber_wingArea = dropAircraft.bomber_wingArea;
+	res.aircraft_bomber_liftCurveSlope = dropAircraft.bomber_liftCurveSlope;
 	res.cons_universalGasConstant = cons.universalGasConstant;
 	res.cons_molarMassAir = cons.molarMassAir;
 	res.cons_adiabaticIndexAir = cons.adiabaticIndexAir;
@@ -410,9 +415,9 @@ PostPenetrationCraterProfilingResult ImpactSimulator::postPenetrationCraterProfi
 
 
 ThermalMassAblationResult ImpactSimulator::thermalMassAblation(bool erosionActive,
-								 double& currentTemperature,
-								 double& currentMass,
-								 double& currentLength) {
+							       double& currentTemperature,
+							       double& currentMass,
+							       double& currentLength) {
 	ThermalMassAblationResult TMA;
 
 	if (!erosionActive) {
@@ -448,7 +453,7 @@ ThermalMassAblationResult ImpactSimulator::thermalMassAblation(bool erosionActiv
 			TMA.should_break = true;
 		}
 	}
-	
+
 	return TMA;
 }
 
@@ -479,26 +484,22 @@ TelemetryFrame ImpactSimulator::buildPenetrationFrame(const FramePackPayload& p)
 	frame.bending_moment = p.bending_moment;
 	frame.max_bending_stress = p.max_bending_stress;
 
-	frame.strain_rate =
-		std::fabs(p.current_velocity) / std::max(0.01, proj.diameter);
+	frame.strain_rate = std::fabs(p.current_velocity) / std::max(0.01, proj.diameter);
 	frame.effective_strength = p.baseStrength * p.dynamic_increase_factor;
 
 	double fc_mpa = std::max(0.001, frame.effective_strength / 1.0e6);
 	double S = 82.6 * std::pow(fc_mpa, -0.544);
-	double CRH_val = (proj.diameter > 0.0)
-				 ? (proj.curvature_noseReduce / proj.diameter)
-				 : 3.0;
+	double CRH_val = (proj.diameter > 0.0) ? (proj.curvature_noseReduce / proj.diameter) : 3.0;
 	double dragCoef = (8.0 * ((CRH_val > 0.0) ? CRH_val : 3.0) - 1.0) /
 			  (24.0 * std::pow(((CRH_val > 0.0) ? CRH_val : 3.0), 2));
-	frame.tunnel_force = (cons.PI * std::pow(proj.diameter / 2.0, 2)) * (S * frame.effective_strength +
-				     dragCoef * p.baseDensity * p.current_velocity *
-					     p.current_velocity);
+	frame.tunnel_force = (cons.PI * std::pow(proj.diameter / 2.0, 2)) *
+			     (S * frame.effective_strength +
+			      dragCoef * p.baseDensity * p.current_velocity * p.current_velocity);
 
 	frame.interface_erosion_velocity =
 		p.erosion_active ? (p.current_velocity *
-				  std::sqrt(p.baseDensity /
-					    std::max(1.0, proj.casing_density)))
-			       : 0.0;
+				    std::sqrt(p.baseDensity / std::max(1.0, proj.casing_density)))
+				 : 0.0;
 
 	frame.heat_rate = (p.current_temperature > proj.melting_point)
 				  ? (p.current_temperature - proj.melting_point)
@@ -512,7 +513,7 @@ TelemetryFrame ImpactSimulator::buildPenetrationFrame(const FramePackPayload& p)
 				  : 0.0;
 	frame.effective_linear_density =
 		p.erosion_active ? (proj.total_mass / proj.length)
-			       : (p.current_mass / std::max(0.01, p.current_length));
+				 : (p.current_mass / std::max(0.01, p.current_length));
 
 	return frame;
 }
@@ -596,8 +597,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 
 
-	const double groundSpeedOfSound =
-		EnvironmentPhysics::standardAtmosphere(0.0, cons).speed_of_sound_ms;
+	const double groundSpeedOfSound = this->custom_atmosphere.speed_of_sound_ms;
 	res.mach_number = current_velocity / groundSpeedOfSound;
 
 	double rho_t = target.layers.empty() ? 2500.0 : target.layers[0].density;
@@ -697,7 +697,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		double bending_moment = 0.0;
 		double max_bending_stress = 0.0;
 		if (std::abs(obliquity_radians) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
-			double depth_ratio = std::clamp(current_depth / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
+			double depth_ratio = std::clamp(
+				current_depth / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
 			double active_obliquity = obliquity_radians * (1.0 - depth_ratio);
 			asymmetric_force = (0.5 * baseDensity * squaredVelocity * area) *
 					   std::sin(active_obliquity + angleOfAttack_radians);
@@ -737,7 +738,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 			double lateral_force = 0.0;
 			if (std::abs(theta) > 0.0 || std::abs(angleOfAttack_radians) > 0.0) {
-				double depth_ratio = std::clamp(z / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
+				double depth_ratio = std::clamp(
+					z / (2.0 * std::max(0.01, proj.diameter)), 0.0, 1.0);
 				double active_theta = theta * (1.0 - depth_ratio);
 				lateral_force = (0.5 * baseDensity * vSq * area) *
 						std::sin(active_theta + angleOfAttack_radians);
@@ -792,8 +794,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 
 				double erosion_heat_rate = 0.5 * baseDensity * (v - u) * (v - u) *
 							   area * std::fabs(v - u);
-				double heat_partition_fraction = 0.05; // 5% of energy conducts into the rod
-				d.dT = (erosion_heat_rate * heat_partition_fraction) / (safeMass * proj.specific_heat);
+				double heat_partition_fraction =
+					0.05; // 5% of energy conducts into the rod
+				d.dT = (erosion_heat_rate * heat_partition_fraction) /
+				       (safeMass * proj.specific_heat);
 			}
 
 			if (v > 0.1) {
@@ -847,10 +851,8 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		// !
 		// !
 
-		ThermalMassAblationResult TMAR = thermalMassAblation(erosion_active,
-								     current_temperature,
-								     current_mass,
-								     current_length);
+		ThermalMassAblationResult TMAR = thermalMassAblation(
+			erosion_active, current_temperature, current_mass, current_length);
 
 		if (TMAR.casing_failure) {
 			res.casing_failure = TMAR.casing_failure;
@@ -861,7 +863,7 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 			res.final_rod_length = TMAR.final_rod_length;
 			res.erosion_length_lost = TMAR.erosion_length_lost;
 		}
-		
+
 		if (TMAR.should_break) {
 			break;
 		}
@@ -883,14 +885,28 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 		}
 
 		if (pen_frame_counter++ % 20 == 0) {
-			FramePackPayload payload = {
-				t, current_depth, current_velocity, groundSpeedOfSound,
-				dynamic_pressure, acceleration, current_temperature,
-				erosion_active, res.dynamic_increase_factor, current_length,
-				obliquity_radians, Up, Us, P_shock, transmitted_pressure,
-				shock_energy, asymmetric_force, bending_moment,
-				max_bending_stress, baseStrength, baseDensity, current_mass
-			};
+			FramePackPayload payload = {t,
+						    current_depth,
+						    current_velocity,
+						    groundSpeedOfSound,
+						    dynamic_pressure,
+						    acceleration,
+						    current_temperature,
+						    erosion_active,
+						    res.dynamic_increase_factor,
+						    current_length,
+						    obliquity_radians,
+						    Up,
+						    Us,
+						    P_shock,
+						    transmitted_pressure,
+						    shock_energy,
+						    asymmetric_force,
+						    bending_moment,
+						    max_bending_stress,
+						    baseStrength,
+						    baseDensity,
+						    current_mass};
 			TelemetryFrame frame = buildPenetrationFrame(payload);
 
 			res.penetration_frames.push_back(frame);
@@ -982,7 +998,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario) {
 
 	double dt = 1e-5;
 
-	simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt);
+	simulateAtmosphericDrop(scenario, proj, res, impact_velocity, impact_pitch, dt, aircraft);
 
 	simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
 

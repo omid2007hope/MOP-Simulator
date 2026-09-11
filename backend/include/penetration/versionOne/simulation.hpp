@@ -76,7 +76,7 @@ struct Projectile {
 	double hugoniot_s = 0.0;
 	// explosive_critical_energy (Sensitivity): How much impact shock energy (P^2*tau) the bomb can endure before prematurely detonating (The Trigger)
 	double explosive_critical_energy = 0.0;
-	
+
 	// explosive_energy_j_per_kg (Destructive Yield): The chemical energy density released after a successful detonation (The Boom)
 	double explosive_energy_j_per_kg = 0.0;
 	// specific_heat determines how much the temperature changes for a given amount of energy.
@@ -374,6 +374,10 @@ private:
 	// ! cons payload comes from c (cons) in main.cpp - line 464 initialized in simulation.cpp - line 16
 	PhysicsConstants cons;
 
+	Aircraft aircraft;
+
+	AtmosphereState atmosphereState;
+
 
 
 
@@ -385,7 +389,8 @@ private:
 				     SimulationResult& res,
 				     double& impact_velocity,
 				     double& impact_pitch,
-				     double dt);
+				     double dt,
+				     const Aircraft& dropAircraft);
 
 	// ! scenario, res, impact_velocity, impact_pitch and dt payloads come from simulation.cpp - line 670
 	// ! simulateGroundPenetration(scenario, res, impact_velocity, impact_pitch, dt);
@@ -399,7 +404,9 @@ private:
 	AngleSimulationResult angleSimulation(double altitude,
 					      double flightPathAngle,
 					      double velocity,
-					      double bombTotalMass);
+					      double bombTotalMass,
+					      double bomber_liftCurveSlope,
+					      double bomber_wingArea);
 
 
 	// Ground penetration
@@ -428,7 +435,11 @@ public:
 	// ! p, t and c payloads come from main.cpp - line 464
 	// ! ImpactSimulator simulator(munition, object, cons);
 	// ! purpose : initializes the simulation engine with specific projectile physical specs, multi-layer target configuration, and universal physics constants.
-	ImpactSimulator(const Projectile& p, const Target& t, const PhysicsConstants& c);
+	ImpactSimulator(const Projectile& p,
+			const Target& t,
+			const PhysicsConstants& c,
+			const Aircraft& a,
+			const AtmosphereState& env);
 
 	// ! Atmospheric drop
 	static double impactShockwave(double totalMass, double velocityUponImpact);
