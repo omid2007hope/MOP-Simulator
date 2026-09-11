@@ -10,6 +10,7 @@
 // Standalone physics engine — declarations only.
 // Function bodies are compiled in MOPSimulationCore.cpp (same module, linked together).
 #include "simulation.hpp"
+#include "penetration/versionOne/default.hpp"
 
 
 DEFINE_LOG_CATEGORY(LogMOPSim);
@@ -78,7 +79,12 @@ void UMOPSimulatorComponent::RunSimulation() {
 	UE_LOG(LogMOPSim, Log, TEXT("========================================"));
 
 	// 2. Run full simulation (atmospheric drop + ground penetration)
-	ImpactSimulator Sim(RawProj, RawTarget, Cons);
+	AtmosphereState Atmos;
+	Atmos.density_kgm3 = 1.225;
+	Atmos.speed_of_sound_ms = 340.3;
+	Atmos.pressure_Pa = 101325.0;
+	Atmos.temperature_K = 288.15;
+	ImpactSimulator Sim(RawProj, RawTarget, Cons, B2_Sprit_Strategic_Bomber, Atmos);
 	SimulationResult RawResult = Sim.simulate(RawScenario);
 
 	// 3. Convert results back to UE types

@@ -6,9 +6,10 @@
 #include <sstream>
 
 // files
-#include "penetration/versionOne/config_loader.hpp"
 #include "nlohmann/json.hpp"
+#include "penetration/versionOne/config_loader.hpp"
 #include "penetration/versionOne/default.hpp"
+
 
 using json = nlohmann::json;
 
@@ -25,12 +26,12 @@ std::vector<ImpactScenario> ConfigLoader::loadImpactScenario(const std::string& 
 		file >> j;
 		for (const auto& item : j) {
 			ImpactScenario s;
-			s.name              = item.value("name", "Unknown Scenario");
-			s.altitude_ft       = item.value("altitude_ft", 0.0);
-			s.velocity          = item.value("velocity", 0.0);
+			s.name = item.value("name", "Unknown Scenario");
+			s.altitude_ft = item.value("altitude_ft", 0.0);
+			s.velocity = item.value("velocity", 0.0);
 			s.flight_path_angle = item.value("flight_path_angle", 90.0);
-			s.obliquity_angle   = item.value("obliquity_angle", 0.0);
-			s.angle_of_attack   = item.value("angle_of_attack", 0.0);
+			s.obliquity_angle = item.value("obliquity_angle", 0.0);
+			s.angle_of_attack = item.value("angle_of_attack", 0.0);
 			scenarios.push_back(s);
 		}
 	} catch (const std::exception& e) {
@@ -82,10 +83,10 @@ std::vector<AtmosphereState> ConfigLoader::loadAtmosphereState(const std::string
 		file >> j;
 		for (const auto& item : j) {
 			AtmosphereState a;
-			a.temperature_K      = item.value("temperature_K", 288.15);
-			a.pressure_Pa        = item.value("pressure_Pa", 101325.0);
-			a.density_kgm3       = item.value("density_kgm3", 1.225);
-			a.speed_of_sound_ms  = item.value("speed_of_sound_ms", 340.3);
+			a.temperature_K = item.value("temperature_K", 288.15);
+			a.pressure_Pa = item.value("pressure_Pa", 101325.0);
+			a.density_kgm3 = item.value("density_kgm3", 1.225);
+			a.speed_of_sound_ms = item.value("speed_of_sound_ms", 340.3);
 			states.push_back(a);
 		}
 	} catch (const std::exception& e) {
@@ -112,10 +113,10 @@ std::vector<Aircraft> ConfigLoader::loadAircraft(const std::string& filepath) {
 		file >> j;
 		for (const auto& item : j) {
 			Aircraft a;
-			a.name                   = item.value("name", "Unknown Aircraft");
-			a.bomber_totalMass       = item.value("bomber_totalMass", 0.0);
-			a.bomber_wingArea        = item.value("bomber_wingArea", 0.0);
-			a.bomber_liftCurveSlope  = item.value("bomber_liftCurveSlope", 0.0);
+			a.name = item.value("name", "Unknown Aircraft");
+			a.bomber_totalMass = item.value("bomber_totalMass", 0.0);
+			a.bomber_wingArea = item.value("bomber_wingArea", 0.0);
+			a.bomber_liftCurveSlope = item.value("bomber_liftCurveSlope", 0.0);
 			aircraft.push_back(a);
 		}
 	} catch (const std::exception& e) {
@@ -159,6 +160,9 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
 						l.value("rebar_yield_strength", 0.0);
 					layer.hugoniot_c0 = l.value("hugoniot_c0", 3200.0);
 					layer.hugoniot_s = l.value("hugoniot_s", 1.9);
+					layer.specific_heat = l.value("specific_heat", 880.0);
+					layer.melting_point = l.value("melting_point", 1500.0);
+					layer.heat_of_fusion = l.value("heat_of_fusion", 400000.0);
 					t.layers.push_back(layer);
 				}
 			} else {
@@ -172,6 +176,9 @@ std::vector<Target> ConfigLoader::loadTargets(const std::string& filepath) {
 				layer.rebar_yield_strength = 0.0;
 				layer.hugoniot_c0 = item.value("hugoniot_c0", 3200.0);
 				layer.hugoniot_s = item.value("hugoniot_s", 1.9);
+				layer.specific_heat = item.value("specific_heat", 880.0);
+				layer.melting_point = item.value("melting_point", 1500.0);
+				layer.heat_of_fusion = item.value("heat_of_fusion", 400000.0);
 				t.layers.push_back(layer);
 			}
 			targets.push_back(t);
@@ -221,8 +228,8 @@ std::vector<Projectile> ConfigLoader::loadProjectiles(const std::string& filepat
 			p.hugoniot_s = item.value("hugoniot_s", 1.49);
 			p.explosive_critical_energy =
 				item.value("explosive_critical_energy", 3.0e15);
-			p.explosive_energy_j_per_kg =
-				item.value("explosive_energy_j_per_kg", p.explosive_mass > 0.0 ? 5.2e6 : 0.0);
+			p.explosive_energy_j_per_kg = item.value(
+				"explosive_energy_j_per_kg", p.explosive_mass > 0.0 ? 5.2e6 : 0.0);
 			projectiles.push_back(p);
 		}
 	} catch (const std::exception& e) {
@@ -296,8 +303,8 @@ std::optional<AtmosphereState> ConfigLoader::getAtmosphereStateByIndex(
 
 
 // ! Finds aircraft by name string from aircraft vector
-std::optional<Aircraft> ConfigLoader::getAircraftByName(
-	const std::vector<Aircraft>& aircraft, const std::string& name) {
+std::optional<Aircraft> ConfigLoader::getAircraftByName(const std::vector<Aircraft>& aircraft,
+							const std::string& name) {
 	for (const auto& a : aircraft) {
 		// comment why if -- match aircraft name to request
 		if (a.name == name) {
@@ -308,7 +315,8 @@ std::optional<Aircraft> ConfigLoader::getAircraftByName(
 	// **** Ends Here ****
 }
 
-SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath, const std::vector<Projectile>& projectilesDb) {
+SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
+						    const std::vector<Projectile>& projectilesDb) {
 	SimulationConfig simConfig;
 	std::ifstream ifs(filepath);
 	if (!ifs.is_open()) {
@@ -343,10 +351,11 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 		simConfig.munition.melting_point = p.value("melting_point", 1800.0);
 		simConfig.munition.heat_of_fusion = p.value("heat_of_fusion", 272000.0);
 
+		simConfig.object.name = config.contains("Target") ? config["Target"].value("name", "AI Custom Target") : "AI Custom Target";
 		auto t = config["Target"]["layers"][0];
 		simConfig.object.layers.clear();
 		TargetLayer customLayer;
-		customLayer.material_name = "AI Custom Layer";
+		customLayer.material_name = t.value("material_name", "AI Custom Layer");
 		customLayer.thickness = t.value("thickness", 60.0);
 		customLayer.rebar_volume_fraction = t.value("rebar_volume_fraction", 0.02);
 		customLayer.rebar_yield_strength = t.value("rebar_yield_strength", 400e6);
@@ -354,7 +363,33 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 		customLayer.compressive_strength = t.value("compressive_strength", 70e6);
 		customLayer.hugoniot_c0 = t.value("hugoniot_c0", 3200.0);
 		customLayer.hugoniot_s = t.value("hugoniot_s", 1.9);
+		customLayer.specific_heat = t.value("specific_heat", 880.0);
+		customLayer.melting_point = t.value("melting_point", 1500.0);
+		customLayer.heat_of_fusion = t.value("heat_of_fusion", 400000.0);
 		simConfig.object.layers.push_back(customLayer);
+
+		if (config.contains("Aircraft")) {
+			auto a = config["Aircraft"];
+			simConfig.bomber.name = a.value("name", "AI Custom Bomber");
+			simConfig.bomber.bomber_totalMass = a.value("bomber_totalMass", 160000.0);
+			simConfig.bomber.bomber_wingArea = a.value("bomber_wingArea", 478.0);
+			simConfig.bomber.bomber_liftCurveSlope = a.value("bomber_liftCurveSlope", 4.5);
+		} else {
+			simConfig.bomber = B2_Sprit_Strategic_Bomber; // fallback
+		}
+
+		if (config.contains("AtmosphereState")) {
+			auto env = config["AtmosphereState"];
+			simConfig.atmos.temperature_K = env.value("temperature_K", 288.15);
+			simConfig.atmos.pressure_Pa = env.value("pressure_Pa", 101325.0);
+			simConfig.atmos.density_kgm3 = env.value("density_kgm3", 1.225);
+			simConfig.atmos.speed_of_sound_ms = env.value("speed_of_sound_ms", 340.3);
+		} else {
+			simConfig.atmos.temperature_K = 288.15;
+			simConfig.atmos.pressure_Pa = 101325.0;
+			simConfig.atmos.density_kgm3 = 1.225;
+			simConfig.atmos.speed_of_sound_ms = 340.3;
+		}
 
 		auto s = config["Scenario"];
 		double alt = s.value("altitude_ft", 40000.0);
@@ -389,9 +424,10 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath,
 				name_ss << "Bomb #1 (Shaft Breaker)";
 			else
 				name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-			simConfig.scenarios.push_back({name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
+			simConfig.scenarios.push_back(
+				{name_ss.str(), 50000.0, 250.0, 0.0, 0.0, 0.0});
 		}
 	}
-	
+
 	return simConfig;
 }
