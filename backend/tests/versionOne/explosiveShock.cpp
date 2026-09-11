@@ -5,34 +5,20 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "config_loader.hpp"
-#include "default.hpp"
-#include "simulation.hpp"
+#include "penetration/versionOne/simulation.hpp"
 
 bool approxEqual(double a, double b, double epsilon = 1e-4) {
 	return std::fabs(a - b) < epsilon;
 }
 
 int main() {
-	// Initialize test target and projectile using defaults
-	Target concrete = CONCRETE_DEFAULT;
-	Projectile mop = MOP_DEFAULT;
-
-	PhysicsConstants cons;
-	AtmosphereState atmos;
-	atmos.density_kgm3 = 1.225;
-	atmos.speed_of_sound_ms = 340.3;
-	atmos.pressure_Pa = 101325.0;
-	atmos.temperature_K = 288.15;
-	ImpactSimulator simulator(mop, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
-
 	// Test case 1: explosiveMass = 2400 kg, explosiveEnergy = 5.2e6 J/kg
 	// couplingEfficiency = 0.25 (empirical acoustic impedance coupling, documented in simulation.cpp)
 	// explosiveShock = 2400 * 5.2e6 * 0.25 = 3.12e9
 	double expMass1 = 2400.0;
 	double expEnergy1 = 5.2e6;
 	double expected1 = expMass1 * expEnergy1 * 0.25;
-	double result1 = simulator.explosiveShockwave(expMass1, expEnergy1);
+	double result1 = ImpactSimulator::explosiveShockwave(expMass1, expEnergy1);
 	std::cout << "Test 1 (explosiveShockwave): Expected " << expected1 << ", Got " << result1 << std::endl;
 	assert(approxEqual(result1, expected1));
 
@@ -40,7 +26,7 @@ int main() {
 	double expMass2 = 0.0;
 	double expEnergy2 = 5.2e6;
 	double expected2 = 0.0;
-	double result2 = simulator.explosiveShockwave(expMass2, expEnergy2);
+	double result2 = ImpactSimulator::explosiveShockwave(expMass2, expEnergy2);
 	std::cout << "Test 2 (explosiveShockwave): Expected " << expected2 << ", Got " << result2 << std::endl;
 	assert(approxEqual(result2, expected2));
 

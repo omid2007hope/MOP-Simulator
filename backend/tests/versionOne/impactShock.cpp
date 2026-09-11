@@ -5,27 +5,13 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "config_loader.hpp"
-#include "default.hpp"
-#include "simulation.hpp"
+#include "penetration/versionOne/simulation.hpp"
 
 bool approxEqual(double a, double b, double epsilon = 1e-4) {
 	return std::fabs(a - b) < epsilon;
 }
 
 int main() {
-	// Initialize test target and projectile using defaults
-	Target concrete = CONCRETE_DEFAULT;
-	Projectile mop = MOP_DEFAULT;
-
-	PhysicsConstants cons;
-	AtmosphereState atmos;
-	atmos.density_kgm3 = 1.225;
-	atmos.speed_of_sound_ms = 340.3;
-	atmos.pressure_Pa = 101325.0;
-	atmos.temperature_K = 288.15;
-	ImpactSimulator simulator(mop, concrete, cons, B2_Sprit_Strategic_Bomber, atmos);
-
 	// Test case 1: totalMass = 13600 kg, velocity = 500 m/s
 	// kineticShock = 0.5 * 13600 * 500^2 = 1.7e9 Joules
 	double mass1 = 13600.0;
