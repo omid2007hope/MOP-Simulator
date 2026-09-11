@@ -73,7 +73,7 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 	// which is the unmodified fpa_rad. Subtracting trim_rad here would apply
 	// the aircraft's aerodynamic correction to the ballistic projectile — physically impossible.
 	double current_vx = velocity * std::cos(fpa_rad);
-	double current_vy = -velocity * std::sin(fpa_rad);
+	double current_vy = velocity * std::sin(fpa_rad);
 
 	AngleSimulationResult res;
 	res.trim_deg = trim_deg;
@@ -759,11 +759,10 @@ void ImpactSimulator::simulateGroundPenetration(const ImpactScenario& scenario,
 				double tunnelForce = area * (S * effective_strength +
 							     dragCoef * baseDensity * vSq);
 				double craterDepthLimit = 2.0 * proj.diameter;
-				double zLocal = z - layerEntryDepth;
 				double axialForce =
-					(craterDepthLimit > 0.0 && zLocal < craterDepthLimit)
+					(craterDepthLimit > 0.0 && z < craterDepthLimit)
 						? tunnelForce *
-							  std::clamp(zLocal / craterDepthLimit,
+							  std::clamp(z / craterDepthLimit,
 								     0.0,
 								     1.0)
 						: tunnelForce;

@@ -343,7 +343,7 @@ void printReport(const std::vector<SimulationResult>& results,
 		          << ", \"shock_pressure_gpa_peak\": " << r.shock_pressure_gpa_peak
 		          << ", \"shock_pulse_duration_us\": " << r.shock_pulse_duration_us
 		          << ", \"previous_strike_depth\": " << r.previous_strike_depth
-		          << ", \"cumulative_breach_depth\": " << r.actual_penetration_depth
+		          << ", \"cumulative_breach_depth\": " << r.cumulative_breach_depth
 		          << ", \"kinetic_shock_joules\": " << r.kinetic_shock_joules
 		          // Flight kinematics
 		          << ", \"altitude_ft\": " << r.altitude_ft
