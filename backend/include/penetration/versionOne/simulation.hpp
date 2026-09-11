@@ -74,7 +74,10 @@ struct Projectile {
 	double casing_wall_thickness = 0.0;
 	double hugoniot_c0 = 0.0;
 	double hugoniot_s = 0.0;
+	// explosive_critical_energy (Sensitivity): How much impact shock energy (P^2*tau) the bomb can endure before prematurely detonating (The Trigger)
 	double explosive_critical_energy = 0.0;
+	
+	// explosive_energy_j_per_kg (Destructive Yield): The chemical energy density released after a successful detonation (The Boom)
 	double explosive_energy_j_per_kg = 0.0;
 	// specific_heat determines how much the temperature changes for a given amount of energy.
 	double specific_heat = 460.0;

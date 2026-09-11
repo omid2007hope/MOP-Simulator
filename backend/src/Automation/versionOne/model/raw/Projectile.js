@@ -15,7 +15,10 @@ const projectileSchema = new mongoose.Schema(
 		casing_wall_thickness: { type: Number, default: 0.0 },
 		hugoniot_c0: { type: Number, default: 0.0 },
 		hugoniot_s: { type: Number, default: 0.0 },
+		// explosive_critical_energy (Sensitivity): How much impact shock energy (P^2*tau) the bomb can endure before prematurely detonating (The Trigger)
 		explosive_critical_energy: { type: Number, default: 0.0 },
+		
+		// explosive_energy_j_per_kg (Destructive Yield): The chemical energy density released after a successful detonation (The Boom)
 		explosive_energy_j_per_kg: { type: Number, default: 0.0 },
 		specific_heat: { type: Number, default: 0.0 },
 		melting_point: { type: Number, default: 0.0 },
