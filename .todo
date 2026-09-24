@@ -146,12 +146,12 @@ All files and directories across the repository have been inspected line-by-line
 - **Impact:** In multi-bomb scenarios (e.g. Bomb #1 creates a 25m breached shaft, Bomb #2 is supposed to enter the shaft), Bomb #2 encounters a pristine unbreached target!
 - **Fix:** Update `object = simulator.getTarget();` after each scenario run or maintain an outer simulator instance.
 
-#### 🔴 Bug 06: Telemetry Frames Omitted from stdout Line-Delimited JSON Stream
+#### 🟢 Bug 06: Telemetry Frames Omitted from stdout Line-Delimited JSON Stream (Checked)
 - **Location:** [`telemetry_exporter.cpp:L288-L367`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/telemetry_exporter.cpp#L288-L367)
 - **Root Cause:** `printReport()` prints a single line-delimited JSON summary for Node.js ingestion, but omits the `drop_frames` and `penetration_frames` arrays.
 - **Impact:** Telemetry arrays in MongoDB collections are always empty `[]`, depriving downstream analytics and visualizers of high-frequency step data.
-- **Fix:** Include serialized `drop_frames` and `pen_frames` in the line-delimited JSON payload or stream them as frame events.
-
+- **Fix:** Include serialized `drop_frames` and `pen_frames` in the line-delimited JSON payload or stream them as frame events.   
+  
 #### 🟡 Bug 07: Unassigned Sonic Boom Telemetry Coordinates
 - **Location:** [`simulation.cpp:L213-L215`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/simulation.cpp#L213-L215)
 - **Root Cause:** `double boom_time = ...; double boom_alt = ...;` are defined locally inside the print block rather than assigned to `res.boom_time` and `res.boom_alt`.
@@ -249,7 +249,7 @@ All files and directories across the repository have been inspected line-by-line
 ---
 
 ### 🟠 Phase 2: Physics Telemetry, Cross-Platform & Engine Alignment (P1)
-- [ ] **TEL-01:** Serialize `drop_frames` and `penetration_frames` in [`telemetry_exporter.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/telemetry_exporter.cpp) line-delimited JSON so MongoDB stores complete trajectory curves.
+- [x] **TEL-01:** Serialize `drop_frames` and `penetration_frames` in [`telemetry_exporter.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/telemetry_exporter.cpp) line-delimited JSON so MongoDB stores complete trajectory curves.
 - [ ] **TEL-02:** Correctly assign `res.boom_time` and `res.boom_alt` in [`simulation.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/simulation.cpp).
 - [ ] **PORT-01:** Implement platform-agnostic executable detection in [`simulationRunner.js`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/Automation/versionOne/service/simulationRunner.js):
   ```javascript

@@ -14,6 +14,12 @@
 // ! Namespace for formatting, printing, and exporting simulation telemetry and 3D visualizers
 namespace TelemetryExporter {
 
+	// ! Single source of truth: serializes one SimulationResult to a self-contained JSON string.
+	// ! Used by both printReport() (stdout → Node.js) and generateHtml3DVisualizer() (HTML embed).
+	std::string serializeResultToJson(const SimulationResult& r,
+					  const Projectile& proj,
+					  const Target& target);
+
 	void printAscii3DVisualizer(const SimulationResult& r,
 				    const Projectile& proj,
 				    const Target& target);

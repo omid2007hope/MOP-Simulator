@@ -15,6 +15,213 @@
 namespace TelemetryExporter {
 
 
+// ! ============================================================
+// ! Single source of truth — all fields in one place.
+// ! printReport() and generateHtml3DVisualizer() both call this.
+// ! ============================================================
+std::string serializeResultToJson(const SimulationResult& r,
+				   const Projectile& proj,
+				   const Target& target) {
+
+	// --- Helper: serialize a TelemetryFrame vector to a JSON array string ---
+	auto serializeDropFrames = [](const std::vector<TelemetryFrame>& frames) -> std::string {
+		std::ostringstream ss;
+		ss << "[";
+		for (size_t i = 0; i < frames.size(); ++i) {
+			const auto& f = frames[i];
+			ss << "{\"time\":" << f.time
+			   << ",\"altitude\":" << f.altitude
+			   << ",\"velocity\":" << f.velocity
+			   << ",\"mach\":" << f.mach
+			   << ",\"dynamic_pressure\":" << f.dynamic_pressure
+			   << ",\"is_sonic_boom\":" << (f.is_sonic_boom ? "true" : "false")
+			   << ",\"heat\":" << f.heat
+			   << ",\"g_force\":" << f.g_force
+			   << ",\"pitch_rad\":" << f.pitch_rad
+			   << ",\"is_eroding\":" << (f.is_eroding ? "true" : "false")
+			   << ",\"dif\":" << f.dif
+			   << ",\"remaining_length\":" << f.remaining_length
+			   << ",\"obliquity_deg\":" << f.obliquity_deg
+			   << ",\"current_vx\":" << f.current_vx
+			   << ",\"current_vy\":" << f.current_vy
+			   << ",\"drag_coefficient\":" << f.drag_coefficient
+			   << ",\"drag_force\":" << f.drag_force
+			   << ",\"guidance_pull\":" << f.guidance_pull
+			   << "}";
+			if (i + 1 < frames.size()) ss << ",";
+		}
+		ss << "]";
+		return ss.str();
+	};
+
+	auto serializePenFrames = [](const std::vector<TelemetryFrame>& frames) -> std::string {
+		std::ostringstream ss;
+		ss << "[";
+		for (size_t i = 0; i < frames.size(); ++i) {
+			const auto& f = frames[i];
+			ss << "{\"time\":" << f.time
+			   << ",\"depth\":" << f.depth
+			   << ",\"velocity\":" << f.velocity
+			   << ",\"mach\":" << f.mach
+			   << ",\"dynamic_pressure\":" << f.dynamic_pressure
+			   << ",\"g_force\":" << f.g_force
+			   << ",\"heat\":" << f.heat
+			   << ",\"is_eroding\":" << (f.is_eroding ? "true" : "false")
+			   << ",\"dif\":" << f.dif
+			   << ",\"remaining_length\":" << f.remaining_length
+			   << ",\"obliquity_deg\":" << f.obliquity_deg
+			   << ",\"current_vx\":" << f.current_vx
+			   << ",\"current_vy\":" << f.current_vy
+			   << ",\"Up\":" << f.Up
+			   << ",\"Us\":" << f.Us
+			   << ",\"P_shock\":" << f.P_shock
+			   << ",\"transmitted_pressure\":" << f.transmitted_pressure
+			   << ",\"shock_energy\":" << f.shock_energy
+			   << ",\"asymmetric_force\":" << f.asymmetric_force
+			   << ",\"bending_moment\":" << f.bending_moment
+			   << ",\"max_bending_stress\":" << f.max_bending_stress
+			   << ",\"strain_rate\":" << f.strain_rate
+			   << ",\"effective_strength\":" << f.effective_strength
+			   << ",\"tunnel_force\":" << f.tunnel_force
+			   << ",\"interface_erosion_velocity\":" << f.interface_erosion_velocity
+			   << ",\"heat_rate\":" << f.heat_rate
+			   << ",\"excess_heat\":" << f.excess_heat
+			   << ",\"mass_loss\":" << f.mass_loss
+			   << ",\"effective_linear_density\":" << f.effective_linear_density
+			   << "}";
+			if (i + 1 < frames.size()) ss << ",";
+		}
+		ss << "]";
+		return ss.str();
+	};
+
+	// --- Helper: serialize target layers to a JSON array string ---
+	auto serializeTargetLayers = [](const Target& tgt) -> std::string {
+		std::ostringstream ss;
+		ss << "[";
+		for (size_t k = 0; k < tgt.layers.size(); ++k) {
+			const auto& lay = tgt.layers[k];
+			ss << "{\"name\":\"" << lay.material_name << "\""
+			   << ",\"thickness\":" << lay.thickness
+			   << ",\"density\":" << lay.density
+			   << ",\"compressive_strength\":" << lay.compressive_strength
+			   << ",\"rebar_volume_fraction\":" << lay.rebar_volume_fraction
+			   << ",\"rebar_yield_strength\":" << lay.rebar_yield_strength
+			   << ",\"pulverized_depth\":" << lay.pulverized_depth
+			   << ",\"hugoniot_c0\":" << lay.hugoniot_c0
+			   << ",\"hugoniot_s\":" << lay.hugoniot_s
+			   << "}";
+			if (k + 1 < tgt.layers.size()) ss << ",";
+		}
+		ss << "]";
+		return ss.str();
+	};
+
+	// --- Helper: serialize layer_bottom_depths to a JSON array string ---
+	auto serializeLayerDepths = [](const std::vector<double>& depths) -> std::string {
+		std::ostringstream ss;
+		ss << "[";
+		for (size_t k = 0; k < depths.size(); ++k) {
+			ss << depths[k];
+			if (k + 1 < depths.size()) ss << ",";
+		}
+		ss << "]";
+		return ss.str();
+	};
+
+	PhysicsConstants cons{};
+	std::ostringstream j;
+	j << "{"
+	  // Core result
+	  << "\"name\":\"" << r.scenario_name << "\""
+	  << ",\"velocity\":" << r.velocity
+	  << ",\"mach\":" << r.mach_number
+	  << ",\"energy\":" << (r.kinetic_energy / 1e9)
+	  << ",\"pressurvives\":" << (r.explosive_charge_survives ? "true" : "false")
+	  << ",\"is_kinetic\":" << (r.is_kinetic_rod ? "true" : "false")
+	  << ",\"regime\":\"" << r.regime << "\""
+	  << ",\"summary\":\"" << r.outcome_summary << "\""
+	  // Projectile
+	  << ",\"proj_name\":\"" << proj.name << "\""
+	  << ",\"proj_length\":" << proj.length
+	  << ",\"proj_diameter\":" << proj.diameter
+	  << ",\"proj_total_mass\":" << proj.total_mass
+	  << ",\"proj_curvature_noseReduce\":" << proj.curvature_noseReduce
+	  << ",\"proj_casing_density\":" << proj.casing_density
+	  << ",\"proj_casing_wall_thickness\":" << proj.casing_wall_thickness
+	  << ",\"proj_area_moment_inertia\":" << proj.area_moment_inertia
+	  << ",\"proj_elastic_modulus\":" << proj.elastic_modulus
+	  << ",\"proj_hugoniot_c0\":" << proj.hugoniot_c0
+	  << ",\"proj_hugoniot_s\":" << proj.hugoniot_s
+	  << ",\"proj_explosive_energy_j_per_kg\":" << proj.explosive_energy_j_per_kg
+	  << ",\"proj_specific_heat\":" << proj.specific_heat
+	  << ",\"proj_melting_point\":" << proj.melting_point
+	  << ",\"proj_heat_of_fusion\":" << proj.heat_of_fusion
+	  // Target
+	  << ",\"target_name\":\"" << target.name << "\""
+	  << ",\"flight_path_angle\":" << r.flight_path_angle
+	  << ",\"obliquity_angle\":" << r.obliquity_angle
+	  << ",\"angle_of_attack\":" << r.angle_of_attack
+	  // Physics constants
+	  << ",\"cons_gravity\":" << cons.gravity
+	  << ",\"cons_pi\":" << cons.PI
+	  << ",\"cons_friction_factor\":" << cons.frictionFactor
+	  << ",\"cons_speed_of_sound\":" << cons.SpeedOfSound
+	  << ",\"cons_universalGasConstant\":" << r.cons_universalGasConstant
+	  << ",\"cons_molarMassAir\":" << r.cons_molarMassAir
+	  << ",\"cons_adiabaticIndexAir\":" << r.cons_adiabaticIndexAir
+	  << ",\"cons_earthRadius\":" << r.cons_earthRadius
+	  // Explosion & crater
+	  << ",\"explosive_mass\":" << r.explosive_mass
+	  << ",\"explosion_scale\":" << r.explosion_scale
+	  << ",\"crater_wide_radius\":" << r.crater_wide_radius
+	  << ",\"crater_narrow_radius\":" << r.crater_narrow_radius
+	  << ",\"camera_shake_magnitude\":" << r.camera_shake_magnitude
+	  << ",\"time_scale_pen\":" << r.time_scale_pen
+	  << ",\"total_explosive_yield\":" << r.total_explosive_yield
+	  << ",\"premature_detonation\":" << (r.premature_detonation ? "true" : "false")
+	  // Erosion
+	  << ",\"erosion_occurred\":" << (r.erosion_occurred ? "true" : "false")
+	  << ",\"final_rod_length\":" << r.final_rod_length
+	  << ",\"erosion_length_lost\":" << r.erosion_length_lost
+	  // Shock & dynamics
+	  << ",\"dynamic_increase_factor\":" << r.dynamic_increase_factor
+	  << ",\"bar_wave_speed\":" << r.bar_wave_speed
+	  << ",\"shock_pressure_gpa_peak\":" << r.shock_pressure_gpa_peak
+	  << ",\"shock_pulse_duration_us\":" << r.shock_pulse_duration_us
+	  << ",\"previous_strike_depth\":" << r.previous_strike_depth
+	  << ",\"cumulative_breach_depth\":" << r.cumulative_breach_depth
+	  << ",\"kinetic_shock_joules\":" << r.kinetic_shock_joules
+	  // Flight kinematics
+	  << ",\"altitude_ft\":" << r.altitude_ft
+	  << ",\"x_acceleration\":" << r.x_acceleration
+	  << ",\"y_acceleration\":" << r.y_acceleration
+	  << ",\"trim_deg\":" << r.trim_deg
+	  << ",\"trim_rad\":" << r.trim_rad
+	  << ",\"fpa_rad_corrected\":" << r.fpa_rad_corrected
+	  << ",\"area\":" << r.area
+	  << ",\"boom_time\":" << r.boom_time
+	  << ",\"boom_alt\":" << r.boom_alt
+	  << ",\"impact_velocity\":" << r.impact_velocity
+	  << ",\"impact_pitch\":" << r.impact_pitch
+	  << ",\"initial_shaft_depth\":" << r.initial_shaft_depth
+	  << ",\"critical_angle_threshold\":" << r.critical_angle_threshold
+	  << ",\"average_density\":" << r.average_density
+	  // Aircraft platform
+	  << ",\"aircraft_bomber_totalMass\":" << r.aircraft_bomber_totalMass
+	  << ",\"aircraft_bomber_wingArea\":" << r.aircraft_bomber_wingArea
+	  << ",\"aircraft_bomber_liftCurveSlope\":" << r.aircraft_bomber_liftCurveSlope
+	  // Arrays
+	  << ",\"target_layers\":" << serializeTargetLayers(target)
+	  << ",\"layer_bottom_depths\":" << serializeLayerDepths(r.layer_bottom_depths)
+	  << ",\"drop_frames\":" << serializeDropFrames(r.drop_frames)
+	  << ",\"penetration_frames\":" << serializePenFrames(r.penetration_frames)
+	  << "}";
+
+	return j.str();
+}
+
+
 void printAscii3DVisualizer(const SimulationResult& r,
 			    const Projectile& proj,
 			    const Target& target) {
@@ -285,86 +492,10 @@ void printReport(const std::vector<SimulationResult>& results,
 			  << std::left << std::setw(20) << r.outcome_summary << "\n";
 			  
 		// Full JSON frame for Node.js Automation Runner — matches Mongoose result.js schema
-		std::cout << "{"
-		          << "\"name\": \"" << r.scenario_name << "\""
-		          << ", \"velocity\": " << r.velocity
-		          << ", \"mach\": " << r.mach_number
-		          << ", \"energy\": " << (r.kinetic_energy / 1e9)
-		          << ", \"pressurvives\": " << (r.explosive_charge_survives ? "true" : "false")
-		          << ", \"is_kinetic\": " << (r.is_kinetic_rod ? "true" : "false")
-		          << ", \"regime\": \"" << r.regime << "\""
-		          << ", \"summary\": \"" << r.outcome_summary << "\""
-		          // Projectile
-		          << ", \"proj_name\": \"" << proj.name << "\""
-		          << ", \"proj_length\": " << proj.length
-		          << ", \"proj_diameter\": " << proj.diameter
-		          << ", \"proj_total_mass\": " << proj.total_mass
-		          << ", \"proj_curvature_noseReduce\": " << proj.curvature_noseReduce
-		          << ", \"proj_casing_density\": " << proj.casing_density
-		          << ", \"proj_casing_wall_thickness\": " << proj.casing_wall_thickness
-		          << ", \"proj_area_moment_inertia\": " << proj.area_moment_inertia
-		          << ", \"proj_elastic_modulus\": " << proj.elastic_modulus
-		          << ", \"proj_hugoniot_c0\": " << proj.hugoniot_c0
-		          << ", \"proj_hugoniot_s\": " << proj.hugoniot_s
-		          << ", \"proj_explosive_energy_j_per_kg\": " << proj.explosive_energy_j_per_kg
-		          << ", \"proj_specific_heat\": " << proj.specific_heat
-		          << ", \"proj_melting_point\": " << proj.melting_point
-		          << ", \"proj_heat_of_fusion\": " << proj.heat_of_fusion
-		          // Target
-		          << ", \"target_name\": \"" << target.name << "\""
-		          << ", \"flight_path_angle\": " << r.flight_path_angle
-		          << ", \"obliquity_angle\": " << r.obliquity_angle
-		          << ", \"angle_of_attack\": " << r.angle_of_attack
-		          // Physics constants
-		          << ", \"cons_gravity\": " << PhysicsConstants{}.gravity
-		          << ", \"cons_pi\": " << PhysicsConstants{}.PI
-		          << ", \"cons_friction_factor\": " << PhysicsConstants{}.frictionFactor
-		          << ", \"cons_speed_of_sound\": " << PhysicsConstants{}.SpeedOfSound
-		          << ", \"cons_universalGasConstant\": " << r.cons_universalGasConstant
-		          << ", \"cons_molarMassAir\": " << r.cons_molarMassAir
-		          << ", \"cons_adiabaticIndexAir\": " << r.cons_adiabaticIndexAir
-		          << ", \"cons_earthRadius\": " << r.cons_earthRadius
-		          // Explosion & crater
-		          << ", \"explosive_mass\": " << r.explosive_mass
-		          << ", \"explosion_scale\": " << r.explosion_scale
-		          << ", \"crater_wide_radius\": " << r.crater_wide_radius
-		          << ", \"crater_narrow_radius\": " << r.crater_narrow_radius
-		          << ", \"camera_shake_magnitude\": " << r.camera_shake_magnitude
-		          << ", \"time_scale_pen\": " << r.time_scale_pen
-		          << ", \"total_explosive_yield\": " << r.total_explosive_yield
-		          << ", \"premature_detonation\": " << (r.premature_detonation ? "true" : "false")
-		          // Erosion
-		          << ", \"erosion_occurred\": " << (r.erosion_occurred ? "true" : "false")
-		          << ", \"final_rod_length\": " << r.final_rod_length
-		          << ", \"erosion_length_lost\": " << r.erosion_length_lost
-		          // Shock & dynamics
-		          << ", \"dynamic_increase_factor\": " << r.dynamic_increase_factor
-		          << ", \"bar_wave_speed\": " << r.bar_wave_speed
-		          << ", \"shock_pressure_gpa_peak\": " << r.shock_pressure_gpa_peak
-		          << ", \"shock_pulse_duration_us\": " << r.shock_pulse_duration_us
-		          << ", \"previous_strike_depth\": " << r.previous_strike_depth
-		          << ", \"cumulative_breach_depth\": " << r.cumulative_breach_depth
-		          << ", \"kinetic_shock_joules\": " << r.kinetic_shock_joules
-		          // Flight kinematics
-		          << ", \"altitude_ft\": " << r.altitude_ft
-		          << ", \"x_acceleration\": " << r.x_acceleration
-		          << ", \"y_acceleration\": " << r.y_acceleration
-		          << ", \"trim_deg\": " << r.trim_deg
-		          << ", \"trim_rad\": " << r.trim_rad
-		          << ", \"fpa_rad_corrected\": " << r.fpa_rad_corrected
-		          << ", \"area\": " << r.area
-		          << ", \"boom_time\": " << r.boom_time
-		          << ", \"boom_alt\": " << r.boom_alt
-		          << ", \"impact_velocity\": " << r.impact_velocity
-		          << ", \"impact_pitch\": " << r.impact_pitch
-		          << ", \"initial_shaft_depth\": " << r.initial_shaft_depth
-		          << ", \"critical_angle_threshold\": " << r.critical_angle_threshold
-		          << ", \"average_density\": " << r.average_density
-		          // Aircraft platform
-		          << ", \"aircraft_bomber_totalMass\": " << r.aircraft_bomber_totalMass
-		          << ", \"aircraft_bomber_wingArea\": " << r.aircraft_bomber_wingArea
-		          << ", \"aircraft_bomber_liftCurveSlope\": " << r.aircraft_bomber_liftCurveSlope
-		          << "}" << std::endl;
+		std::string jsonOut = serializeResultToJson(r, proj, target);
+		jsonOut = std::regex_replace(jsonOut, std::regex("\\b(nan|NaN)\\b"), "null");
+		jsonOut = std::regex_replace(jsonOut, std::regex("\\b(inf|Infinity|-inf)\\b"), "null");
+		std::cout << jsonOut << std::endl;
 	}
 	std::cout << std::string(135, '-') << "\n\n";
 
@@ -432,145 +563,19 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 			<< escapeJSON(results[i].scenario_name) << "</button>\n";
 	}
 
-	// Generate scenario data
+	// Generate scenario data — reuse serializeResultToJson() as the single source of truth
 	std::stringstream data;
 	for (size_t i = 0; i < results.size(); ++i) {
 		const auto& r = results[i];
-		std::stringstream dropFramesJson;
-		dropFramesJson << "[";
-		for (size_t j = 0; j < r.drop_frames.size(); ++j) {
-			const auto& f = r.drop_frames[j];
-			dropFramesJson
-				<< "{\"t\":" << f.time << ",\"y\":" << f.altitude << ",\"v\":" << f.velocity
-				<< ",\"m\":" << f.mach << ",\"sb\":" << (f.is_sonic_boom ? "true" : "false")
-				<< ",\"pr\":" << f.pitch_rad << ",\"cvx\":" << f.current_vx
-				<< ",\"cvy\":" << f.current_vy << ",\"dc\":" << f.drag_coefficient
-				<< ",\"df\":" << f.drag_force << ",\"gp\":" << f.guidance_pull << "}";
-			if (j + 1 < r.drop_frames.size())
-				dropFramesJson << ",";
-		}
-		dropFramesJson << "]";
-
-		std::stringstream penFramesJson;
-		penFramesJson << "[";
-		for (size_t j = 0; j < r.penetration_frames.size(); ++j) {
-			const auto& f = r.penetration_frames[j];
-			penFramesJson
-				<< "{\"t\":" << f.time << ",\"y\":" << f.depth << ",\"v\":" << f.velocity
-				<< ",\"m\":" << f.mach << ",\"p\":" << (f.dynamic_pressure / 1.0e9)
-				<< ",\"g\":" << f.g_force << ",\"h\":" << f.heat
-				<< ",\"e\":" << (f.is_eroding ? "true" : "false") << ",\"dif\":" << f.dif
-				<< ",\"rl\":" << f.remaining_length << ",\"ob\":" << f.obliquity_deg
-				<< ",\"cvx\":" << f.current_vx << ",\"cvy\":" << f.current_vy
-				<< ",\"up\":" << f.Up << ",\"us\":" << f.Us << ",\"ps\":" << f.P_shock
-				<< ",\"tp\":" << f.transmitted_pressure << ",\"se\":" << f.shock_energy
-				<< ",\"af\":" << f.asymmetric_force << ",\"bm\":" << f.bending_moment
-				<< ",\"mbs\":" << f.max_bending_stress << ",\"sr\":" << f.strain_rate
-				<< ",\"es\":" << f.effective_strength << ",\"tf\":" << f.tunnel_force
-				<< ",\"iev\":" << f.interface_erosion_velocity << ",\"hr\":" << f.heat_rate
-				<< ",\"eh\":" << f.excess_heat << ",\"ml\":" << f.mass_loss
-				<< ",\"eld\":" << f.effective_linear_density << "}";
-			if (j + 1 < r.penetration_frames.size())
-				penFramesJson << ",";
-		}
-		penFramesJson << "]";
-
-		std::stringstream targetLayersJson;
-		targetLayersJson << "[";
-		for (size_t k = 0; k < target.layers.size(); ++k) {
-			const auto& lay = target.layers[k];
-			targetLayersJson << "{\"name\":\"" << escapeJSON(lay.material_name)
-					 << "\",\"thickness\":" << lay.thickness
-					 << ",\"density\":" << lay.density
-					 << ",\"compressive_strength\":" << lay.compressive_strength
-					 << ",\"rebar_volume_fraction\":" << lay.rebar_volume_fraction
-					 << ",\"rebar_yield_strength\":" << lay.rebar_yield_strength
-					 << ",\"pulverized_depth\":" << lay.pulverized_depth
-					 << ",\"hugoniot_c0\":" << lay.hugoniot_c0
-					 << ",\"hugoniot_s\":" << lay.hugoniot_s << "}";
-			if (k + 1 < target.layers.size())
-				targetLayersJson << ",";
-		}
-		targetLayersJson << "]";
-
-		data << "            { name: \"" << escapeJSON(r.scenario_name)
-		     << "\", velocity: " << r.velocity << ", mach: " << r.mach_number
-		     << ", energy: " << (r.kinetic_energy / 1e9)
-		     << ", pressurvives: " << (r.explosive_charge_survives ? "true" : "false")
-		     << ", is_kinetic: " << (r.is_kinetic_rod ? "true" : "false") << ", regime: \""
-		     << escapeJSON(r.regime) << "\", summary: \"" << escapeJSON(r.outcome_summary)
-		     << "\""
-		     << ", proj_length: " << proj.length << ", proj_diameter: " << proj.diameter
-		     << ", proj_name: \"" << escapeJSON(proj.name) << "\", target_name: \""
-		     << escapeJSON(target.name) << "\""
-		     << ", proj_total_mass: " << proj.total_mass
-		     << ", proj_curvature_noseReduce: " << proj.curvature_noseReduce
-		     << ", proj_casing_density: " << proj.casing_density
-		     << ", proj_casing_wall_thickness: " << proj.casing_wall_thickness
-		     << ", proj_area_moment_inertia: " << proj.area_moment_inertia
-		     << ", proj_elastic_modulus: " << proj.elastic_modulus
-		     << ", proj_hugoniot_c0: " << proj.hugoniot_c0
-		     << ", proj_hugoniot_s: " << proj.hugoniot_s
-		     << ", proj_explosive_energy_j_per_kg: " << proj.explosive_energy_j_per_kg
-		     << ", proj_specific_heat: " << proj.specific_heat
-		     << ", proj_melting_point: " << proj.melting_point
-		     << ", proj_heat_of_fusion: " << proj.heat_of_fusion
-		     << ", flight_path_angle: " << r.flight_path_angle
-		     << ", obliquity_angle: " << r.obliquity_angle
-		     << ", angle_of_attack: " << r.angle_of_attack
-		     << ", cons_gravity: " << PhysicsConstants {}.gravity
-		     << ", cons_pi: " << PhysicsConstants {}.PI
-		     << ", cons_friction_factor: " << PhysicsConstants {}.frictionFactor
-		     << ", cons_speed_of_sound: " << PhysicsConstants {}.SpeedOfSound
-		     << ", explosive_mass: " << r.explosive_mass
-		     << ", explosion_scale: " << r.explosion_scale
-		     << ", crater_wide_radius: " << r.crater_wide_radius
-		     << ", crater_narrow_radius: " << r.crater_narrow_radius
-		     << ", camera_shake_magnitude: " << r.camera_shake_magnitude
-		     << ", time_scale_pen: " << r.time_scale_pen
-		     << ", erosion_occurred: " << (r.erosion_occurred ? "true" : "false")
-		     << ", final_rod_length: " << r.final_rod_length
-		     << ", erosion_length_lost: " << r.erosion_length_lost
-		     << ", dynamic_increase_factor: " << r.dynamic_increase_factor
-		     << ", bar_wave_speed: " << r.bar_wave_speed
-		     << ", shock_pressure_gpa_peak: " << r.shock_pressure_gpa_peak
-		     << ", shock_pulse_duration_us: " << r.shock_pulse_duration_us
-		     << ", previous_strike_depth: " << r.previous_strike_depth
-		     << ", cumulative_breach_depth: " << r.cumulative_breach_depth
-		     << ", kinetic_shock_joules: " << r.kinetic_shock_joules
-		     << ", total_explosive_yield: " << r.total_explosive_yield
-		     << ", altitude_ft: " << r.altitude_ft
-		     << ", premature_detonation: " << (r.premature_detonation ? "true" : "false")
-		     << ", x_acceleration: " << r.x_acceleration
-		     << ", y_acceleration: " << r.y_acceleration << ", trim_deg: " << r.trim_deg
-		     << ", trim_rad: " << r.trim_rad
-		     << ", fpa_rad_corrected: " << r.fpa_rad_corrected << ", area: " << r.area
-		     << ", boom_time: " << r.boom_time << ", boom_alt: " << r.boom_alt
-		     << ", impact_velocity: " << r.impact_velocity
-		     << ", impact_pitch: " << r.impact_pitch
-		     << ", initial_shaft_depth: " << r.initial_shaft_depth
-		     << ", critical_angle_threshold: " << r.critical_angle_threshold
-		     << ", average_density: " << r.average_density
-		     << ", aircraft_bomber_totalMass: " << r.aircraft_bomber_totalMass
-		     << ", aircraft_bomber_wingArea: " << r.aircraft_bomber_wingArea
-		     << ", aircraft_bomber_liftCurveSlope: " << r.aircraft_bomber_liftCurveSlope
-		     << ", cons_universalGasConstant: " << r.cons_universalGasConstant
-		     << ", cons_molarMassAir: " << r.cons_molarMassAir
-		     << ", cons_adiabaticIndexAir: " << r.cons_adiabaticIndexAir
-		     << ", cons_earthRadius: " << r.cons_earthRadius
-		     << ", \"target_layers\": " << targetLayersJson.str() << ", \"layer_bottom_depths\": [";
-		for (size_t k = 0; k < r.layer_bottom_depths.size(); ++k) {
-			data << r.layer_bottom_depths[k];
-			if (k + 1 < r.layer_bottom_depths.size())
-				data << ",";
-		}
-		data << "]"
-		     << ", \"drop_frames\": " << dropFramesJson.str()
-		     << ", \"pen_frames\": " << penFramesJson.str() << " }";
-		if (i + 1 < results.size())
-			data << ",";
+		std::string scenarioJson = serializeResultToJson(r, proj, target);
+		scenarioJson = std::regex_replace(scenarioJson, std::regex("\\b(nan|NaN)\\b"), "null");
+		scenarioJson = std::regex_replace(scenarioJson, std::regex("\\b(inf|Infinity|-inf)\\b"), "null");
+		data << scenarioJson;
+		if (i + 1 < results.size()) data << ",";
 		data << "\n";
 	}
+
+
 
 	auto replaceAll = [](std::string& str, const std::string& from, const std::string& to) {
 		if (from.empty())
@@ -582,12 +587,10 @@ void generateHtml3DVisualizer(const std::vector<SimulationResult>& results,
 		}
 	};
 
-	replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
-
 	std::string dataStr = data.str();
-	dataStr = std::regex_replace(dataStr, std::regex("\\b(nan|NaN)\\b"), "null");
-	dataStr = std::regex_replace(dataStr, std::regex("\\b(inf|Infinity)\\b"), "null");
+	replaceAll(html, "{{SCENARIO_BUTTONS}}", buttons.str());
 	replaceAll(html, "/*{{SCENARIOS_DATA}}*/", dataStr);
+
 
 	out << html;
 	out.close();
