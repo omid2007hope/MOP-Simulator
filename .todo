@@ -161,7 +161,7 @@ All files and directories across the repository have been inspected line-by-line
 
 ### 1.3 Wiring, Integration & Test Alignment Issues (P1 - P2)
 
-#### 🟠 Issue 08: Faulty Relative `.env` Path in AI Core
+#### 🟢 Issue 08: Faulty Relative `.env` Path in AI Core (Checked)
 - **Location:** [`core.js:L2`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/AI/versionOne/core.js#L2)
 - **Description:** `path.resolve(__dirname, '../Automation/.env')` looks for `src/AI/Automation/.env`, which does not exist. The true relative path is `../../Automation/versionOne/.env`.
 
@@ -242,7 +242,7 @@ All files and directories across the repository have been inspected line-by-line
   !**/.env.example
   ```
 - [ ] **SEC-03:** Create sanitized [`.env.example`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/Automation/versionOne/.env.example) template with placeholder keys.
-- [ ] **AI-02:** Switch Gemini authorization from URL query param (`?key=`) to standard HTTP header (`x-goog-api-key`).
+- [x] **AI-02:** Switch Gemini authorization from URL query param (`?key=`) to standard HTTP header (`x-goog-api-key`).
 - [x] **PHY-01:** Add zero-division guard in [`environment_physics.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/environment_physics.cpp) for `flightControlTrim()` to prevent `NaN` values.
 - [x] **PHY-02:** Fix sequential salvo target pulverization in [`main.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/main.cpp) by preserving modified target across scenario iterations.
 

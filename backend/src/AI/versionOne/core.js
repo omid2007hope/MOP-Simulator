@@ -1,5 +1,5 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../Automation/.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../Automation/versionOne/.env') });
 const asyncHandler = require('../../Automation/versionOne/util/asyncHandler');
 
 const Status = require('../../Automation/versionOne/libs/status');
