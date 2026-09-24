@@ -65,6 +65,8 @@ class AIClient {
 			throw e;
 		}
 	}
+
+	/**
 	 * Generates a C++ simulation config based on the research topic.
 	 * @param {Object} researchData - { title, description, count }
 	 * @param {Number} currentCycle - The current simulation cycle number (1-indexed)
