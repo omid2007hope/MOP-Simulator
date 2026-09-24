@@ -100,8 +100,7 @@ int main(int argc, char* argv[]) {
 	// ==========================================
 	if (jsonMode == true) {
 		try {
-			SimulationConfig simConfig =
-				ConfigLoader::loadSimulationConfig(jsonFile);
+			SimulationConfig simConfig = ConfigLoader::loadSimulationConfig(jsonFile);
 
 			scenarios = simConfig.scenarios;
 			munition = simConfig.munition;
@@ -111,8 +110,14 @@ int main(int argc, char* argv[]) {
 
 			for (const auto& sc : scenarios) {
 				ImpactSimulator simulator(munition, object, cons);
-				results.push_back(simulator.simulate(sc, aircraft, atmos));
+
+				results.push_back(
+					//  calculation and simulation
+					simulator.simulate(sc, aircraft, atmos));
+				// Update object(target in fact) after each scenario simulation result
+				object = simulator.getTarget();
 			}
+
 			TelemetryExporter::printReport(results, munition, object);
 			TelemetryExporter::generateHtml3DVisualizer(
 				results, munition, object, basePath);
@@ -199,7 +204,8 @@ int main(int argc, char* argv[]) {
 		munition.diameter = getValidInput<double>(
 			"Enter Projectile Diameter d (meters) [e.g., 0.8]: ", false);
 		munition.curvature_noseReduce = getValidInput<double>(
-			"Enter Projectile Nose Curvature Radius R (meters) [e.g., 2.0 (Ogive)]: ", true);
+			"Enter Projectile Nose Curvature Radius R (meters) [e.g., 2.0 (Ogive)]: ",
+			true);
 		munition.total_mass =
 			getValidInput<double>("Enter Total Mass m (kg) [e.g., 14000]: ", false);
 
@@ -285,9 +291,10 @@ int main(int argc, char* argv[]) {
 		std::cout << "Enter Aircraft Name [e.g., B-2 Spirit]: ";
 		std::string aircraftName;
 		getline(std::cin, aircraftName);
-		if (aircraftName.empty()) aircraftName = "Custom Aircraft";
+		if (aircraftName.empty())
+			aircraftName = "Custom Aircraft";
 		aircraft.name = aircraftName;
-		
+
 		aircraft.bomber_totalMass = getValidInput<double>(
 			"Enter Bomber Total Mass (kg) [e.g., 152200]: ", false);
 		aircraft.bomber_wingArea =
