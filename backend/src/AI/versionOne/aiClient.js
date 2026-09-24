@@ -38,8 +38,25 @@ class AIClient {
 				throw new Error(data.error ? data.error.message : `HTTP Error ${response.status}`);
 			}
 			if (data.candidates && data.candidates[0].content) {
-				const rawText = data.candidates[0].content.parts[0].text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
-				return JSON.parse(rawText);
+				const rawText = data.candidates[0].content.parts[0].text;
+				
+				// Try to extract JSON from a markdown code block first
+				const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+				let jsonStr = match ? match[1] : rawText;
+				
+				// Ensure we only parse the outermost object/array to ignore any conversational padding
+				const objStart = jsonStr.indexOf('{');
+				const objEnd = jsonStr.lastIndexOf('}');
+				const arrStart = jsonStr.indexOf('[');
+				const arrEnd = jsonStr.lastIndexOf(']');
+				
+				if (objStart !== -1 && objEnd !== -1 && (arrStart === -1 || objStart < arrStart)) {
+					jsonStr = jsonStr.substring(objStart, objEnd + 1);
+				} else if (arrStart !== -1 && arrEnd !== -1) {
+					jsonStr = jsonStr.substring(arrStart, arrEnd + 1);
+				}
+				
+				return JSON.parse(jsonStr);
 			} else {
 				throw new Error(`Gemini returned unexpected format: ${JSON.stringify(data)}`);
 			}
@@ -48,8 +65,6 @@ class AIClient {
 			throw e;
 		}
 	}
-
-	/**
 	 * Generates a C++ simulation config based on the research topic.
 	 * @param {Object} researchData - { title, description, count }
 	 * @param {Number} currentCycle - The current simulation cycle number (1-indexed)
