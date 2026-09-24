@@ -216,9 +216,6 @@ double solveInterfaceVelocity(double v, double rho_p, double rho_t, double Yp, d
 
 
 
-
-
-
 // ! physics-based Aircraft Flight Control & Trim system
 double flightControlTrim(double flightPathAngle,
 			 double bomberVelocity,
@@ -227,6 +224,11 @@ double flightControlTrim(double flightPathAngle,
 			 double wingArea,
 			 double airDensity,
 			 const PhysicsConstants& cons) {
+
+	if (bomberVelocity <= 1.0 || CurveSlop <= 0.0 || wingArea <= 0.0 || airDensity <= 0.0) {
+
+		return 0.0;
+	};
 
 	// 3. FPA in Radians
 	double fpa_rad = flightPathAngle * cons.PI / 180.0;

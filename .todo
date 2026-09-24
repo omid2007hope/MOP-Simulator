@@ -97,7 +97,7 @@ All files and directories across the repository have been inspected line-by-line
 
 ### 1.1 Critical Security & Secret Leaks (P0)
 
-#### 🔴 Bug 01: Hardcoded Plaintext MongoDB Atlas Cluster Connection String
+#### 🟢 Bug 01: Hardcoded Plaintext MongoDB Atlas Cluster Connection String (Checked)
 - **Location:** [`.env:L12`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/Automation/versionOne/.env#L12)
 - **Description:** Live MongoDB Atlas connection string with embedded administrative credentials (`<username>:<password>`) is stored directly in the local environment file.
 - **Impact:** Complete database compromise, data tampering, leakage of research sessions, and unauthorized remote access.
@@ -106,7 +106,7 @@ All files and directories across the repository have been inspected line-by-line
   2. Update `.gitignore` with `**/.env*` to prevent any `.env` file across nested folders from being committed.
   3. Replace with local/template configuration (`.env.example`).
 
-#### 🔴 Bug 02: Hardcoded Production Google Gemini AI API Key
+#### 🟢 Bug 02: Hardcoded Production Google Gemini AI API Key (Checked)
 - **Location:** [`.env:L15`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/Automation/versionOne/.env#L15)
 - **Description:** Active Google Gemini API key (`GEMINI_API_KEY=<REDACTED>`) is stored in cleartext.
 - **Impact:** Unlimited unauthorized consumption of Gemini tokens, potential cloud account suspension, and unexpected financial billing.
@@ -116,13 +116,7 @@ All files and directories across the repository have been inspected line-by-line
 
 ### 1.2 Physics Engine & Runtime Execution Bugs (P0 - P1)
 
-#### 🔴 Bug 03: Non-Existent Model String `gemini-3.6-flash` Crashing All AI Calls
-- **Location:** [`aiClient.js:L23`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/AI/versionOne/aiClient.js#L23)
-- **Root Cause:** Requests target `models/gemini-3.6-flash:generateContent`. No such model version exists in Google's API catalog.
-- **Impact:** Every call to `generateScenario()`, `analyzeResults()`, and `generateArticle()` returns HTTP 404, causing the entire autonomous research loop to fail immediately.
-- **Fix:** Update model target to valid active models (e.g., `gemini-2.0-flash` or `gemini-1.5-flash`).
-
-#### 🔴 Bug 04: C++ Divide-by-Zero / `NaN` in Flight Control Trim Calculation
+#### 🟢 Bug 04: C++ Divide-by-Zero / `NaN` in Flight Control Trim Calculation (Checked)
 - **Location:** [`environment_physics.cpp:L237-L245`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/environment_physics.cpp#L237-L245)
 - **Root Cause:**
   ```cpp
@@ -240,17 +234,16 @@ All files and directories across the repository have been inspected line-by-line
 ## ✅ Section 2: Prioritized Action Plan & Checklist
 
 ### 🔴 Phase 1: Critical Security & Crash Remediation (P0) — Immediate
-- [ ] **SEC-01:** Invalidate and rotate exposed MongoDB Atlas credentials and Google Gemini API key.
-- [ ] **SEC-02:** Update [`.gitignore`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/.gitignore) to recursively ignore all `.env` files:
+- [x] **SEC-01:** Invalidate and rotate exposed MongoDB Atlas credentials and Google Gemini API key.
+- [x] **SEC-02:** Update [`.gitignore`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/.gitignore) to recursively ignore all `.env` files:
   ```gitignore
   **/.env
   **/.env.*
   !**/.env.example
   ```
 - [ ] **SEC-03:** Create sanitized [`.env.example`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/Automation/versionOne/.env.example) template with placeholder keys.
-- [ ] **AI-01:** Update Gemini model target in [`aiClient.js`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/AI/versionOne/aiClient.js) to official `gemini-2.0-flash` (or `gemini-1.5-flash`).
 - [ ] **AI-02:** Switch Gemini authorization from URL query param (`?key=`) to standard HTTP header (`x-goog-api-key`).
-- [ ] **PHY-01:** Add zero-division guard in [`environment_physics.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/environment_physics.cpp) for `flightControlTrim()` to prevent `NaN` values.
+- [x] **PHY-01:** Add zero-division guard in [`environment_physics.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/environment_physics.cpp) for `flightControlTrim()` to prevent `NaN` values.
 - [ ] **PHY-02:** Fix sequential salvo target pulverization in [`main.cpp`](file:///c:/Users/Omid/X/Code/MOP-Simulator/backend/src/simulation/penetration/versionOne/main.cpp) by preserving modified target across scenario iterations.
 
 ---
