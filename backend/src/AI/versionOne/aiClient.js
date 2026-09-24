@@ -15,83 +15,100 @@ class AIClient {
 	}
 
 	/**
-	 * Generic helper to call Gemini API with JSON enforcement and exponential backoff retry.
-	 * Retries automatically on transient 503 (high demand) and 429 (rate limit) errors.
-	 * @param {number} [maxRetries=4] - Maximum number of retry attempts
+	 * Generic helper to call Gemini API with JSON enforcement.
+	 * Tries a prioritized list of models. On 503/429, falls back to the next model in the chain.
+	 * Non-transient errors (404, bad JSON, etc.) are thrown immediately.
 	 */
-	async _callGemini(promptText, inputData, temperature = 1.0, maxRetries = 4) {
+	async _callGemini(promptText, inputData, temperature = 1.0) {
 		const key = this._getApiKey();
+
+		// Ordered fallback chain — confirmed working models first
+		const models = [
+			'gemini-3.6-flash',
+			'gemini-3.5-flash',
+			'gemini-3-flash-preview',
+		];
+
+		const _parseJson = (rawText) => {
+			const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+			let jsonStr = match ? match[1] : rawText;
+			const objStart = jsonStr.indexOf('{');
+			const objEnd = jsonStr.lastIndexOf('}');
+			const arrStart = jsonStr.indexOf('[');
+			const arrEnd = jsonStr.lastIndexOf(']');
+			if (objStart !== -1 && objEnd !== -1 && (arrStart === -1 || objStart < arrStart)) {
+				jsonStr = jsonStr.substring(objStart, objEnd + 1);
+			} else if (arrStart !== -1 && arrEnd !== -1) {
+				jsonStr = jsonStr.substring(arrStart, arrEnd + 1);
+			}
+			return JSON.parse(jsonStr);
+		};
+
+		const _isTransient = (status, msg) =>
+			status === 503 || status === 429 ||
+			(msg && (msg.includes('high demand') || msg.includes('rate limit') || msg.includes('UNAVAILABLE')));
+
 		let lastError;
+		for (const model of models) {
+			// Each model gets 2 attempts before we fall back to the next
+			for (let attempt = 1; attempt <= 2; attempt++) {
+				try {
+					const response = await fetch(
+						`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+						{
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+							body: JSON.stringify({
+								systemInstruction: { parts: [{ text: promptText }] },
+								contents: [{ parts: [{ text: JSON.stringify(inputData) }] }],
+								generationConfig: { responseMimeType: 'application/json', temperature }
+							})
+						}
+					);
 
-		for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
-					method: 'POST',
-					headers: { 
-						'Content-Type': 'application/json',
-						'x-goog-api-key': key
-					},
-					body: JSON.stringify({
-						systemInstruction: { parts: [{ text: promptText }] },
-						contents: [{ parts: [{ text: JSON.stringify(inputData) }] }],
-						generationConfig: { responseMimeType: "application/json", temperature }
-					})
-				});
-				
-				const data = await response.json();
+					const data = await response.json();
+					const errMsg = data.error ? data.error.message : null;
 
-				// Retry on transient server-side errors (503 high demand, 429 rate limit)
-				if (response.status === 503 || response.status === 429) {
-					const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s, 16s
-					const msg = data.error ? data.error.message : `HTTP ${response.status}`;
-					console.warn(`[AI Client] Attempt ${attempt}/${maxRetries} failed (${msg}). Retrying in ${delay / 1000}s...`);
-					await new Promise(r => setTimeout(r, delay));
-					lastError = new Error(msg);
-					continue;
-				}
-
-				if (!response.ok || data.error) {
-					throw new Error(data.error ? data.error.message : `HTTP Error ${response.status}`);
-				}
-
-				if (data.candidates && data.candidates[0].content) {
-					const rawText = data.candidates[0].content.parts[0].text;
-					
-					// Try to extract JSON from a markdown code block first
-					const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-					let jsonStr = match ? match[1] : rawText;
-					
-					// Strip any conversational padding outside the outermost object/array
-					const objStart = jsonStr.indexOf('{');
-					const objEnd = jsonStr.lastIndexOf('}');
-					const arrStart = jsonStr.indexOf('[');
-					const arrEnd = jsonStr.lastIndexOf(']');
-					
-					if (objStart !== -1 && objEnd !== -1 && (arrStart === -1 || objStart < arrStart)) {
-						jsonStr = jsonStr.substring(objStart, objEnd + 1);
-					} else if (arrStart !== -1 && arrEnd !== -1) {
-						jsonStr = jsonStr.substring(arrStart, arrEnd + 1);
+					if (_isTransient(response.status, errMsg)) {
+						const delay = attempt === 1 ? 2000 : 5000;
+						console.warn(`[AI Client] ${model} attempt ${attempt}/2 unavailable. Retrying in ${delay / 1000}s...`);
+						await new Promise(r => setTimeout(r, delay));
+						lastError = new Error(errMsg || `HTTP ${response.status}`);
+						continue; // retry same model once
 					}
-					
-					return JSON.parse(jsonStr);
-				} else {
+
+					if (!response.ok || data.error) {
+						// Permanent error (404 deprecated, auth failure, etc.) — skip model immediately
+						console.warn(`[AI Client] ${model} failed permanently (${errMsg}). Trying next model...`);
+						lastError = new Error(errMsg || `HTTP Error ${response.status}`);
+						break; // break inner loop → try next model
+					}
+
+					if (data.candidates && data.candidates[0].content) {
+						if (model !== 'gemini-3.6-flash') {
+							console.log(`[AI Client] Succeeded via fallback model: ${model}`);
+						}
+						return _parseJson(data.candidates[0].content.parts[0].text);
+					}
+
 					throw new Error(`Gemini returned unexpected format: ${JSON.stringify(data)}`);
-				}
-			} catch (e) {
-				// Only retry on transient errors; rethrow permanent ones immediately
-				if (attempt < maxRetries && (e.message.includes('high demand') || e.message.includes('rate limit'))) {
-					const delay = Math.pow(2, attempt) * 1000;
-					console.warn(`[AI Client] Attempt ${attempt}/${maxRetries} failed. Retrying in ${delay / 1000}s...`);
-					await new Promise(r => setTimeout(r, delay));
+
+				} catch (e) {
+					if (_isTransient(0, e.message) && attempt < 2) {
+						console.warn(`[AI Client] ${model} attempt ${attempt}/2 threw transient error. Retrying in 3s...`);
+						await new Promise(r => setTimeout(r, 3000));
+						lastError = e;
+						continue;
+					}
+					// Permanent or final attempt — try next model
+					console.warn(`[AI Client] ${model} failed: ${e.message}. Trying next model...`);
 					lastError = e;
-					continue;
+					break;
 				}
-				console.error("[AI Client] Gemini API call failed.", e.message);
-				throw e;
 			}
 		}
 
-		console.error("[AI Client] All retry attempts exhausted.", lastError.message);
+		console.error('[AI Client] All models exhausted.', lastError.message);
 		throw lastError;
 	}
 
