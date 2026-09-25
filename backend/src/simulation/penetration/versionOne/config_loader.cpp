@@ -40,8 +40,11 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath)
 		simConfig.munition.casing_wall_thickness = p.value("casing_wall_thickness", 0.05);
 		simConfig.munition.hugoniot_c0 = p.value("hugoniot_c0", 4570.0);
 		simConfig.munition.hugoniot_s = p.value("hugoniot_s", 1.49);
-		simConfig.munition.explosive_critical_energy =
-			p.value("explosive_critical_energy", 3.0e15);
+		double ec = p.value("explosive_critical_energy", 3.0e15);
+		if (ec < 1e10) {
+			ec *= 1e15;
+		}
+		simConfig.munition.explosive_critical_energy = ec;
 		simConfig.munition.specific_heat = p.value("specific_heat", 460.0);
 		simConfig.munition.melting_point = p.value("melting_point", 1800.0);
 		simConfig.munition.heat_of_fusion = p.value("heat_of_fusion", 272000.0);

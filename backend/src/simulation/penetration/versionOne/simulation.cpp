@@ -156,7 +156,7 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 				d.dv_x = 0.0;
 				d.dv_y = cons.gravity;
 			}
-			d.dy = -vy;
+			d.dy = vy;
 			return d;
 		};
 
