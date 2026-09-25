@@ -29,24 +29,24 @@ std::string serializeResultToJson(const SimulationResult& r,
 		ss << "[";
 		for (size_t i = 0; i < frames.size(); ++i) {
 			const auto& f = frames[i];
-			ss << "{\"time\":" << f.time
-			   << ",\"altitude\":" << f.altitude
-			   << ",\"velocity\":" << f.velocity
-			   << ",\"mach\":" << f.mach
-			   << ",\"dynamic_pressure\":" << f.dynamic_pressure
-			   << ",\"is_sonic_boom\":" << (f.is_sonic_boom ? "true" : "false")
-			   << ",\"heat\":" << f.heat
-			   << ",\"g_force\":" << f.g_force
-			   << ",\"pitch_rad\":" << f.pitch_rad
-			   << ",\"is_eroding\":" << (f.is_eroding ? "true" : "false")
+			ss << "{\"t\":" << f.time
+			   << ",\"y\":" << f.altitude
+			   << ",\"v\":" << f.velocity
+			   << ",\"m\":" << f.mach
+			   << ",\"p\":" << f.dynamic_pressure
+			   << ",\"sb\":" << (f.is_sonic_boom ? "true" : "false")
+			   << ",\"h\":" << f.heat
+			   << ",\"g\":" << f.g_force
+			   << ",\"pr\":" << f.pitch_rad
+			   << ",\"e\":" << (f.is_eroding ? "true" : "false")
 			   << ",\"dif\":" << f.dif
-			   << ",\"remaining_length\":" << f.remaining_length
-			   << ",\"obliquity_deg\":" << f.obliquity_deg
-			   << ",\"current_vx\":" << f.current_vx
-			   << ",\"current_vy\":" << f.current_vy
-			   << ",\"drag_coefficient\":" << f.drag_coefficient
-			   << ",\"drag_force\":" << f.drag_force
-			   << ",\"guidance_pull\":" << f.guidance_pull
+			   << ",\"rl\":" << f.remaining_length
+			   << ",\"ob\":" << f.obliquity_deg
+			   << ",\"cvx\":" << f.current_vx
+			   << ",\"cvy\":" << f.current_vy
+			   << ",\"dc\":" << f.drag_coefficient
+			   << ",\"df\":" << f.drag_force
+			   << ",\"gp\":" << f.guidance_pull
 			   << "}";
 			if (i + 1 < frames.size()) ss << ",";
 		}
@@ -59,35 +59,40 @@ std::string serializeResultToJson(const SimulationResult& r,
 		ss << "[";
 		for (size_t i = 0; i < frames.size(); ++i) {
 			const auto& f = frames[i];
-			ss << "{\"time\":" << f.time
-			   << ",\"depth\":" << f.depth
-			   << ",\"velocity\":" << f.velocity
-			   << ",\"mach\":" << f.mach
-			   << ",\"dynamic_pressure\":" << f.dynamic_pressure
-			   << ",\"g_force\":" << f.g_force
-			   << ",\"heat\":" << f.heat
-			   << ",\"is_eroding\":" << (f.is_eroding ? "true" : "false")
+			ss << "{\"t\":" << f.time
+			   << ",\"y\":" << f.depth
+			   << ",\"v\":" << f.velocity
+			   << ",\"m\":" << f.mach
+			   << ",\"p\":" << f.dynamic_pressure
+			   << ",\"g\":" << f.g_force
+			   << ",\"h\":" << f.heat
+			   << ",\"e\":" << (f.is_eroding ? "true" : "false")
 			   << ",\"dif\":" << f.dif
-			   << ",\"remaining_length\":" << f.remaining_length
-			   << ",\"obliquity_deg\":" << f.obliquity_deg
-			   << ",\"current_vx\":" << f.current_vx
-			   << ",\"current_vy\":" << f.current_vy
-			   << ",\"Up\":" << f.Up
-			   << ",\"Us\":" << f.Us
-			   << ",\"P_shock\":" << f.P_shock
-			   << ",\"transmitted_pressure\":" << f.transmitted_pressure
-			   << ",\"shock_energy\":" << f.shock_energy
-			   << ",\"asymmetric_force\":" << f.asymmetric_force
-			   << ",\"bending_moment\":" << f.bending_moment
-			   << ",\"max_bending_stress\":" << f.max_bending_stress
-			   << ",\"strain_rate\":" << f.strain_rate
-			   << ",\"effective_strength\":" << f.effective_strength
-			   << ",\"tunnel_force\":" << f.tunnel_force
-			   << ",\"interface_erosion_velocity\":" << f.interface_erosion_velocity
-			   << ",\"heat_rate\":" << f.heat_rate
-			   << ",\"excess_heat\":" << f.excess_heat
-			   << ",\"mass_loss\":" << f.mass_loss
-			   << ",\"effective_linear_density\":" << f.effective_linear_density
+			   << ",\"rl\":" << f.remaining_length
+			   << ",\"ob\":" << f.obliquity_deg
+			   << ",\"cvx\":" << f.current_vx
+			   << ",\"cvy\":" << f.current_vy
+			   << ",\"up\":" << f.Up
+			   << ",\"us\":" << f.Us
+			   << ",\"ps\":" << f.P_shock
+			   << ",\"tp\":" << f.transmitted_pressure
+			   << ",\"se\":" << f.shock_energy
+			   << ",\"af\":" << f.asymmetric_force
+			   << ",\"bm\":" << f.bending_moment
+			   << ",\"mbs\":" << f.max_bending_stress
+			   << ",\"sr\":" << f.strain_rate
+			   << ",\"es\":" << f.effective_strength
+			   << ",\"tf\":" << f.tunnel_force
+			   << ",\"iev\":" << f.interface_erosion_velocity
+			   << ",\"hr\":" << f.heat_rate
+			   << ",\"eh\":" << f.excess_heat
+			   << ",\"ml\":" << f.mass_loss
+			   << ",\"eld\":" << f.effective_linear_density
+			   << ",\"sb\":" << (f.is_sonic_boom ? "true" : "false")
+			   << ",\"pr\":" << f.pitch_rad
+			   << ",\"dc\":" << f.drag_coefficient
+			   << ",\"df\":" << f.drag_force
+			   << ",\"gp\":" << f.guidance_pull
 			   << "}";
 			if (i + 1 < frames.size()) ss << ",";
 		}
