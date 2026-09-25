@@ -13,10 +13,7 @@
     <script>tailwind = { corePlugins: { preflight: false } };</script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- P-008: Production builds remove prop-type checking (~30-40% less render overhead) -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- P-009: Babel standalone removed — UI uses React.createElement (saves 800KB + 500ms parse time) -->
+
 
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
     <style>
@@ -252,6 +249,10 @@
       function playAnthem(){
         stopAnthem();
         try{
+          if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+            console.warn("AudioContext requires user gesture. Anthem playback skipped.");
+            return;
+          }
           audioCtx=new(window.AudioContext||window.webkitAudioContext)();
           if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
           const notes=[{f:392.0,d:0.35},{f:329.63,d:0.35},{f:261.63,d:0.6},{f:329.63,d:0.6},{f:392.0,d:0.6},{f:523.25,d:1.1},{f:659.25,d:0.7},{f:587.33,d:0.35},{f:523.25,d:0.6},{f:329.63,d:0.6},{f:370.0,d:0.6},{f:392.0,d:1.1},{f:392.0,d:0.35},{f:392.0,d:0.35},{f:659.25,d:0.7},{f:587.33,d:0.35},{f:523.25,d:0.6},{f:493.88,d:0.6},{f:440.0,d:0.6},{f:493.88,d:0.6},{f:523.25,d:1.2},{f:523.25,d:0.35},{f:523.25,d:0.35},{f:659.25,d:0.6},{f:698.46,d:0.6},{f:783.99,d:1.0},{f:783.99,d:0.6},{f:659.25,d:0.35},{f:587.33,d:0.6},{f:523.25,d:0.6},{f:587.33,d:1.2},{f:659.25,d:0.6},{f:659.25,d:0.35},{f:587.33,d:0.35},{f:523.25,d:0.6},{f:493.88,d:0.6},{f:440.0,d:0.6},{f:493.88,d:0.6},{f:523.25,d:1.4},{f:523.25,d:0.35},{f:523.25,d:0.35},{f:392.0,d:0.6},{f:329.63,d:0.6},{f:392.0,d:0.6},{f:523.25,d:1.4}];

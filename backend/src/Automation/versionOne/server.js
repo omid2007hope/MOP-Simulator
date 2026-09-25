@@ -30,6 +30,9 @@ const researchRouter = require('./router/research');
 const simulationDataRouter = require('./router/simulationData');
 const pipelineRouter = require('./router/pipeline');
 const { coreHealth } = require('../../AI/versionOne/core');
+\A
+// Serve static files from the root of the backend directory (e.g., for 3d_visualizer.html)
+app.use(express.static(path.join(__dirname, '../../..')));
 
 app.use(healthRouter);
 app.use(researchRouter);
