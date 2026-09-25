@@ -58,6 +58,95 @@ class SimulationRunner {
             const CHUNK_SIZE = 1000;
             let streamError = null;
 
+            /**
+             * Maps a C++ drop_frame (full field names) → Mongoose DropFrameSchema (short keys).
+             * C++ outputs: time, altitude, velocity, mach, dynamic_pressure, is_sonic_boom, heat,
+             *              g_force, pitch_rad, is_eroding, dif, remaining_length, obliquity_deg,
+             *              current_vx, current_vy, drag_coefficient, drag_force, guidance_pull
+             */
+            const mapDropFrame = (f) => ({
+                t:   f.time,
+                y:   f.altitude,
+                v:   f.velocity,
+                m:   f.mach,
+                p:   f.dynamic_pressure   ?? 0,
+                sb:  f.is_sonic_boom      ?? false,
+                h:   f.heat               ?? 0,
+                g:   f.g_force            ?? 0,
+                pr:  f.pitch_rad          ?? 0,
+                e:   f.is_eroding         ?? false,
+                dif: f.dif               ?? 1,
+                rl:  f.remaining_length   ?? 0,
+                ob:  f.obliquity_deg      ?? 0,
+                cvx: f.current_vx         ?? 0,
+                cvy: f.current_vy         ?? 0,
+                dc:  f.drag_coefficient   ?? 0,
+                df:  f.drag_force         ?? 0,
+                gp:  f.guidance_pull      ?? 0,
+                up:  f.Up                 ?? 0,
+                us:  f.Us                 ?? 0,
+                ps:  f.P_shock            ?? 0,
+                tp:  f.transmitted_pressure      ?? 0,
+                se:  f.shock_energy       ?? 0,
+                af:  f.asymmetric_force   ?? 0,
+                bm:  f.bending_moment     ?? 0,
+                mbs: f.max_bending_stress ?? 0,
+                sr:  f.strain_rate        ?? 0,
+                es:  f.effective_strength ?? 0,
+                tf:  f.tunnel_force       ?? 0,
+                iev: f.interface_erosion_velocity ?? 0,
+                hr:  f.heat_rate          ?? 0,
+                eh:  f.excess_heat        ?? 0,
+                ml:  f.mass_loss          ?? 0,
+                eld: f.effective_linear_density   ?? 0,
+            });
+
+            /**
+             * Maps a C++ pen_frame (full field names) → Mongoose PenetrationFrameSchema (short keys).
+             * C++ outputs: time, depth, velocity, mach, dynamic_pressure, g_force, heat,
+             *              is_eroding, dif, remaining_length, obliquity_deg, current_vx, current_vy,
+             *              Up, Us, P_shock, transmitted_pressure, shock_energy, asymmetric_force,
+             *              bending_moment, max_bending_stress, strain_rate, effective_strength,
+             *              tunnel_force, interface_erosion_velocity, heat_rate, excess_heat,
+             *              mass_loss, effective_linear_density
+             */
+            const mapPenFrame = (f) => ({
+                t:   f.time,
+                y:   f.depth,
+                v:   f.velocity,
+                m:   f.mach,
+                p:   f.dynamic_pressure   ?? 0,
+                g:   f.g_force            ?? 0,
+                h:   f.heat               ?? 0,
+                e:   f.is_eroding         ?? false,
+                dif: f.dif               ?? 1,
+                rl:  f.remaining_length   ?? 0,
+                ob:  f.obliquity_deg      ?? 0,
+                cvx: f.current_vx         ?? 0,
+                cvy: f.current_vy         ?? 0,
+                up:  f.Up                 ?? 0,
+                us:  f.Us                 ?? 0,
+                ps:  f.P_shock            ?? 0,
+                tp:  f.transmitted_pressure      ?? 0,
+                se:  f.shock_energy       ?? 0,
+                af:  f.asymmetric_force   ?? 0,
+                bm:  f.bending_moment     ?? 0,
+                mbs: f.max_bending_stress ?? 0,
+                sr:  f.strain_rate        ?? 0,
+                es:  f.effective_strength ?? 0,
+                tf:  f.tunnel_force       ?? 0,
+                iev: f.interface_erosion_velocity ?? 0,
+                hr:  f.heat_rate          ?? 0,
+                eh:  f.excess_heat        ?? 0,
+                ml:  f.mass_loss          ?? 0,
+                eld: f.effective_linear_density   ?? 0,
+                sb:  f.is_sonic_boom      ?? false,
+                pr:  f.pitch_rad          ?? 0,
+                dc:  f.drag_coefficient   ?? 0,
+                df:  f.drag_force         ?? 0,
+                gp:  f.guidance_pull      ?? 0,
+            });
+
             // Handle lines asynchronously for backpressure support (Prevents Node.js OOM)
             const processStream = (async () => {
                 try {
@@ -69,6 +158,17 @@ class SimulationRunner {
                                 frame.research_title = metadata.research_title || 'Unknown';
                                 frame.session_id = metadata.session_id || 'Unknown';
                                 frame.rawDataset_id = metadata.rawDataset_id ? String(metadata.rawDataset_id) : '';
+
+                                // Map C++ full field names → Mongoose short keys for sub-frame arrays
+                                if (Array.isArray(frame.drop_frames)) {
+                                    frame.drop_frames = frame.drop_frames.map(mapDropFrame);
+                                }
+                                if (Array.isArray(frame.pen_frames)) {
+                                    frame.pen_frames = frame.pen_frames.map(mapPenFrame);
+                                }
+                                if (Array.isArray(frame.penetration_frames)) {
+                                    frame.penetration_frames = frame.penetration_frames.map(mapPenFrame);
+                                }
                                 
                                 chunk.push(frame);
                                 totalFrames++;
