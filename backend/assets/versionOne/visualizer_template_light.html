@@ -837,13 +837,13 @@
         const container = document.getElementById("canvas-container");
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x05080f);
-        scene.fog = new THREE.Fog(0x05080f, 300, 2000); // Linear fog pushed far back to prevent obscuring zoom
+        scene.fog = new THREE.Fog(0x05080f, 300, 200000); // Linear fog pushed far back to prevent obscuring zoom
 
         camera = new THREE.PerspectiveCamera(
           50,
           window.innerWidth / window.innerHeight,
           0.1,
-          5000,
+          200000,
         );
         camera.position.set(45, 30, 60);
 
@@ -950,7 +950,7 @@
 
       function setupEnvironment() {
         // Ground Grid with glow
-        const gridHelper = new THREE.GridHelper(200, 100, 0x0ea5e9, 0x1e293b);
+        const gridHelper = new THREE.GridHelper(200000, 10000, 0x0ea5e9, 0x1e293b);
         gridHelper.position.y = 0.1;
         scene.add(gridHelper);
 
