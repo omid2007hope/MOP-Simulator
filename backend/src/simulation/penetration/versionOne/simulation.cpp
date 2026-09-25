@@ -54,6 +54,12 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 						       double bomber_liftCurveSlope,
 						       double bomber_wingArea) {
 
+	// Enforce stationary release for vertical free-fall (90 or -90 degrees).
+	// A vertical drop implies the bomb was not carried by a forward-moving bomber.
+	if (std::abs(std::abs(flightPathAngle) - 90.0) < 0.1) {
+		velocity = 0.0;
+	}
+
 	AtmosphereState atmos = EnvironmentPhysics::standardAtmosphere(altitude / 3.28084, cons);
 
 	double fpa_rad = flightPathAngle * cons.PI / 180.0;
@@ -73,7 +79,10 @@ AngleSimulationResult ImpactSimulator::angleSimulation(double altitude,
 	// which is the unmodified fpa_rad. Subtracting trim_rad here would apply
 	// the aircraft's aerodynamic correction to the ballistic projectile — physically impossible.
 	double current_vx = velocity * std::cos(fpa_rad);
-	double current_vy = velocity * std::sin(fpa_rad);
+	
+	// Enforce downward initial velocity. This resolves conflicting FPA conventions 
+	// where both 90 (C++ default) and -90 (aviation standard) represent a vertical dive.
+	double current_vy = std::abs(velocity * std::sin(fpa_rad));
 
 	AngleSimulationResult res;
 	res.trim_deg = trim_deg;
