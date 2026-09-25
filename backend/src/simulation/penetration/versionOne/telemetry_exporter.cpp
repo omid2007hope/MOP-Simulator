@@ -142,7 +142,7 @@ std::string serializeResultToJson(const SimulationResult& r,
 	  << ",\"velocity\":" << r.velocity
 	  << ",\"mach\":" << r.mach_number
 	  << ",\"energy\":" << (r.kinetic_energy / 1e9)
-	  << ",\"pressurvives\":" << (r.explosive_charge_survives ? "true" : "false")
+	  << ",\"exp_survives\":" << (r.explosive_charge_survives ? "true" : "false")
 	  << ",\"is_kinetic\":" << (r.is_kinetic_rod ? "true" : "false")
 	  << ",\"regime\":\"" << r.regime << "\""
 	  << ",\"summary\":\"" << r.outcome_summary << "\""
@@ -183,8 +183,8 @@ std::string serializeResultToJson(const SimulationResult& r,
 	  << ",\"crater_narrow_radius\":" << r.crater_narrow_radius
 	  << ",\"camera_shake_magnitude\":" << r.camera_shake_magnitude
 	  << ",\"time_scale_pen\":" << r.time_scale_pen
-	  << ",\"total_explosive_yield\":" << r.total_explosive_yield
-	  << ",\"premature_detonation\":" << (r.premature_detonation ? "true" : "false")
+	  << ",\"yield\":" << r.total_explosive_yield
+	  << ",\"fail\":" << (r.premature_detonation ? "true" : "false")
 	  // Erosion
 	  << ",\"erosion_occurred\":" << (r.erosion_occurred ? "true" : "false")
 	  << ",\"final_rod_length\":" << r.final_rod_length
@@ -220,7 +220,7 @@ std::string serializeResultToJson(const SimulationResult& r,
 	  << ",\"target_layers\":" << serializeTargetLayers(target)
 	  << ",\"layer_bottom_depths\":" << serializeLayerDepths(r.layer_bottom_depths)
 	  << ",\"drop_frames\":" << serializeDropFrames(r.drop_frames)
-	  << ",\"penetration_frames\":" << serializePenFrames(r.penetration_frames)
+	  << ",\"pen_frames\":" << serializePenFrames(r.penetration_frames)
 	  << "}";
 
 	return j.str();

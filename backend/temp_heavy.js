@@ -1,0 +1,1 @@
+tailwind = { corePlugins: { preflight: false } };
