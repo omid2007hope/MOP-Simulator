@@ -1,5 +1,5 @@
 // © 2026 Omid Teimory. All rights reserved.
-const { researchConductor, researchAnalyst, articleWriter } = require('./Prompt');
+const { researchConductor, researchAnalyst } = require('./Prompt');
 
 class AIClient {
 	/**
@@ -143,22 +143,6 @@ class AIClient {
 		return this._callGemini(researchAnalyst, input, 0.7);
 	}
 
-	/**
-	 * Synthesizes research analysis into a formatted scientific article.
-	 * @param {string} title - Research title
-	 * @param {string} description - Research description/hypothesis
-	 * @param {Object} stats - Aggregate statistics
-	 * @param {Object} analysis - The insights extracted by the researchAnalyst step
-	 * @param {Array} sampleResults - A sample of raw result documents for context
-	 * @returns {Object} { abstract, content, key_findings }
-	 */
-	async generateArticle(title, description, stats, analysis, sampleResults) {
-		console.log(`[AI Client] Generating research article for: "${title}"`);
-		const input = { title, description, stats, analysis, sampleResults };
-		
-		// Standard temperature (1.0) for creative but grounded synthesis
-		return this._callGemini(articleWriter, input, 1.0);
-	}
 }
 
 module.exports = new AIClient();

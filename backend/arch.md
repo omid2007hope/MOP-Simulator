@@ -44,11 +44,6 @@ The AI constructs and populates the following structural models for the simulati
 
 The AI analyzes the generated result datasets to extract meaningful insights, producing comprehensive and detailed research texts.
 
-### Article Generation
-
-* **Schema Model:** `articleSchema`
-
-Based on the synthesized research texts, the AI constructs and outputs a high-quality, formatted scientific article.
 
 ## Simulation Core (C++ Executable)
 
