@@ -83,7 +83,15 @@ void runTest() {
 
     Aircraft manualAircraft{"Test Bomber", 150000.0, 450.0, 4.0};
     AtmosphereState manualAtmos{300.0, 100000.0, 1.2, 340.0};
-    ImpactScenario manualScen{"Custom Test #1 (30000 ft drop)", 30000.0, 0.0, 90.0, 0.0, 0.0};
+    ImpactScenario manualScen{
+        .name = "Custom Test #1 (30000 ft drop)",
+        .altitude_ft = 30000.0,
+        .bombers_horizontal_velocity = 0.0,
+        .velocity = 0.0,
+        .flight_path_angle = 90.0,
+        .obliquity_angle = 0.0,
+        .angle_of_attack = 0.0
+    };
 
     PhysicsConstants cons;
 

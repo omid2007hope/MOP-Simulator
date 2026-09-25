@@ -222,6 +222,8 @@ void ImpactSimulator::simulateAtmosphericDrop(const ImpactScenario& scenario,
 				double boom_time = (t_drop <= dt_drop) ? 0.0 : t_drop;
 				double boom_alt = (t_drop <= dt_drop) ? scenario.altitude_ft
 								      : current_altitude;
+				res.boom_time = boom_time;
+				res.boom_alt = boom_alt;
 
 				std::cout << "  >>> [SONIC BOOM] Mach 1 exceeded at T+ "
 					  << std::fixed << std::setprecision(2) << boom_time
