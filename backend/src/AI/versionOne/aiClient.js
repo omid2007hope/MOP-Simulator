@@ -41,16 +41,17 @@ class AIClient {
 			} else if (arrStart !== -1 && arrEnd !== -1) {
 				jsonStr = jsonStr.substring(arrStart, arrEnd + 1);
 			}
-			// Sanitize unescaped control characters inside JSON string values.
-			// High-temperature AI responses sometimes embed literal \n, \r, \t in strings,
-			// which are invalid JSON and cause JSON.parse to throw at that position.
-			jsonStr = jsonStr.replace(/[\r\n\t]/g, (c) => {
-				if (c === '\n') return '\\n';
-				if (c === '\r') return '\\r';
-				if (c === '\t') return '\\t';
-				return c;
-			});
-			return JSON.parse(jsonStr);
+			// Pass 1: try direct parse — structural newlines in formatted JSON are valid.
+			try {
+				return JSON.parse(jsonStr);
+			} catch (_) {
+				// Pass 2: AI embedded literal \n/\r/\t inside a string value (invalid JSON).
+				// Only sanitize content between quote pairs, leave structural whitespace intact.
+				const sanitized = jsonStr.replace(/"((?:[^"\\]|\\[\s\S])*?)"/g, (_m, c) =>
+					'"' + c.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"'
+				);
+				return JSON.parse(sanitized);
+			}
 		};
 
 		const _isTransient = (status, msg) =>
