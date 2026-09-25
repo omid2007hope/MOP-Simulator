@@ -41,6 +41,15 @@ class AIClient {
 			} else if (arrStart !== -1 && arrEnd !== -1) {
 				jsonStr = jsonStr.substring(arrStart, arrEnd + 1);
 			}
+			// Sanitize unescaped control characters inside JSON string values.
+			// High-temperature AI responses sometimes embed literal \n, \r, \t in strings,
+			// which are invalid JSON and cause JSON.parse to throw at that position.
+			jsonStr = jsonStr.replace(/[\r\n\t]/g, (c) => {
+				if (c === '\n') return '\\n';
+				if (c === '\r') return '\\r';
+				if (c === '\t') return '\\t';
+				return c;
+			});
 			return JSON.parse(jsonStr);
 		};
 
