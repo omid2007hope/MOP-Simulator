@@ -70,7 +70,7 @@ int main() {
 
 	// Test 1: Subsonic Operational Impact (Mach ~1.0, 340 m/s)
 	std::cout << "[Test 1] Testing Subsonic Rigid Penetration (340 m/s)...\n";
-	ImpactScenario subScenario {"Subsonic Test", 0.0, 340.0, 90.0, 0.0, 0.0};
+	ImpactScenario subScenario {"Subsonic Test", 0.0, 340.0, 340.0, 90.0, 0.0, 0.0};
 	SimulationResult resSub = simulator.simulate(subScenario, dummyAircraft, atmos);
 
 	assert(resSub.casing_failure == false);
@@ -98,7 +98,7 @@ int main() {
 	// Test 2: Hypervelocity Impact (Mach ~14.7, 5000 m/s) - Tests Walker-Wasley Triggering
 	std::cout
 		<< "[Test 2] Testing Hypervelocity Impact (5000 m/s) for Walker-Wasley Shock Initiation...\n";
-	ImpactScenario hyperScenario {"Hypervelocity Test", 50000.0, 5000.0, 90.0, 0.0, 0.0};
+	ImpactScenario hyperScenario {"Hypervelocity Test", 0.0, 5000.0, 5000.0, 90.0, 0.0, 0.0};
 	SimulationResult resHyper = simulator.simulate(hyperScenario, dummyAircraft, atmos);
 
 	assert(resHyper.regime == "Shock Initiation (Walker-Wasley)");
@@ -137,7 +137,7 @@ int main() {
 		.heat_of_fusion = 350000.0
 	};
 	ImpactSimulator rodSim(rod, concrete, cons);
-	ImpactScenario rodScenario {"LEO Strike", 100000.0, 3400.0, 90.0, 0.0, 0.0};
+	ImpactScenario rodScenario {"LEO Strike", 0.0, 3400.0, 3400.0, 90.0, 0.0, 0.0};
 	SimulationResult resRod = rodSim.simulate(rodScenario, dummyAircraft, atmos);
 
 	assert(resRod.is_kinetic_rod == true);
@@ -168,7 +168,7 @@ int main() {
 
 	// Test 5: Oblique Impact
 	std::cout << "[Test 5] Testing Oblique Impact (Obliquity 30 deg, AoA 5 deg, 400 m/s)...\n";
-	ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 90.0, 30.0, 5.0};
+	ImpactScenario obliqueScenario {"Oblique Test", 15.0, 400.0, 400.0, 90.0, 30.0, 5.0};
 	SimulationResult resOblique = simulator.simulate(obliqueScenario, dummyAircraft, atmos);
 
 	assert(resOblique.casing_failure == false);

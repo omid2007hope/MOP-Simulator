@@ -139,6 +139,7 @@ std::string serializeResultToJson(const SimulationResult& r,
 	j << "{"
 	  // Core result
 	  << "\"name\":\"" << r.scenario_name << "\""
+	  << ",\"bombers_horizontal_velocity\":" << r.bombers_horizontal_velocity
 	  << ",\"velocity\":" << r.velocity
 	  << ",\"mach\":" << r.mach_number
 	  << ",\"energy\":" << (r.kinetic_energy / 1e9)
@@ -239,7 +240,7 @@ void printAscii3DVisualizer(const SimulationResult& r,
 		<< "================================================================================="
 		   "==================\n";
 	std::cout << "  Velocity: " << std::fixed << std::setprecision(1) << r.velocity
-		  << " m/s (Mach " << r.mach_number << ") | Dyn. Press: " << std::setprecision(2)
+		  << " m/s (Mach " << r.mach_number << ") | Bomber's Hz Vel: " << r.bombers_horizontal_velocity << " m/s | Dyn. Press: " << std::setprecision(2)
 		  << (r.dynamic_pressure / 1e9)
 		  << " GPa | Casing Yield: " << (proj.yield_strength / 1e9) << " GPa\n";
 	std::cout << "  Actual Penetration Depth: " << r.actual_penetration_depth << " m ("

@@ -112,17 +112,19 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath)
 		if (config.contains("Scenarios") && config["Scenarios"].is_array()) {
 			for (const auto& s : config["Scenarios"]) {
 				double alt = s.value("altitude_ft", 40000.0);
-				double vel = s.value("velocity", 0.0);
+				double vel = s.value("bombers_horizontal_velocity", 0.0);
+				double bomb_vel = s.value("velocity", vel);
 				double fpa = s.value("flight_path_angle", 90.0);
 				double obliq = s.value("obliquity_angle", 0.0);
 				double aoa = s.value("angle_of_attack", 0.0);
 				std::string name = s.value("name", "AI Custom Test");
-				simConfig.scenarios.push_back({name, alt, vel, fpa, obliq, aoa});
+				simConfig.scenarios.push_back({name, alt, vel, bomb_vel, fpa, obliq, aoa});
 			}
 		} else {
 			auto s = config.contains("Scenario") ? config["Scenario"] : json::object();
 			double alt = s.value("altitude_ft", 40000.0);
-			double vel = s.value("velocity", 0.0);
+			double vel = s.value("bombers_horizontal_velocity", 0.0);
+			double bomb_vel = s.value("velocity", vel);
 			double fpa = s.value("flight_path_angle", 90.0);
 			double obliq = s.value("obliquity_angle", 0.0);
 			double aoa = s.value("angle_of_attack", 0.0);
@@ -136,7 +138,7 @@ SimulationConfig ConfigLoader::loadSimulationConfig(const std::string& filepath)
 					name_ss << "Bomb #1 (Shaft Breaker)";
 				else
 					name_ss << "Bomb #" << (i + 1) << " (Shaft Direct Strike)";
-				simConfig.scenarios.push_back({name_ss.str(), alt, vel, fpa, obliq, aoa});
+				simConfig.scenarios.push_back({name_ss.str(), alt, vel, bomb_vel, fpa, obliq, aoa});
 			}
 		}
 	} else {

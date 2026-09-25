@@ -28,6 +28,7 @@ struct PhysicsConstants {
 struct ImpactScenario {
 	std::string name;
 	double altitude_ft = 0.0;
+	double bombers_horizontal_velocity = 0.0;
 	double velocity = 0.0;
 	double flight_path_angle = 0.0;
 	double obliquity_angle = 0.0;
@@ -174,6 +175,7 @@ struct TelemetryFrame {
 struct SimulationResult {
 	std::string scenario_name;
 	double altitude_ft = 0.0;
+	double bombers_horizontal_velocity = 0.0;
 	double velocity = 0.0;
 	double mach_number = 0.0;
 	double kinetic_energy = 0.0;

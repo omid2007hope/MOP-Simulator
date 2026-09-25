@@ -985,6 +985,7 @@ SimulationResult ImpactSimulator::simulate(const ImpactScenario& scenario, const
 	SimulationResult res;
 	res.scenario_name = scenario.name;
 	res.altitude_ft = scenario.altitude_ft;
+	res.bombers_horizontal_velocity = scenario.bombers_horizontal_velocity;
 	res.velocity = scenario.velocity;
 	res.flight_path_angle = scenario.flight_path_angle;
 	res.obliquity_angle = scenario.obliquity_angle;
