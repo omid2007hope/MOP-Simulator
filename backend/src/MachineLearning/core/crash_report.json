@@ -1,0 +1,146 @@
+{
+  "timestamp": "2026-10-11T21:27:40.382117",
+  "executable": "C:\\Users\\Omid\\X\\Code\\PROJECT-AXIOM\\core\\app.exe",
+  "total_tests": 1000,
+  "passed": 1000,
+  "failed": 0,
+  "duration_sec": 395.53,
+  "category_summary": {
+    "cli_standard": {
+      "total": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "cli_syntax_edge": {
+      "total": 32,
+      "passed": 32,
+      "failed": 0
+    },
+    "cli_fuzz": {
+      "total": 100,
+      "passed": 100,
+      "failed": 0
+    },
+    "interactive_menu": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_menu_invalid": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "interactive_inference": {
+      "total": 15,
+      "passed": 15,
+      "failed": 0
+    },
+    "interactive_training_text_no_media": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_text_retry": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_text_image": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_text_video": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_text_voice": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_text_invalid_media": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_number_no_media": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_number_retry": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_image_only": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_video_only": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_voice_only": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_invalid_dtype": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_training_invalid_add_media": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_bulk_keep": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "interactive_bulk_purge_cancel": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "stdin_fuzz": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "stdin_pattern_fuzz": {
+      "total": 19,
+      "passed": 19,
+      "failed": 0
+    },
+    "random_stdin_fuzz": {
+      "total": 203,
+      "passed": 203,
+      "failed": 0
+    },
+    "random_menu_nav": {
+      "total": 189,
+      "passed": 189,
+      "failed": 0
+    },
+    "random_unicode_fuzz": {
+      "total": 201,
+      "passed": 201,
+      "failed": 0
+    },
+    "random_cli_flag": {
+      "total": 201,
+      "passed": 201,
+      "failed": 0
+    }
+  },
+  "crashes": []
+}
