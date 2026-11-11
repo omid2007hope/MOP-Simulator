@@ -1,24 +1,24 @@
 {
-  "license": "LicenseRef-Proprietary",
+  "license": "LicenseRef-MopSimulator-Proprietary",
   "name": "mop-simulator-frontend",
   "version": "3.5.0",
   "private": true,
   "scripts": {
-  "license": "LicenseRef-Proprietary",
+  "license": "LicenseRef-MopSimulator-Proprietary",
   "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-  "license": "LicenseRef-Proprietary",
+  "license": "LicenseRef-MopSimulator-Proprietary",
   "lucide-react": "^1.33.0",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-  "license": "LicenseRef-Proprietary",
+  "license": "LicenseRef-MopSimulator-Proprietary",
   "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",

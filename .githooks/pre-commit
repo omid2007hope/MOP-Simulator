@@ -32,7 +32,7 @@ IGNORED = {
     '.next', '.venv', '__pycache__', 'test_sandbox_assets',
     'asset_sample', 'database', 'models', 'pdfs', 'vendor', 'nlohmann'
 }
-REQUIRED = "NOTICE: This file contains proprietary source code licensed exclusively under the"
+REQUIRED = "PROPRIETARY SOURCE-AVAILABLE SOFTWARE — NOT OPEN SOURCE."
 
 violations = []
 for f in files:

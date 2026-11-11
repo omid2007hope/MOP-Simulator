@@ -39,7 +39,7 @@ jobs:
               'nlohmann', 'out'
           }
 
-          REQUIRED_NOTICE = "NOTICE: This file contains proprietary source code licensed exclusively under the"
+          REQUIRED_NOTICE = "PROPRIETARY SOURCE-AVAILABLE SOFTWARE — NOT OPEN SOURCE."
 
           violations = []
           scanned_count = 0

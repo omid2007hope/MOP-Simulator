@@ -3,6 +3,34 @@
 cmake_minimum_required(VERSION 3.15)
 project(MOPSimulator VERSION 2.8.0 LANGUAGES CXX)
 
+# ==============================================================================
+# MANDATORY LICENSE ACCEPTANCE GATE (CLICKWRAP / COMMAND-WRAP ASSENT)
+# ==============================================================================
+option(MOP_ACCEPT_LICENSE "Affirmative acceptance of the MOP Simulator Proprietary Source-Available License in ./LICENSE" OFF)
+
+if(NOT MOP_ACCEPT_LICENSE)
+    message(FATAL_ERROR
+        "\n"
+        "==============================================================================\n"
+        "  PROPRIETARY LICENSE ACCEPTANCE REQUIRED (NOT OPEN SOURCE)\n"
+        "==============================================================================\n"
+        "  MOP Simulator is proprietary, source-available software owned exclusively\n"
+        "  by Omid Teimory. All Rights Reserved.\n\n"
+        "  By compiling or building this software, you enter into a binding legal\n"
+        "  agreement governed by the terms in the root ./LICENSE file.\n"
+        "  Copying snippets, modifying, redistributing, commercial/SaaS use, and\n"
+        "  AI/LLM training are strictly prohibited.\n\n"
+        "  To affirmatively accept the terms of ./LICENSE and unlock compilation,\n"
+        "  re-run CMake with the explicit assent flag:\n\n"
+        "      cmake -B build -DMOP_ACCEPT_LICENSE=ON\n"
+        "==============================================================================\n"
+    )
+else()
+    message(STATUS "[LEGAL] Licensee has affirmatively accepted the MOP Simulator Proprietary Source-Available License (./LICENSE).")
+endif()
+
+
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
