@@ -1,12 +1,16 @@
 {
+  "license": "LicenseRef-Proprietary",
   "name": "mop-simulator-backend",
   "version": "3.5.0",
   "scripts": {
-    "start": "node -r dotenv/config src/Automation/versionOne/server.js"
+  "license": "LicenseRef-Proprietary",
+  "start": "node -r dotenv/config src/Automation/versionOne/server.js"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
+  "license": "LicenseRef-Proprietary",
+  "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongoose": "^9.9.2"
   }
 }
+

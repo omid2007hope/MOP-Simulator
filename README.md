@@ -1,3 +1,15 @@
+## ⚠️ LICENSE & COPYRIGHT NOTICE (NOT OPEN SOURCE)
+
+**Copyright © 2026 Omid Teimory. All Rights Reserved.**
+
+This repository is **source-available and proprietary**, NOT open source. 
+- **Permitted:** You may view the code, download the repository, and build/run the unmodified application for your own use.
+- **Strictly Prohibited:** You may **not** copy, paste, modify, redistribute, extract snippets, create derivative works, offer this software as a commercial/hosted service, or use any part of this codebase in your own projects or AI training.
+
+See the [LICENSE](./LICENSE) file for the full legally binding agreement. Unauthorized use will be prosecuted to the fullest extent of US, EU, and international copyright law.
+
+---
+
 ```
   _________________________________________________________________________________________
  /                                                                                         \
@@ -28,7 +40,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Persisted-yellow.svg)
 ![AI Powered](https://img.shields.io/badge/AI-Autonomous_Research-purple.svg)
-![License](https://img.shields.io/badge/License-AGPLv3-g.svg)
+![License](https://img.shields.io/badge/License-Proprietary-red.svg)
 ![Physics](https://img.shields.io/badge/Physics-100%25%20Validated-orange.svg)
 
 **MOP Simulator V3.5.0** has evolved from a standalone native binary into a **full-stack autonomous AI research platform**. It tightly couples a high-performance C++23 terminal ballistics simulation engine with a Node.js/Express backend API, Google Gemini AI integration, and a modern Next.js 16 Web UI.
@@ -37,7 +49,7 @@ The platform is designed to autonomously hypothesize target geometries, execute 
 
 ---
 
-## 🚀 Architecture & Ecosystem
+## ðŸš€ Architecture & Ecosystem
 
 ```mermaid
 flowchart TD
@@ -75,7 +87,7 @@ flowchart TD
 
 ---
 
-## ⚡ Complete End-to-End Workflow Demonstration
+## âš¡ Complete End-to-End Workflow Demonstration
 
 The platform operates through an automated two-phase research cycle:
 
@@ -113,7 +125,7 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Installation & Setup
+## ðŸ› ï¸ Installation & Setup
 
 ### Requirements
 
@@ -163,7 +175,7 @@ Open `http://localhost:3000` (or the port Next.js binds to, typically 3001 if ba
 
 ---
 
-## 🔬 Core Physics & Mathematical Framework
+## ðŸ”¬ Core Physics & Mathematical Framework
 
 The native C++ simulation engine remains the heart of the project, integrating continuum mechanics, cavity expansion theory, and Hugoniot shock impedance matching.
 
@@ -197,7 +209,7 @@ Transmitted shock stress $P_{shock}$ and casing transit pulse duration $\tau$ ev
 
 ---
 
-## 🔮 Machine Learning Vision (V4.0)
+## ðŸ”® Machine Learning Vision (V4.0)
 
 See `backend/src/MachineLearning/versionOne/MachineLearning.md` for full architectural plans:
 - **Surrogate Neural Physics**: Replacing heavy RK4 integration loops with $O(1)$ Deep Neural Networks (DNN) via **LibTorch (PyTorch C++)**.
@@ -205,8 +217,9 @@ See `backend/src/MachineLearning/versionOne/MachineLearning.md` for full archite
 
 ---
 
-## 📜 License & Copyright
+## ðŸ“œ License & Copyright
 
 **Copyright (c) 2026 Omid Teimory. All Rights Reserved.**
 
-Licensed under the GNU Affero General Public License v3.0 (AGPLv3). See `LICENSE` for details.
+Proprietary and source-available. See `LICENSE` for details. Copyright © 2026 Omid Teimory. All Rights Reserved.
+
