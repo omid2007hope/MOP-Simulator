@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Git pre-commit hook to verify statutory license notice headers on staged files
+
+if command -v py >/dev/null 2>&1; then
+    PY_BIN="py -3"
+elif command -v python3 >/dev/null 2>&1; then
+    PY_BIN="python3"
+elif command -v python >/dev/null 2>&1; then
+    PY_BIN="python"
+else
+    echo "[WARN] Python interpreter not found; skipping license notice pre-commit check."
+    exit 0
+fi
+
+$PY_BIN - << 'EOF'
+import subprocess, sys, os
+
+cmd = ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"]
+result = subprocess.run(cmd, capture_output=True, text=True)
+if result.returncode != 0:
+    sys.exit(0)
+
+files = [f.strip() for f in result.stdout.splitlines() if f.strip()]
+EXTENSIONS = {
+    '.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx', 
+    '.cu', '.cuh', '.js', '.jsx', '.ts', '.tsx', 
+    '.mjs', '.cjs', '.css', '.scss', '.go', '.rs', 
+    '.java', '.py', '.sh', '.bash', '.ps1'
+}
+IGNORED = {
+    'node_modules', 'third_party', 'We_Know', 'build', 'dist',
+    '.next', '.venv', '__pycache__', 'test_sandbox_assets',
+    'asset_sample', 'database', 'models', 'pdfs', 'vendor', 'nlohmann'
+}
+REQUIRED = "NOTICE: This file contains proprietary source code licensed exclusively under the"
+
+violations = []
+for f in files:
+    parts = os.path.normpath(f).split(os.sep)
+    if any(p in IGNORED for p in parts):
+        continue
+    ext = os.path.splitext(f)[1].lower()
+    if ext in EXTENSIONS and os.path.exists(f):
+        with open(f, 'r', encoding='utf-8', errors='ignore') as handle:
+            if REQUIRED not in handle.read(1500):
+                violations.append(f)
+
+if violations:
+    print("\n[ERROR] Commit rejected: Missing statutory license notice header in staged files:")
+    for v in violations:
+        print(f"  - {v}")
+    sys.exit(1)
+EOF
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+exit 0

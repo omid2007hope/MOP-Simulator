@@ -1,0 +1,77 @@
+name: License Audit
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify-license-headers:
+    name: Verify Statutory License Headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Audit First-Party Source Headers
+        run: |
+          python - << 'EOF'
+          import os, sys
+
+          EXTENSIONS = {
+              '.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx', 
+              '.cu', '.cuh', '.js', '.jsx', '.ts', '.tsx', 
+              '.mjs', '.cjs', '.css', '.scss', '.go', '.rs', 
+              '.java', '.py', '.sh', '.bash', '.ps1'
+          }
+
+          IGNORED_DIRECTORIES = {
+              '.git', 'node_modules', 'third_party', 'We_Know', 'build', 
+              'dist', '.next', '.venv', '__pycache__', 'coverage', 
+              '.nyc_output', 'test_sandbox_assets', 'asset_sample', 
+              'database', 'models', 'pdfs', '.vscode', 'vendor', 
+              'nlohmann', 'out'
+          }
+
+          REQUIRED_NOTICE = "NOTICE: This file contains proprietary source code licensed exclusively under the"
+
+          violations = []
+          scanned_count = 0
+
+          for root, dirs, files in os.walk('.'):
+              dirs[:] = [d for d in dirs if d not in IGNORED_DIRECTORIES and not d.startswith('.')]
+              parts = os.path.normpath(root).split(os.sep)
+              if any(part in IGNORED_DIRECTORIES for part in parts):
+                  continue
+
+              for filename in files:
+                  ext = os.path.splitext(filename)[1].lower()
+                  if ext in EXTENSIONS:
+                      scanned_count += 1
+                      filepath = os.path.join(root, filename)
+                      try:
+                          with open(filepath, 'r', encoding='utf-8', errors='ignore') as handle:
+                              sample = handle.read(1500)
+                              if REQUIRED_NOTICE not in sample:
+                                  violations.append(filepath)
+                      except Exception as error:
+                          violations.append(str(filepath) + " (Read Error: " + str(error) + ")")
+
+          print(f"Scanned {scanned_count} source files for statutory notice header.")
+
+          if violations:
+              print("
+[!] LICENSE HEADER AUDIT FAILED:")
+              print("The following files are missing the required statutory license notice:")
+              for violation in violations:
+                  print(f"  - {violation}")
+              sys.exit(1)
+
+          print("[OK] All source files contain the required statutory license notice header.")
+          EOF

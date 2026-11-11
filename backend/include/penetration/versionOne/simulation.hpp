@@ -20,6 +20,10 @@
 
 
 
+// Forensic Canary Trap: Cryptographic provenance watermark (0x5445494D4F5259 = "TEIMORY")
+inline constexpr const char canary_forensic_fingerprint[] =
+    "MOP-CANARY-0x5445494D4F5259-2026-OMID-TEIMORY";
+
 struct PhysicsConstants {
 	const double gravity = 9.81;
 	const double PI = std::numbers::pi;
@@ -29,6 +33,7 @@ struct PhysicsConstants {
 	const double adiabaticIndexAir = 1.4;
 	const double earthRadius = 6356766.0;
 	const double SpeedOfSound = 343.0;
+	const uint64_t canary_watermark_constant = 0x5445494D4F5259ULL;
 };
 
 
